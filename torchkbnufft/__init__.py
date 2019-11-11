@@ -5,7 +5,7 @@ __author__ = 'Matthew Muckley'
 __author_email__ = 'Matthew.Muckley@nyulangone.org'
 __license__ = 'MIT'
 __homepage__ = 'https://github.com/mmuckley/torchkbnufft'
-__docs__ = 'An easy-to-use Kaiser-Bessel NUFFT for PyTorch'
+__docs__ = 'A robust, easy-to-deploy non-uniform Fast Fourier Transform in PyTorch.'
 
 try:
     # This variable is injected in the __builtins__ by the build
