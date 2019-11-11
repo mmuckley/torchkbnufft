@@ -1,0 +1,8 @@
+.pytest_cache/
+__pycache__/
+.vscode/
+dist/
+build/
+torchkbnufft.egg-info/
+*checkpoint.ipynb
+speedtests/
