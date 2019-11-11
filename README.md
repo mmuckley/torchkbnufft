@@ -1,6 +1,6 @@
 # Torch KB-NUFFT
 
-(Soon) Simple installation from PyPI:
+Simple installation from PyPI:
 
 ```bash
 pip install torchkbnufft
