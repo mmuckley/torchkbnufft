@@ -107,6 +107,12 @@ image = adjnufft_ob(kdata, ktraj)
 
 Similar to programming low-level code, PyTorch will throw errors if the underlying ```dtype``` and ```device``` of all objects are not matching. Be sure to make sure your data and NUFFT objects are on the right device and in the right format to avoid these errors.
 
+## References
+
+Fessler, J. A., & Sutton, B. P. (2003). Nonuniform fast Fourier transforms using min-max interpolation. *IEEE transactions on signal processing*, 51(2), 560-574.
+
+Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). Rapid gridding reconstruction with a minimal oversampling ratio. *IEEE transactions on medical imaging*, 24(6), 799-808.
+
 ## Citation
 
 If you want to cite the  package, you can use the following:
