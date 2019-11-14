@@ -41,7 +41,7 @@ class MriSenseNufft(nn.Module):
 
     def __init__(self, smap, im_size, grid_size=None, numpoints=6, n_shift=None,
                  table_oversamp=2**10, order=0, norm='None', coil_broadcast=False,
-                 coilpack=False):
+                 coilpack=False, matadj=False):
 
         super(MriSenseNufft, self).__init__()
 
@@ -91,6 +91,7 @@ class MriSenseNufft(nn.Module):
         self.norm = norm
         self.coil_broadcast = coil_broadcast
         self.coilpack = coilpack
+        self.matadj = matadj
 
         # dimension checking
         assert len(self.grid_size) == len(self.im_size)
@@ -161,6 +162,7 @@ class MriSenseNufft(nn.Module):
         interpob['norm'] = self.norm
         interpob['coil_broadcast'] = self.coil_broadcast
         interpob['coilpack'] = self.coilpack
+        interpob['matadj'] = self.matadj
 
         y = MriSenseNufftFunction.apply(x, smap, om, interpob, interp_mats)
 

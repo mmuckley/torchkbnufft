@@ -24,7 +24,7 @@ class KbInterpFunction(Function):
 
         This is a wrapper for mri.interp_functions.adjkbinterp for PyTorch autograd.
         """
-        om, = ctx.saved_variables
+        om, = ctx.saved_tensors
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
 
@@ -54,7 +54,7 @@ class AdjKbInterpFunction(Function):
 
         This is a wrapper for mri.interp_functions.kbinterp for PyTorch autograd.
         """
-        om, = ctx.saved_variables
+        om, = ctx.saved_tensors
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
 

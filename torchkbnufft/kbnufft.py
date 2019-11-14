@@ -34,7 +34,8 @@ class KbNufft(nn.Module):
     """
 
     def __init__(self, im_size, grid_size=None, numpoints=6, n_shift=None,
-                 table_oversamp=2**10, order=0, norm='None', coil_broadcast=False):
+                 table_oversamp=2**10, order=0, norm='None', coil_broadcast=False,
+                 matadj=False):
 
         super(KbNufft, self).__init__()
 
@@ -83,6 +84,7 @@ class KbNufft(nn.Module):
         self.scaling_coef = scaling_coef
         self.norm = norm
         self.coil_broadcast = coil_broadcast
+        self.matadj = matadj
 
         # dimension checking
         assert len(self.grid_size) == len(self.im_size)
@@ -148,6 +150,7 @@ class KbNufft(nn.Module):
         interpob['table_oversamp'] = self.table_oversamp_tensor
         interpob['norm'] = self.norm
         interpob['coil_broadcast'] = self.coil_broadcast
+        interpob['matadj'] = self.matadj
 
         y = KbNufftFunction.apply(x, om, interpob, interp_mats)
 

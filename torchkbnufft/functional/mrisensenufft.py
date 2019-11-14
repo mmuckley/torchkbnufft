@@ -34,7 +34,7 @@ class MriSenseNufftFunction(Function):
         This function wraps sense_backward and coilpack_sense_backward for PyTorch
         autograd.
         """
-        smap, om = ctx.saved_variables
+        smap, om = ctx.saved_tensors
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
 
@@ -76,7 +76,7 @@ class AdjMriSenseNufftFunction(Function):
         This function wraps sense_forward and coilpack_sense_forward for PyTorch
         autograd.
         """
-        smap, om = ctx.saved_variables
+        smap, om = ctx.saved_tensors
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
 

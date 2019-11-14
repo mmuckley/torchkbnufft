@@ -30,7 +30,7 @@ class KbInterpForw(nn.Module):
     """
 
     def __init__(self, im_size, grid_size=None, numpoints=6, n_shift=None,
-                 table_oversamp=2**10, order=0, coil_broadcast=False):
+                 table_oversamp=2**10, order=0, coil_broadcast=False, matadj=False):
 
         super(KbInterpForw, self).__init__()
 
@@ -70,6 +70,7 @@ class KbInterpForw(nn.Module):
         )
         self.table = table
         self.coil_broadcast = coil_broadcast
+        self.matadj = matadj
 
         # dimension checking
         assert len(self.grid_size) == len(self.im_size)
@@ -121,6 +122,7 @@ class KbInterpForw(nn.Module):
         interpob['numpoints'] = self.numpoints_tensor
         interpob['table_oversamp'] = self.table_oversamp_tensor
         interpob['coil_broadcast'] = self.coil_broadcast
+        interpob['matadj'] = self.matadj
 
         y = KbInterpFunction.apply(x, om, interpob, interp_mats)
 

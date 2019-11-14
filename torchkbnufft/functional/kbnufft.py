@@ -39,7 +39,7 @@ class KbNufftFunction(Function):
         This function wraps ifft_and_scale_on_gridded_data and AdjKbInterpFunction
         for PyTorch autograd.
         """
-        om, = ctx.saved_variables
+        om, = ctx.saved_tensors
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
 
@@ -91,7 +91,7 @@ class AdjKbNufftFunction(Function):
         """
         x = x.clone()
 
-        om, = ctx.saved_variables
+        om, = ctx.saved_tensors
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
 
