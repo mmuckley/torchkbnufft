@@ -37,6 +37,9 @@ class MriSenseNufft(nn.Module):
             coil dimension prior to NUFFT. This is useful when batch is a set
             of slices with 1 k-space trajectory (note: coilpack expects ktraj
             to have batch dim of 1).
+        matadj (boolean, default=False): If true, adjoint interpolation
+            constructs a sparse matrix and does the interpolation with the
+            PyTorch sparse matrix API (for backward ops).
     """
 
     def __init__(self, smap, im_size, grid_size=None, numpoints=6, n_shift=None,
@@ -130,7 +133,7 @@ class MriSenseNufft(nn.Module):
         self.register_buffer('table_oversamp_tensor', torch.tensor(
             np.array(self.table_oversamp, dtype=np.double)))
 
-    def forward(self, x, om, interp_mats=None):
+    def forward(self, x, om, interp_mats=None, smap=None):
         """Apply SENSE maps and NUFFT.
 
         Inputs are assumed to be batch/chans x coil (1) x real/imag x image dims.
@@ -145,6 +148,8 @@ class MriSenseNufft(nn.Module):
                 a list of interpolation matrices (see 
                 mri.sparse_interp_mat.precomp_sparse_mats for construction).
                 If None, then a standard interpolation is run.
+            smap (tensor, default=None): If passed in, uses input smap tensor
+                instead of the one used on layer initialization.
         Returns:
             y (tensor): x computed at off-grid locations in om.
         """
@@ -153,7 +158,8 @@ class MriSenseNufft(nn.Module):
         interpob['table'] = []
         for i in range(len(self.table)):
             interpob['table'].append(getattr(self, 'table_tensor_' + str(i)))
-        smap = self.smap_tensor
+        if smap is None:
+            smap = self.smap_tensor
         interpob['n_shift'] = self.n_shift_tensor
         interpob['grid_size'] = self.grid_size_tensor
         interpob['im_size'] = self.im_size_tensor
@@ -308,7 +314,7 @@ class AdjMriSenseNufft(nn.Module):
         self.register_buffer('table_oversamp_tensor', torch.tensor(
             np.array(self.table_oversamp, dtype=np.double)))
 
-    def forward(self, y, om, interp_mats=None):
+    def forward(self, y, om, interp_mats=None, smap=None):
         """Apply adjoint NUFFT and SENSE.
 
         Inputs are assumed to be batch/chans x coil x real/imag x kspace length.
@@ -322,6 +328,8 @@ class AdjMriSenseNufft(nn.Module):
                 a list of interpolation matrices (see 
                 mri.sparse_interp_mat.precomp_sparse_mats for construction).
                 If None, then a standard interpolation is run.
+            smap (tensor, default=None): If passed in, uses input smap tensor
+                instead of the one used on layer initialization.
         Returns:
             x (tensor): The image with an adjoint SENSE-NUFFT.
         """
@@ -330,7 +338,8 @@ class AdjMriSenseNufft(nn.Module):
         interpob['table'] = []
         for i in range(len(self.table)):
             interpob['table'].append(getattr(self, 'table_tensor_' + str(i)))
-        smap = self.smap_tensor
+        if smap is None:
+            smap = self.smap_tensor
         interpob['n_shift'] = self.n_shift_tensor
         interpob['grid_size'] = self.grid_size_tensor
         interpob['im_size'] = self.im_size_tensor

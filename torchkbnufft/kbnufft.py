@@ -31,6 +31,9 @@ class KbNufft(nn.Module):
             energy.
         coil_broadcast (boolean, default=False): Whether to broadcast across
             coil dimension. Much faster for many coils, but uses more memory.
+        matadj (boolean, default=False): If true, adjoint interpolation
+            constructs a sparse matrix and does the interpolation with the
+            PyTorch sparse matrix API (for backward ops).
     """
 
     def __init__(self, im_size, grid_size=None, numpoints=6, n_shift=None,

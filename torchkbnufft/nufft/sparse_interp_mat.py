@@ -9,6 +9,9 @@ from ..math import complex_mult, conj_complex_mult
 def get_interpob(model):
     """Retrieves the interpolation dictionary from model.
 
+    Different nufft objects use different interpolation objects. This function
+    only extracts the minimum amount necessary for sparse matrix precomputation.
+
     Args:
         model (KbNufft-type object): A KbNufft object with attributes for
             forming a KbNufft interpolation dictionary.
@@ -16,18 +19,12 @@ def get_interpob(model):
         interpob (dictionary): A dictionary with interpolation parameters.
     """
     interpob = dict()
-    interpob['scaling_coef'] = model.scaling_coef_tensor
     interpob['table'] = []
     for i in range(len(model.table)):
         interpob['table'].append(getattr(model, 'table_tensor_' + str(i)))
-    interpob['n_shift'] = model.n_shift_tensor
     interpob['grid_size'] = model.grid_size_tensor
-    interpob['im_size'] = model.im_size_tensor
     interpob['numpoints'] = model.numpoints_tensor
     interpob['table_oversamp'] = model.table_oversamp_tensor
-    interpob['norm'] = model.norm
-    interpob['coil_broadcast'] = model.coil_broadcast
-    interpob['matadj'] = model.matadj
 
     return interpob
 
