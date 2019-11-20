@@ -1,27 +1,25 @@
-torchkbnufft.mri package
-========================
+torchkbnufft.mri
+================
 
-Submodules
-----------
 
-torchkbnufft.mri.dcomp\_calc module
------------------------------------
+torchkbnufft.mri.dcomp\_calc
+----------------------------
 
 .. automodule:: torchkbnufft.mri.dcomp_calc
    :members:
    :undoc-members:
    :show-inheritance:
 
-torchkbnufft.mri.mrisensesim module
------------------------------------
+torchkbnufft.mri.mrisensesim
+----------------------------
 
 .. automodule:: torchkbnufft.mri.mrisensesim
    :members:
    :undoc-members:
    :show-inheritance:
 
-torchkbnufft.mri.sensenufft\_functions module
----------------------------------------------
+torchkbnufft.mri.sensenufft\_functions
+--------------------------------------
 
 .. automodule:: torchkbnufft.mri.sensenufft_functions
    :members:
@@ -29,8 +27,6 @@ torchkbnufft.mri.sensenufft\_functions module
    :show-inheritance:
 
 
-Module contents
----------------
 
 .. automodule:: torchkbnufft.mri
    :members:

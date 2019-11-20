@@ -32,12 +32,25 @@ release = '0.1.1'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
     'sphinx.ext.napoleon',
-    'sphinxcontrib.fulltoc'
+    'sphinx.ext.viewcode',
+    'sphinx.ext.autosectionlabel',
 ]
+
+# autosectionlabel throws warnings if section names are duplicated.
+# The following tells autosectionlabel to not throw a warning for
+# duplicated section names that are in different documents.
+autosectionlabel_prefix_document = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+
+html_sidebars = {'**': ['globaltoc.html', 'searchbox.html']}
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

@@ -1,27 +1,25 @@
-torchkbnufft.functional package
-===============================
+torchkbnufft.functional
+=======================
 
-Submodules
-----------
 
-torchkbnufft.functional.kbinterp module
----------------------------------------
+torchkbnufft.functional.kbinterp
+--------------------------------
 
 .. automodule:: torchkbnufft.functional.kbinterp
    :members:
    :undoc-members:
    :show-inheritance:
 
-torchkbnufft.functional.kbnufft module
---------------------------------------
+torchkbnufft.functional.kbnufft
+-------------------------------
 
 .. automodule:: torchkbnufft.functional.kbnufft
    :members:
    :undoc-members:
    :show-inheritance:
 
-torchkbnufft.functional.mrisensenufft module
---------------------------------------------
+torchkbnufft.functional.mrisensenufft
+-------------------------------------
 
 .. automodule:: torchkbnufft.functional.mrisensenufft
    :members:
@@ -29,8 +27,6 @@ torchkbnufft.functional.mrisensenufft module
    :show-inheritance:
 
 
-Module contents
----------------
 
 .. automodule:: torchkbnufft.functional
    :members:

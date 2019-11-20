@@ -1,52 +1,49 @@
-torchkbnufft package
-====================
+torchkbnufft
+============
 
-Subpackages
------------
 
 .. toctree::
 
+   torchkbnufft
    torchkbnufft.functional
    torchkbnufft.mri
    torchkbnufft.nufft
 
-Submodules
-----------
 
-torchkbnufft.kbinterp module
-----------------------------
+torchkbnufft.kbinterp
+---------------------
 
 .. automodule:: torchkbnufft.kbinterp
    :members:
    :undoc-members:
    :show-inheritance:
 
-torchkbnufft.kbnufft module
----------------------------
+torchkbnufft.kbnufft
+--------------------
 
 .. automodule:: torchkbnufft.kbnufft
    :members:
    :undoc-members:
    :show-inheritance:
 
-torchkbnufft.math module
-------------------------
+torchkbnufft.math
+-----------------
 
 .. automodule:: torchkbnufft.math
    :members:
    :undoc-members:
    :show-inheritance:
 
-torchkbnufft.mrisensenufft module
----------------------------------
+torchkbnufft.mrisensenufft
+--------------------------
 
 .. automodule:: torchkbnufft.mrisensenufft
    :members:
    :undoc-members:
    :show-inheritance:
 
-torchkbnufft.nufft\_utils module
---------------------------------
+torchkbnufft.nufft\_utils
+-------------------------
 
 .. automodule:: torchkbnufft.nufft_utils
    :members:
@@ -54,8 +51,6 @@ torchkbnufft.nufft\_utils module
    :show-inheritance:
 
 
-Module contents
----------------
 
 .. automodule:: torchkbnufft
    :members:

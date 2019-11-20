@@ -3,15 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to torchkbnufft's documentation!
+TorchKbNufft Documentation
 ========================================
 
-Contents
-========
 .. toctree::
    :maxdepth: 1
+   :caption: API
 
-   modules
+   torchkbnufft
+   torchkbnufft.functional
+   torchkbnufft.mri
+   torchkbnufft.nufft
 
 
 Indices and tables

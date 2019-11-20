@@ -1,27 +1,25 @@
-torchkbnufft.nufft package
-==========================
+torchkbnufft.nufft
+==================
 
-Submodules
-----------
 
-torchkbnufft.nufft.fft\_functions module
-----------------------------------------
+torchkbnufft.nufft.fft\_functions
+---------------------------------
 
 .. automodule:: torchkbnufft.nufft.fft_functions
    :members:
    :undoc-members:
    :show-inheritance:
 
-torchkbnufft.nufft.interp\_functions module
--------------------------------------------
+torchkbnufft.nufft.interp\_functions
+------------------------------------
 
 .. automodule:: torchkbnufft.nufft.interp_functions
    :members:
    :undoc-members:
    :show-inheritance:
 
-torchkbnufft.nufft.sparse\_interp\_mat module
----------------------------------------------
+torchkbnufft.nufft.sparse\_interp\_mat
+--------------------------------------
 
 .. automodule:: torchkbnufft.nufft.sparse_interp_mat
    :members:
@@ -29,8 +27,6 @@ torchkbnufft.nufft.sparse\_interp\_mat module
    :show-inheritance:
 
 
-Module contents
----------------
 
 .. automodule:: torchkbnufft.nufft
    :members:
