@@ -149,7 +149,7 @@ class KbNufft(nn.Module):
                 If None, then a standard interpolation is run.
 
         Returns:
-            y: x computed at off-grid locations in om.
+            tensor: x computed at off-grid locations in om.
         """
         interpob = dict()
         interpob['scaling_coef'] = self.scaling_coef_tensor
@@ -326,7 +326,7 @@ class AdjKbNufft(nn.Module):
                 If None, then a standard interpolation is run.
 
         Returns:
-            x: The image after adjoint NUFFT.
+            tensor: The image after adjoint NUFFT.
         """
         interpob = dict()
         interpob['scaling_coef'] = self.scaling_coef_tensor

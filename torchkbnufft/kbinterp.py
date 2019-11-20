@@ -124,7 +124,7 @@ class KbInterpForw(nn.Module):
                 If None, then a standard interpolation is run.
 
         Returns:
-            y: x computed at off-grid locations in om.
+            tensor: x computed at off-grid locations in om.
         """
         interpob = dict()
         interpob['table'] = []
@@ -274,7 +274,7 @@ class KbInterpBack(nn.Module):
                 If None, then a standard interpolation is run.
 
         Returns:
-            x: The DFT of the signal.
+            tensor: The DFT of the signal.
         """
         interpob = dict()
         interpob['table'] = []

@@ -6,12 +6,11 @@
 Welcome to torchkbnufft's documentation!
 ========================================
 
-.. include:: modules.rst
-
 Contents
 ========
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
+
    modules
 
 

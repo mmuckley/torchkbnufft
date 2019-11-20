@@ -22,7 +22,7 @@ def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
         alpha (double or array of doubles): KB parameter.
 
     Returns:
-        spmat: A scipy sparse interpolation matrix.
+        coo_matrix: A scipy sparse interpolation matrix.
     """
     spmat = -1
 
@@ -124,7 +124,7 @@ def build_table(numpoints, table_oversamp, grid_size, im_size, ndims, order, alp
         alpha (double or array of doubles): KB parameter.
 
     Returns:
-        table: A list of tables for each dimension.
+        list: A list of tables for each dimension.
     """
     table = []
 
@@ -171,7 +171,7 @@ def kaiser_bessel_ft(om, npts, alpha, order, d):
         alpha (double or array of doubles): KB parameter.
 
     Returns:
-        scaling_coef: The scaling coefficients.
+        ndarray: The scaling coefficients.
     """
     z = np.sqrt((2 * np.pi * (npts / 2) * om)**2 - alpha**2 + 0j)
     nu = d / 2 + order
@@ -201,7 +201,7 @@ def compute_scaling_coefs(im_size, grid_size, numpoints, alpha, order):
             implemented.
 
     Returns:
-        scaling_coef: The scaling coefficients.
+        ndarray: The scaling coefficients.
     """
     num_coefs = np.array(range(im_size[0])) - (im_size[0] - 1) / 2
     scaling_coef = 1 / kaiser_bessel_ft(

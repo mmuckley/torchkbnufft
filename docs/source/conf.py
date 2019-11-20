@@ -32,7 +32,8 @@ release = '0.1.1'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinxcontrib.fulltoc'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -45,6 +46,8 @@ exclude_patterns = []
 
 
 # -- Options for HTML output -------------------------------------------------
+
+add_module_names = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.

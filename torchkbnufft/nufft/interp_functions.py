@@ -18,7 +18,7 @@ def run_mat_interp(griddat, coef_mat_real, coef_mat_imag, kdat):
         kdat (tensor): A tensor to store the outputs in.
 
     Returns:
-        kdat: griddat interpolated to off-grid locations.
+        tensor: griddat interpolated to off-grid locations.
     """
     real_griddat = griddat[:, 0, :].t()
     imag_griddat = griddat[:, 1, :].t()
@@ -54,7 +54,7 @@ def run_mat_interp_back(kdat, coef_mat_real, coef_mat_imag, griddat):
         griddat (tensor): A tensor to store the outputs in.
 
     Returns:
-        griddat: kdat interpolated to on-grid locations.
+        tensor: kdat interpolated to on-grid locations.
     """
     real_kdat = kdat[:, 0, :].t().reshape(-1, kdat.shape[0])
     imag_kdat = kdat[:, 1, :].t().reshape(-1, kdat.shape[0])
@@ -96,7 +96,7 @@ def run_interp(griddat, dims, table, numpoints, Jlist, L, tm, kdat):
         kdat (tensor): A tensor to store the outputs in.
 
     Returns:
-        kdat: griddat interpolated to off-grid locations.
+        tensor: griddat interpolated to off-grid locations.
     """
     dtype = table[0].dtype
     device = table[0].device
@@ -174,7 +174,7 @@ def run_interp_back(kdat, dims, table, numpoints, Jlist, L, tm, griddat,
         griddat (tensor): A tensor to store the outputs in.
 
     Returns:
-        griddat (tensor): kdat interpolated to on-grid locations.
+        tensor: kdat interpolated to on-grid locations.
     """
     dtype = table[0].dtype
     device = table[0].device
@@ -260,7 +260,7 @@ def kbinterp(x, om, interpob, interp_mats=None):
             None, then a standard interpolation is run.
 
     Returns:
-        y: The signal interpolated to off-grid locations.
+        tensor: The signal interpolated to off-grid locations.
     """
     dtype = interpob['table'][0].dtype
     device = interpob['table'][0].device
@@ -365,7 +365,7 @@ def adjkbinterp(y, om, interpob, interp_mats=None):
             None, then a standard interpolation is run.
 
     Returns:
-        x: The signal interpolated to on-grid locations.
+        tensor: The signal interpolated to on-grid locations.
     """
     y = y.clone()
 

@@ -10,7 +10,7 @@ def complex_mult(a, b, dim=0):
         dim (int): An integer indicating the complex dimension.
 
     Returns:
-        c: c = a * b, where * executes complex multiplication.
+        tensor: a * b, where * executes complex multiplication.
     """
     assert a.shape[dim] == 2
     assert b.shape[dim] == 2
@@ -37,7 +37,7 @@ def conj_complex_mult(a, b, dim=0):
         dim (int, default=0): An integer indicating the complex dimension.
 
     Returns:
-        c: c = a * conj(b), where * executes complex multiplication.
+        tensor: c = a * conj(b), where * executes complex multiplication.
     """
     assert a.shape[dim] == 2
     assert b.shape[dim] == 2
@@ -63,7 +63,7 @@ def imag_exp(a, dim=0):
         dim (int, default=0): An integer indicating the complex dimension.
 
     Returns:
-        c: c = exp(i*a), where i is sqrt(-1).
+        tensor: c = exp(i*a), where i is sqrt(-1).
     """
     c = torch.stack((torch.cos(a), torch.sin(a)), dim)
 
@@ -79,8 +79,7 @@ def inner_product(a, b, dim=0):
         dim (int, default=0): An integer indicating the complex dimension.
 
     Returns:
-        c: <a, b> where <> indicates complex inner product. This tensor is of
-            size 2 (real, imag).
+        tensor: The complex inner product of a and b of size 2 (real, imag).
     """
     assert a.shape[dim] == 2
     assert b.shape[dim] == 2
@@ -101,7 +100,7 @@ def absolute(t, dim=0):
         dim (int, default=0): An integer indicating the complex dimension.
 
     Returns:
-        abst: abs(t).
+        tensor: The absolute value of t.
     """
     abst = torch.sqrt(
         t.select(dim, 0) ** 2 +
@@ -119,7 +118,7 @@ def complex_sign(t, dim=0):
         dim (int, default=0): An integer indicating the complex dimension.
 
     Returns:
-        abst: sign(t).
+        tensor: The complex sign of t.
     """
     signt = torch.atan2(t.select(dim, 1), t.select(dim, 0))
     signt = imag_exp(signt, dim=dim)

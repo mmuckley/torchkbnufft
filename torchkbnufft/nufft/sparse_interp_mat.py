@@ -18,7 +18,7 @@ def get_interpob(model):
         forming a KbNufft interpolation dictionary.
 
     Returns:
-        interpob: A dictionary with interpolation parameters.
+        dict: A dictionary with interpolation parameters.
     """
     interpob = dict()
     interpob['table'] = []
@@ -44,9 +44,9 @@ def compute_forw_mat(dims, table, numpoints, Jlist, L, tm):
         tm (tensor): An array of normalized frequency locations.
 
     Returns:
-        (coef_mat_real, coef_mat_imag): A 2-length tuple with a sparse
-            interpolation matrix in each element. The first matrix has the real
-            coefficients; the second has the imaginary.
+        tuple: A 2-length tuple with a sparse interpolation matrix in each
+            element. The first matrix has the real coefficients; the second
+            has the imaginary.
     """
     dtype = table[0].dtype
     device = table[0].device
@@ -130,9 +130,9 @@ def precomp_sparse_mats(om, model):
             creating a KbNufft interpolation object.
 
     Returns:
-        (coef_real_mats, coef_imag_mats): A 2-length tuple with lists
-            of sparse interpolation matrices in each element. The first matrix
-            has the real coefficient matrices; the second has the imaginary.
+        tuple: A 2-length tuple with lists of sparse interpolation matrices in
+            each element. The first matrix has the real coefficient matrices;
+            the second has the imaginary.
     """
     interpob = get_interpob(model)
 

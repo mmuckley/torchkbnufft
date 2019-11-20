@@ -156,7 +156,7 @@ class MriSenseNufft(nn.Module):
                 instead of the one used on layer initialization.
 
         Returns:
-            y: x computed at off-grid locations in om.
+            tensor: x computed at off-grid locations in om.
         """
         interpob = dict()
         interpob['scaling_coef'] = self.scaling_coef_tensor
@@ -340,7 +340,7 @@ class AdjMriSenseNufft(nn.Module):
                 instead of the one used on layer initialization.
 
         Returns:
-            x: The image with an adjoint SENSE-NUFFT.
+            tensor: The image with an adjoint SENSE-NUFFT.
         """
         interpob = dict()
         interpob['scaling_coef'] = self.scaling_coef_tensor

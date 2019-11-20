@@ -27,11 +27,11 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj):
             passed in using a list.
 
     Returns:
-        dcomps: The density compensation coefficients for ktraj of size (m).
-            If b == 1, then dcomps is a tensor with a batch size of 1. If
-            b > 1, then dcomps is a list. If all input trajectories are of the
-            same size, then torch.stack(dcomps) can be used to get an array of
-            size (b, m).
+        tensor or list of tensors: The density compensation coefficients for
+            ktraj of size (m). If b == 1, then dcomps is a tensor with a batch
+            size of 1. If b > 1, then dcomps is a list. If all input
+            trajectories are of the same size, then torch.stack(dcomps) can be
+            used to get an array of size (b, m).
     """
     dtype = nufftob_forw.scaling_coef_tensor.dtype
     device = nufftob_forw.scaling_coef_tensor.device

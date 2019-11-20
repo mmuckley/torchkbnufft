@@ -16,8 +16,9 @@ def scale_and_fft_on_image_volume(x, scaling_coef, grid_size, im_size, norm):
         im_size (tensor): The image dimensions for x.
         norm (str): Type of normalization factor to use. If 'ortho', uses
             orthogonal FFT, otherwise, no normalization is applied.
+
     Returns:
-        x: The oversampled FFT of x.
+        tensor: The oversampled FFT of x.
     """
     pad_sizes = []
     permute_dims = [0, 1]
@@ -57,8 +58,9 @@ def ifft_and_scale_on_gridded_data(x, scaling_coef, grid_size, im_size, norm):
         im_size (tensor): The image dimensions for x.
         norm (str): Type of normalization factor to use. If 'ortho', uses
             orthogonal iFFT, otherwise, no normalization is applied.
+
     Returns:
-        x: The iFFT of x.
+        tensor: The iFFT of x.
     """
     permute_dims = [0, 1]
     inv_permute_dims = [0, 1, 2 + grid_size.shape[0]]
