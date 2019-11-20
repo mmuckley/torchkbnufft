@@ -1,4 +1,5 @@
-"""Non-uniform FFT interpolation PyTorch layer with sensitivity coils."""
+import warnings
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -31,21 +32,15 @@ class MriSenseNufft(nn.Module):
         norm (str, default='None'): Normalization for FFT. Default uses no
             normalization. Use 'ortho' to use orthogonal FFTs and preserve
             energy.
-        coil_broadcast (boolean, default=False): Whether to broadcast across
-            coil dimension. Much faster for many coils, but uses more memory.
         coilpack (boolean, default=False): If True, packs batch dimension into
             coil dimension prior to NUFFT. This is useful when batch is a set
             of slices with 1 k-space trajectory (note: coilpack expects ktraj
             to have batch dim of 1).
-        matadj (boolean, default=False): If true, adjoint interpolation
-            constructs a sparse matrix and does the interpolation with the
-            PyTorch sparse matrix API (for backward ops).
     """
 
     def __init__(self, smap, im_size, grid_size=None, numpoints=6, n_shift=None,
                  table_oversamp=2**10, order=0, norm='None', coil_broadcast=False,
                  coilpack=False, matadj=False):
-
         super(MriSenseNufft, self).__init__()
 
         self.alpha = 2.34
@@ -95,6 +90,15 @@ class MriSenseNufft(nn.Module):
         self.coil_broadcast = coil_broadcast
         self.coilpack = coilpack
         self.matadj = matadj
+
+        if coil_broadcast == True:
+            warnings.warn(
+                'coil_broadcast will be deprecated in a future release',
+                DeprecationWarning)
+        if matadj == True:
+            warnings.warn(
+                'matadj will be deprecated in a future release',
+                DeprecationWarning)
 
         # dimension checking
         assert len(self.grid_size) == len(self.im_size)
@@ -150,8 +154,9 @@ class MriSenseNufft(nn.Module):
                 If None, then a standard interpolation is run.
             smap (tensor, default=None): If passed in, uses input smap tensor
                 instead of the one used on layer initialization.
+
         Returns:
-            y (tensor): x computed at off-grid locations in om.
+            y: x computed at off-grid locations in om.
         """
         interpob = dict()
         interpob['scaling_coef'] = self.scaling_coef_tensor
@@ -214,21 +219,15 @@ class AdjMriSenseNufft(nn.Module):
         norm (str, default='None'): Normalization for FFT. Default uses no
             normalization. Use 'ortho' to use orthogonal FFTs and preserve
             energy.
-        coil_broadcast (boolean, default=False): Whether to broadcast across
-            coil dimension. Much faster for many coils, but uses more memory.
         coilpack (boolean, default=False): If True, packs batch dimension into
             coil dimension prior to NUFFT. This is useful when batch is a set
             of slices with 1 k-space trajectory (note: coilpack expects ktraj
             to have batch dim of 1).
-        matadj (boolean, default=False): If true, adjoint interpolation
-            constructs a sparse matrix and does the interpolation with the
-            PyTorch sparse matrix API. (fastest option, more memory)
     """
 
     def __init__(self, smap, im_size, grid_size=None, numpoints=6, n_shift=None,
                  table_oversamp=2**10, order=0, norm='None', coil_broadcast=False,
                  coilpack=False, matadj=False):
-
         super(AdjMriSenseNufft, self).__init__()
 
         self.alpha = 2.34
@@ -278,6 +277,15 @@ class AdjMriSenseNufft(nn.Module):
         self.coilpack = coilpack
         self.matadj = matadj
         self.smap_bsize = len(smap)
+
+        if coil_broadcast == True:
+            warnings.warn(
+                'coil_broadcast will be deprecated in a future release',
+                DeprecationWarning)
+        if matadj == True:
+            warnings.warn(
+                'matadj will be deprecated in a future release',
+                DeprecationWarning)
 
         # dimension checking
         assert len(self.grid_size) == len(self.im_size)
@@ -330,8 +338,9 @@ class AdjMriSenseNufft(nn.Module):
                 If None, then a standard interpolation is run.
             smap (tensor, default=None): If passed in, uses input smap tensor
                 instead of the one used on layer initialization.
+
         Returns:
-            x (tensor): The image with an adjoint SENSE-NUFFT.
+            x: The image with an adjoint SENSE-NUFFT.
         """
         interpob = dict()
         interpob['scaling_coef'] = self.scaling_coef_tensor

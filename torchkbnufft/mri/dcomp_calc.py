@@ -10,26 +10,28 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj):
     The function applies A'A1 (where A is the nufftob and 1 is a ones vector)
     and estimates the signal accumulation at the origin of k-space. It then
     returns a vector of density compensation values that are computed based on
-    the distance from the k-space center and thresholded above the center density
-    estimate. Then, a density-compensated image can be calculated by applying A'Wy,
-    where W is a diagonal matrix with the density compensation values.
+    the distance from the k-space center and thresholded above the center
+    density estimate. Then, a density-compensated image can be calculated by
+    applying A'Wy, where W is a diagonal matrix with the density compensation
+    values.
 
     This function uses a PyTorch NUFFT object and k-space trajectory.
 
     Args:
         nufftob (object): A PyTorch NUFFT object.
-        traj (tensor or list of tensors): The k-space trajectory in radians/voxel
-            of length b, where each of the trajectories in the list has dimension
-            (d, m). In this notation, b is a batch dimension, d is the number of
-            spatial dimensions, and m is the length of the trajectory.
-            Trajectories of different sizes can be passed in using a list.
+        traj (tensor or list of tensors): The k-space trajectory in
+            radians/voxel of length b, where each of the trajectories in the
+            list has dimension (d, m). In this notation, b is a batch
+            dimension, d is the number of spatial dimensions, and m is the
+            length of the trajectory. Trajectories of different sizes can be
+            passed in using a list.
 
     Returns:
-        dcomps (tensor of list of tensors): The density compensation coefficients
-            for ktraj of size (m). If b == 1, then dcomps is a tensor with a
-            batch size of 1. If b > 1, then dcomps is a list. If all input
-            trajectories are of the same size, then torch.stack(dcomps) can
-            be used to get an array of size (b, m).
+        dcomps: The density compensation coefficients for ktraj of size (m).
+            If b == 1, then dcomps is a tensor with a batch size of 1. If
+            b > 1, then dcomps is a list. If all input trajectories are of the
+            same size, then torch.stack(dcomps) can be used to get an array of
+            size (b, m).
     """
     dtype = nufftob_forw.scaling_coef_tensor.dtype
     device = nufftob_forw.scaling_coef_tensor.device

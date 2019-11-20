@@ -10,13 +10,15 @@ def get_interpob(model):
     """Retrieves the interpolation dictionary from model.
 
     Different nufft objects use different interpolation objects. This function
-    only extracts the minimum amount necessary for sparse matrix precomputation.
+    only extracts the minimum amount necessary for sparse matrix
+    precomputation.
 
     Args:
         model (KbNufft-type object): A KbNufft object with attributes for
-            forming a KbNufft interpolation dictionary.
+        forming a KbNufft interpolation dictionary.
+
     Returns:
-        interpob (dictionary): A dictionary with interpolation parameters.
+        interpob: A dictionary with interpolation parameters.
     """
     interpob = dict()
     interpob['table'] = []
@@ -35,12 +37,14 @@ def compute_forw_mat(dims, table, numpoints, Jlist, L, tm):
     Args:
         dims (tensor): A list of sizes of each dimension.
         table (tensor): A list of interpolation tables.
-        numpoints (tensor): A list of numbers of nearest neighbors for each dimension.
+        numpoints (tensor): A list of numbers of nearest neighbors for each
+            dimension.
         Jlist (tensor): A list of nearest neighbor configurations.
         L (tensor): A list of table sizes for each dimension.
         tm (tensor): An array of normalized frequency locations.
+
     Returns:
-        (coef_mat_real, coef_mat_imag) (tuple): A 2-length tuple with a sparse
+        (coef_mat_real, coef_mat_imag): A 2-length tuple with a sparse
             interpolation matrix in each element. The first matrix has the real
             coefficients; the second has the imaginary.
     """
@@ -124,10 +128,11 @@ def precomp_sparse_mats(om, model):
         om (tensor): The k-space trajectory in radians/voxel.
         model (KbNufft-type object): A KbNufft type object with attributes for
             creating a KbNufft interpolation object.
+
     Returns:
-        (coef_real_mats, coef_imag_mats) (tuple): A 2-length tuple with lists of sparse
-            interpolation matrices in each element. The first matrix has the real
-            coefficient matrices; the second has the imaginary.
+        (coef_real_mats, coef_imag_mats): A 2-length tuple with lists
+            of sparse interpolation matrices in each element. The first matrix
+            has the real coefficient matrices; the second has the imaginary.
     """
     interpob = get_interpob(model)
 

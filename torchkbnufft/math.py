@@ -8,8 +8,9 @@ def complex_mult(a, b, dim=0):
         a (tensor): A tensor where dimension dim is the complex dimension.
         b (tensor): A tensor where dimension dim is the complex dimension.
         dim (int): An integer indicating the complex dimension.
+
     Returns:
-        c (tensor): c = a * b, where * executes complex multiplication.
+        c: c = a * b, where * executes complex multiplication.
     """
     assert a.shape[dim] == 2
     assert b.shape[dim] == 2
@@ -34,8 +35,9 @@ def conj_complex_mult(a, b, dim=0):
         a (tensor): A tensor where dimension dim is the complex dimension.
         b (tensor): A tensor where dimension dim is the complex dimension.
         dim (int, default=0): An integer indicating the complex dimension.
+
     Returns:
-        c (tensor): c = a * conj(b), where * executes complex multiplication.
+        c: c = a * conj(b), where * executes complex multiplication.
     """
     assert a.shape[dim] == 2
     assert b.shape[dim] == 2
@@ -59,8 +61,9 @@ def imag_exp(a, dim=0):
     Args:
         a (tensor): A tensor where dimension dim is the complex dimension.
         dim (int, default=0): An integer indicating the complex dimension.
+
     Returns:
-        c (tensor): c = exp(i*a), where i is sqrt(-1).
+        c: c = exp(i*a), where i is sqrt(-1).
     """
     c = torch.stack((torch.cos(a), torch.sin(a)), dim)
 
@@ -74,9 +77,10 @@ def inner_product(a, b, dim=0):
         a (tensor): A tensor where dimension dim is the complex dimension.
         b (tensor): A tensor where dimension dim is the complex dimension.
         dim (int, default=0): An integer indicating the complex dimension.
+
     Returns:
-        c (tensor): <a, b> where <> indicates complex inner product. This
-            tensor is of size 2 (real, imag).
+        c: <a, b> where <> indicates complex inner product. This tensor is of
+            size 2 (real, imag).
     """
     assert a.shape[dim] == 2
     assert b.shape[dim] == 2
@@ -95,8 +99,9 @@ def absolute(t, dim=0):
     Args:
         t (tensor): A tensor where dimension dim is the complex dimension.
         dim (int, default=0): An integer indicating the complex dimension.
+
     Returns:
-        abst (tensor): abs(t).
+        abst: abs(t).
     """
     abst = torch.sqrt(
         t.select(dim, 0) ** 2 +
@@ -112,8 +117,9 @@ def complex_sign(t, dim=0):
     Args:
         t (tensor): A tensor where dimension dim is the complex dimension.
         dim (int, default=0): An integer indicating the complex dimension.
+
     Returns:
-        abst (tensor): sign(t).
+        abst: sign(t).
     """
     signt = torch.atan2(t.select(dim, 1), t.select(dim, 0))
     signt = imag_exp(signt, dim=dim)

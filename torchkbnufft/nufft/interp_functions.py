@@ -11,13 +11,14 @@ def run_mat_interp(griddat, coef_mat_real, coef_mat_imag, kdat):
 
     Args:
         griddat (tensor): The gridded frequency data.
-        coef_mat_real (sparse tensor): The real interpolation coefficients stored
-            as a sparse tensor.
-        coef_mat_imag (sparse tensor): The imaginary interpolation coefficients stored
-            as a sparse tensor.
+        coef_mat_real (sparse tensor): The real interpolation coefficients
+            stored as a sparse tensor.
+        coef_mat_imag (sparse tensor): The imaginary interpolation coefficients
+            stored as a sparse tensor.
         kdat (tensor): A tensor to store the outputs in.
+
     Returns:
-        kdat (tensor): griddat interpolated to off-grid locations.
+        kdat: griddat interpolated to off-grid locations.
     """
     real_griddat = griddat[:, 0, :].t()
     imag_griddat = griddat[:, 1, :].t()
@@ -46,13 +47,14 @@ def run_mat_interp_back(kdat, coef_mat_real, coef_mat_imag, griddat):
 
     Args:
         kdat (tensor): The off-grid frequency data.
-        coef_mat_real (sparse tensor): The real interpolation coefficients stored
-            as a sparse tensor.
-        coef_mat_imag (sparse tensor): The imaginary interpolation coefficients stored
-            as a sparse tensor.
+        coef_mat_real (sparse tensor): The real interpolation coefficients
+            stored as a sparse tensor.
+        coef_mat_imag (sparse tensor): The imaginary interpolation coefficients
+            stored as a sparse tensor.
         griddat (tensor): A tensor to store the outputs in.
+
     Returns:
-        griddat (tensor): kdat interpolated to on-grid locations.
+        griddat: kdat interpolated to on-grid locations.
     """
     real_kdat = kdat[:, 0, :].t().reshape(-1, kdat.shape[0])
     imag_kdat = kdat[:, 1, :].t().reshape(-1, kdat.shape[0])
@@ -84,15 +86,17 @@ def run_interp(griddat, dims, table, numpoints, Jlist, L, tm, kdat):
     Args:
         griddat (tensor): The on-grid frequency data.
         dims (tensor): A list of size of each dimension.
-        table (list): A list of interpolation tables (one table for each dimension).
-        numpoints (tensor): A list of number of nearest neighbors to use for each
-            dimension.
+        table (list): A list of interpolation tables (one table for each
+            dimension).
+        numpoints (tensor): A list of number of nearest neighbors to use for
+            each dimension.
         Jlist (tensor): An array with all possible combinations of offsets.
         L (tensor): Number of samples in table.
         tm (tensor): Normalized frequency coordinates.
         kdat (tensor): A tensor to store the outputs in.
+
     Returns:
-        kdat (tensor): griddat interpolated to off-grid locations.
+        kdat: griddat interpolated to off-grid locations.
     """
     dtype = table[0].dtype
     device = table[0].device
@@ -139,9 +143,14 @@ def run_interp(griddat, dims, table, numpoints, Jlist, L, tm, kdat):
                 torch.prod(dims[d + 1:])
 
         # no danger of collisions for forward op
+        arr_ind = arr_ind.unsqueeze(0).unsqueeze(0).expand(
+            kdat.shape[0],
+            kdat.shape[1],
+            -1
+        )
         kdat = kdat + complex_mult(
             coef.unsqueeze(0),
-            griddat[:, :, arr_ind],
+            torch.gather(griddat, 2, arr_ind),
             dim=1
         )
 
@@ -155,19 +164,15 @@ def run_interp_back(kdat, dims, table, numpoints, Jlist, L, tm, griddat,
     Args:
         kdat (tensor): The off-grid frequency data.
         dims (tensor): A list of size of each dimension.
-        table (list): A list of interpolation tables (one table for each dimension).
-        numpoints (tensor): A list of number of nearest neighbors to use for each
-            dimension.
+        table (list): A list of interpolation tables (one table for each
+            dimension).
+        numpoints (tensor): A list of number of nearest neighbors to use for
+            each dimension.
         Jlist (tensor): An array with all possible combinations of offsets.
         L (int): Number of samples in table.
         tm (tensor): Normalized frequency coordinates.
         griddat (tensor): A tensor to store the outputs in.
-        coil_broadcast (boolean, default=False): If True, tries to do broacast
-            multiplies across coil dimension. Can be slower or faster, but always
-            uses more memory.
-        matadj (boolean, default=False): If True, this function will construct
-            a sparse interpolation matrix and use this matrix to do the
-            interpolation. This is the fastest option, but requires more memory.
+
     Returns:
         griddat (tensor): kdat interpolated to on-grid locations.
     """
@@ -193,11 +198,6 @@ def run_interp_back(kdat, dims, table, numpoints, Jlist, L, tm, griddat,
     kofflist = kofflist.to(dtype=int_type, device=device)
     Jlist = Jlist.to(dtype=int_type)
 
-    coef_mat_real = torch.sparse.FloatTensor(torch.prod(
-        dims), kdat.shape[-1]).to(dtype=dtype, device=device)
-    coef_mat_imag = torch.sparse.FloatTensor(torch.prod(
-        dims), kdat.shape[-1]).to(dtype=dtype, device=device)
-
     # loop over offsets and take advantage of numpy broadcasting
     for Jind in range(nJ):
         curgridind = (kofflist + Jlist[:, Jind].unsqueeze(1)).to(dtype)
@@ -217,104 +217,25 @@ def run_interp_back(kdat, dims, table, numpoints, Jlist, L, tm, griddat,
                 table[d][:, curdistind[d, :] + centers[d]],
                 dim=0
             )
-            arr_ind = arr_ind + torch.remainder(curgridind[d, :], dims[d]).view(-1) * \
+            arr_ind = arr_ind + \
+                torch.remainder(curgridind[d, :], dims[d]).view(-1) * \
                 torch.prod(dims[d + 1:])
 
-        if matadj:
-            sparse_coords = torch.stack(
-                (
-                    arr_ind,
-                    torch.arange(
-                        arr_ind.shape[0],
-                        dtype=arr_ind.dtype,
-                        device=arr_ind.device
+        if device == torch.device('cpu'):
+            tmp = complex_mult(coef.unsqueeze(0), kdat, dim=1)
+            for bind in range(griddat.shape[0]):
+                for riind in range(griddat.shape[1]):
+                    griddat[bind, riind].index_put_(
+                        tuple(arr_ind.unsqueeze(0)),
+                        tmp[bind, riind],
+                        accumulate=True
                     )
-                )
+        else:
+            griddat.index_add_(
+                2,
+                arr_ind,
+                complex_mult(coef.unsqueeze(0), kdat, dim=1)
             )
-            coef_mat_real = coef_mat_real + torch.sparse.FloatTensor(
-                sparse_coords,
-                coef[0],
-                torch.Size((torch.prod(dims), arr_ind.shape[0]))
-            )
-            coef_mat_imag = coef_mat_imag + torch.sparse.FloatTensor(
-                sparse_coords,
-                coef[1],
-                torch.Size((torch.prod(dims), arr_ind.shape[0]))
-            )
-
-        # try to broadcast multiply - batch over coil if not enough memory
-        # handle write collisions by using bincount
-        if not matadj:
-            raise_error = False
-            try:
-                tmp = complex_mult(coef.unsqueeze(0), kdat, dim=1)
-
-                sparse_coords = torch.stack(
-                    (
-                        arr_ind,
-                        torch.arange(
-                            arr_ind.shape[0],
-                            dtype=arr_ind.dtype,
-                            device=arr_ind.device
-                        )
-                    )
-                )
-                sparse_accum_mat = torch.sparse.FloatTensor(
-                    sparse_coords,
-                    torch.ones(arr_ind.shape[0], dtype=dtype, device=device),
-                    torch.Size((torch.prod(dims), arr_ind.shape[0]))
-                )
-
-                if coil_broadcast:
-                    griddat[:, 0, :] = griddat[:, 0, :] + torch.mm(
-                        sparse_accum_mat, tmp[:, 0, :].t().reshape(-1, tmp.shape[0])).t()
-                    griddat[:, 1, :] = griddat[:, 1, :] + torch.mm(
-                        sparse_accum_mat, tmp[:, 1, :].t().reshape(-1, tmp.shape[0])).t()
-                else:
-                    for coilind in range(griddat.shape[0]):
-                        real_bin = torch.bincount(
-                            arr_ind, tmp[coilind, 0, ...])
-                        griddat[coilind, 0, :len(real_bin)] = \
-                            griddat[coilind, 0, :len(real_bin)] + real_bin
-                        imag_bin = torch.bincount(
-                            arr_ind, tmp[coilind, 1, ...])
-                        griddat[coilind, 1, :len(imag_bin)] = \
-                            griddat[coilind, 1, :len(imag_bin)] + imag_bin
-
-            except RuntimeError as e:
-                if 'out of memory' in str(e) and not raise_error:
-                    torch.cuda.empty_cache()
-                    for coilind in range(griddat.shape[0]):
-                        tmp = complex_mult(coef, kdat[coilind, ...], dim=0)
-                        real_bin = torch.bincount(
-                            arr_ind, tmp[0, ...])
-                        griddat[coilind, 0, :len(real_bin)] = \
-                            griddat[coilind, 0, :len(real_bin)] + real_bin
-                        imag_bin = torch.bincount(
-                            arr_ind, tmp[1, ...])
-                        griddat[coilind, 1, :len(imag_bin)] = \
-                            griddat[coilind, 1, :len(imag_bin)] + imag_bin
-                    raise_error = True
-                else:
-                    raise e
-            except BaseException:
-                raise e
-
-    if matadj:
-        griddat[:, 0, :] = torch.mm(
-            coef_mat_real,
-            kdat[:, 0, :].t().reshape(-1, kdat.shape[0])
-        ).t() - torch.mm(
-            coef_mat_imag,
-            kdat[:, 1, :].t().reshape(-1, kdat.shape[0])
-        ).t()
-        griddat[:, 1, :] = torch.mm(
-            coef_mat_real,
-            kdat[:, 1, :].t().reshape(-1, kdat.shape[0])
-        ).t() + torch.mm(
-            coef_mat_imag,
-            kdat[:, 0, :].t().reshape(-1, kdat.shape[0])
-        ).t()
 
     return griddat
 
@@ -324,6 +245,7 @@ def kbinterp(x, om, interpob, interp_mats=None):
 
     Inputs are assumed to be batch/chans x coil x real/imag x image dims.
     Om should be nbatch x ndims x klength.
+
     Args:
         x (tensor): The oversampled DFT of the signal.
         om (tensor, optional): A custom set of k-space points to
@@ -332,10 +254,13 @@ def kbinterp(x, om, interpob, interp_mats=None):
             'grid_size', 'numpoints', and 'table_oversamp' keys. See
             models.kbinterp.py for details.
         interp_mats (dict, default=None): A dictionary with keys
-            'real_interp_mats' and 'imag_interp_mats', each key containing
-            a list of interpolation matrices (see 
-            mri.sparse_interp_mat.precomp_sparse_mats for construction).
-            If None, then a standard interpolation is run.
+            'real_interp_mats' and 'imag_interp_mats', each key containing a
+            list of interpolation matrices (see
+            mri.sparse_interp_mat.precomp_sparse_mats for construction). If
+            None, then a standard interpolation is run.
+
+    Returns:
+        y: The signal interpolated to off-grid locations.
     """
     dtype = interpob['table'][0].dtype
     device = interpob['table'][0].device
@@ -434,10 +359,13 @@ def adjkbinterp(y, om, interpob, interp_mats=None):
             'grid_size', 'numpoints', and 'table_oversamp' keys. See
             models.kbinterp.py for details.
         interp_mats (dict, default=None): A dictionary with keys
-            'real_interp_mats' and 'imag_interp_mats', each key containing
-            a list of interpolation matrices (see 
-            mri.sparse_interp_mat.precomp_sparse_mats for construction).
-            If None, then a standard interpolation is run.
+            'real_interp_mats' and 'imag_interp_mats', each key containing a
+            list of interpolation matrices (see
+            mri.sparse_interp_mat.precomp_sparse_mats for construction). If
+            None, then a standard interpolation is run.
+
+    Returns:
+        x: The signal interpolated to on-grid locations.
     """
     y = y.clone()
 

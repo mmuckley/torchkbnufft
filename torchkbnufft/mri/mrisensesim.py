@@ -1,25 +1,23 @@
-"""Simulation of MRI sensitivity coil arrays."""
 import numpy as np
 
 
-def mrisensesim(
-        size, ncoils=8, array_cent=None, coil_width=2, n_rings=None, phi=0):
-    """ Apply simulated sensitivity maps. Based on a script by Florian Knoll.
+def mrisensesim(size, ncoils=8, array_cent=None, coil_width=2, n_rings=None, phi=0):
+    """Apply simulated sensitivity maps. Based on a script by Florian Knoll.
 
     Args:
         size (tuple): Size of the image array for the sensitivity coils.
         nc_range (int, default: 8): Number of coils to simulate.
         array_cent (tuple, default: 0): Location of the center of the coil
-            array
-        coil_width (double, default: 2): Parameter governing the width of
-            the coil, multiplied by actual image dimension.
+            array.
+        coil_width (double, default: 2): Parameter governing the width of the
+            coil, multiplied by actual image dimension.
         n_rings (int, default: ncoils // 4): Number of rings for a
             cylindrical hardware set-up.
         phi (double, default: 0): Parameter for rotating coil geometry.
 
     Returns:
-        coil_array (array_like): An array of dimensions (ncoils (N)),
-            specifying spatially-varying sensitivity maps for each coil.
+        coil_array: An array of dimensions (ncoils (N)), specifying
+            spatially-varying sensitivity maps for each coil.
     """
     if array_cent is None:
         c_shift = [0, 0, 0]

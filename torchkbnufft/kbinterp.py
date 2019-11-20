@@ -1,4 +1,5 @@
-"""Non-uniform FFT interpolation PyTorch layer."""
+import warnings
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -34,7 +35,6 @@ class KbInterpForw(nn.Module):
 
     def __init__(self, im_size, grid_size=None, numpoints=6, n_shift=None,
                  table_oversamp=2**10, order=0, coil_broadcast=False, matadj=False):
-
         super(KbInterpForw, self).__init__()
 
         self.alpha = 2.34
@@ -75,6 +75,15 @@ class KbInterpForw(nn.Module):
         self.coil_broadcast = coil_broadcast
         self.matadj = matadj
 
+        if coil_broadcast == True:
+            warnings.warn(
+                'coil_broadcast will be deprecated in a future release',
+                DeprecationWarning)
+        if matadj == True:
+            warnings.warn(
+                'matadj will be deprecated in a future release',
+                DeprecationWarning)
+
         # dimension checking
         assert len(self.grid_size) == len(self.im_size)
         assert len(self.n_shift) == len(self.im_size)
@@ -113,8 +122,9 @@ class KbInterpForw(nn.Module):
                 a list of interpolation matrices (see 
                 mri.sparse_interp_mat.precomp_sparse_mats for construction).
                 If None, then a standard interpolation is run.
+
         Returns:
-            y (tensor): x computed at off-grid locations in om.
+            y: x computed at off-grid locations in om.
         """
         interpob = dict()
         interpob['table'] = []
@@ -167,17 +177,11 @@ class KbInterpBack(nn.Module):
         table_oversamp (int, default=2^10): Table oversampling factor.
         order (ind, default=0): Order of Kaiser-Bessel kernel. Not currently
             implemented.
-        coil_broadcast (boolean, default=False): Whether to broadcast across
-            coil dimension. Much faster for many coils, but uses more memory.
-        matadj (boolean, default=False): If true, adjoint interpolation
-            constructs a sparse matrix and does the interpolation with the
-            PyTorch sparse matrix API. (fastest option, more memory)
     """
 
     def __init__(self, im_size, grid_size=None, numpoints=6, n_shift=None,
                  table_oversamp=2**10, order=0, coil_broadcast=False,
                  matadj=False):
-
         super(KbInterpBack, self).__init__()
 
         self.alpha = 2.34
@@ -217,6 +221,15 @@ class KbInterpBack(nn.Module):
         self.table = table
         self.coil_broadcast = coil_broadcast
         self.matadj = matadj
+
+        if coil_broadcast == True:
+            warnings.warn(
+                'coil_broadcast will be deprecated in a future release',
+                DeprecationWarning)
+        if matadj == True:
+            warnings.warn(
+                'matadj will be deprecated in a future release',
+                DeprecationWarning)
 
         # dimension checking
         assert len(self.grid_size) == len(self.im_size)
@@ -259,8 +272,9 @@ class KbInterpBack(nn.Module):
                 a list of interpolation matrices (see 
                 mri.sparse_interp_mat.precomp_sparse_mats for construction).
                 If None, then a standard interpolation is run.
+
         Returns:
-            x (tensor): The DFT of the signal.
+            x: The DFT of the signal.
         """
         interpob = dict()
         interpob['table'] = []

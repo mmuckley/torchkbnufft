@@ -1,4 +1,5 @@
-"""Non-uniform FFT PyTorch layer."""
+import warnings
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -39,7 +40,6 @@ class KbNufft(nn.Module):
     def __init__(self, im_size, grid_size=None, numpoints=6, n_shift=None,
                  table_oversamp=2**10, order=0, norm='None', coil_broadcast=False,
                  matadj=False):
-
         super(KbNufft, self).__init__()
 
         self.alpha = 2.34
@@ -88,6 +88,15 @@ class KbNufft(nn.Module):
         self.norm = norm
         self.coil_broadcast = coil_broadcast
         self.matadj = matadj
+
+        if coil_broadcast == True:
+            warnings.warn(
+                'coil_broadcast will be deprecated in a future release',
+                DeprecationWarning)
+        if matadj == True:
+            warnings.warn(
+                'matadj will be deprecated in a future release',
+                DeprecationWarning)
 
         # dimension checking
         assert len(self.grid_size) == len(self.im_size)
@@ -138,8 +147,9 @@ class KbNufft(nn.Module):
                 a list of interpolation matrices (see 
                 mri.sparse_interp_mat.precomp_sparse_mats for construction).
                 If None, then a standard interpolation is run.
+
         Returns:
-            y (tensor): x computed at off-grid locations in om.
+            y: x computed at off-grid locations in om.
         """
         interpob = dict()
         interpob['scaling_coef'] = self.scaling_coef_tensor
@@ -209,7 +219,6 @@ class AdjKbNufft(nn.Module):
     def __init__(self, im_size, grid_size=None, numpoints=6, n_shift=None,
                  table_oversamp=2**10, order=0, norm='None', coil_broadcast=False,
                  matadj=False):
-
         super(AdjKbNufft, self).__init__()
 
         self.alpha = 2.34
@@ -258,6 +267,15 @@ class AdjKbNufft(nn.Module):
         self.coil_broadcast = coil_broadcast
         self.matadj = matadj
 
+        if coil_broadcast == True:
+            warnings.warn(
+                'coil_broadcast will be deprecated in a future release',
+                DeprecationWarning)
+        if matadj == True:
+            warnings.warn(
+                'matadj will be deprecated in a future release',
+                DeprecationWarning)
+
         # dimension checking
         assert len(self.grid_size) == len(self.im_size)
         assert len(self.n_shift) == len(self.im_size)
@@ -295,8 +313,8 @@ class AdjKbNufft(nn.Module):
     def forward(self, y, om, interp_mats=None):
         """Interpolate from scattered data to gridded data and then iFFT.
 
-        Inputs are assumed to be batch/chans x coil x real/imag x kspace length.
-        Om should be nbatch x ndims x klength.
+        Inputs are assumed to be batch/chans x coil x real/imag x kspace
+        length. Om should be nbatch x ndims x klength.
 
         Args:
             y (tensor): The off-grid signal.
@@ -306,8 +324,9 @@ class AdjKbNufft(nn.Module):
                 a list of interpolation matrices (see 
                 mri.sparse_interp_mat.precomp_sparse_mats for construction).
                 If None, then a standard interpolation is run.
+
         Returns:
-            x (tensor): The image after adjoint NUFFT.
+            x: The image after adjoint NUFFT.
         """
         interpob = dict()
         interpob['scaling_coef'] = self.scaling_coef_tensor

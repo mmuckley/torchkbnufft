@@ -9,23 +9,23 @@ def coilpack_sense_forward(x, smap, om, interpob, interp_mats=None):
 
     This function applies "coil-packing" SENSE-NUFFT operation, which is just a
     normal SENSE-NUFFT operation with a reshape command that puts the batch
-    dimension into the coil dimension prior to the NUFFT. With the implementation
-    in the package, the code will then broadcast NUFFT opeartions across the
-    combined dimension, which is extremely fast.
+    dimension into the coil dimension prior to the NUFFT. With the
+    implementation in the package, the code will then broadcast NUFFT opeartions
+    across the combined dimension, which is extremely fast.
 
-    This is the fastest way to do NUFFT operations on a slice stack of multi-coil
-    data, where the slices are stored in the batch dimension.
+    This is the fastest way to do NUFFT operations on a slice stack of
+    multi-coil data, where the slices are stored in the batch dimension.
 
     Args:
         x (tensor): The input images of size (nbatch, ncoil, 2) + im_size.
-        smap (tensor): The sensitivity maps of size (nbatch, ncoil, 2) + im_size.
+        smap (tensor): The sensitivity maps of size (nbatch, ncoil, 2) +
+            im_size.
         interpob (dictionary): A NUFFT interpolation object.
         interp_mats (dictionary, default=None): A dictionary of sparse
             interpolation matrices. If not None, the NUFFT operation will use
-            the matrices for interpolation. This is the fastest option, but more
-            memory-intensive.
+            the matrices for interpolation.
     Returns:
-        y (tensor): Output off-grid k-space data of dimensions
+        y: Output off-grid k-space data of dimensions
             (nbatch, ncoil, 2, klength).
     """
     ncoil = smap.shape[1]
@@ -51,24 +51,24 @@ def coilpack_sense_backward(y, smap, om, interpob, interp_mats=None):
     """Coil-packing SENSE-NUFFT adjoint operation.
 
     This function applies "coil-packing" SENSE-NUFFT adjoint operation, which is
-    a normal SENSE-NUFFT adjoint operation with a reshape command that puts the batch
-    dimension into the coil dimension prior to the NUFFT. With the implementation
-    in the package, the code will then broadcast NUFFT opeartions across the
-    combined dimension, which is extremely fast.
+    a normal SENSE-NUFFT adjoint operation with a reshape command that puts the
+    batch dimension into the coil dimension prior to the NUFFT. With the
+    implementation in the package, the code will then broadcast NUFFT operations
+    across the combined dimension, which is extremely fast.
 
-    This is the fastest way to do NUFFT operations on a slice stack of multi-coil
-    data, where the slices are stored in the batch dimension.
+    This is the fastest way to do NUFFT operations on a slice stack of
+    multi-coil data, where the slices are stored in the batch dimension.
 
     Args:
         y (tensor): The input images of size (nbatch, ncoil, 2, klength).
-        smap (tensor): The sensitivity maps of size (nbatch, ncoil, 2) + im_size.
+        smap (tensor): The sensitivity maps of size (nbatch, ncoil, 2) +
+            im_size.
         interpob (dictionary): A NUFFT interpolation object.
         interp_mats (dictionary, default=None): A dictionary of sparse
             interpolation matrices. If not None, the NUFFT operation will use
-            the matrices for interpolation. This is the fastest option, but more
-            memory-intensive.
+            the matrices for interpolation.
     Returns:
-        x (tensor): The images after adjoint NUFFT of size
+        x: The images after adjoint NUFFT of size
             (nbatch, ncoil, 2) + im_size.
     """
     ncoil = smap.shape[1]
@@ -95,14 +95,14 @@ def sense_forward(x, smap, om, interpob, interp_mats=None):
 
     Args:
         x (tensor): The input images of size (nbatch, ncoil, 2) + im_size.
-        smap (tensor): The sensitivity maps of size (nbatch, ncoil, 2) + im_size.
+        smap (tensor): The sensitivity maps of size (nbatch, ncoil, 2) +
+            im_size.
         interpob (dictionary): A NUFFT interpolation object.
         interp_mats (dictionary, default=None): A dictionary of sparse
             interpolation matrices. If not None, the NUFFT operation will use
-            the matrices for interpolation. This is the fastest option, but more
-            memory-intensive.
+            the matrices for interpolation.
     Returns:
-        y (tensor): Output off-grid k-space data of dimensions
+        y: Output off-grid k-space data of dimensions
             (nbatch, ncoil, 2, klength).
     """
     if isinstance(smap, torch.Tensor):
@@ -127,15 +127,14 @@ def sense_backward(y, smap, om, interpob, interp_mats=None):
 
     Args:
         y (tensor): The input images of size (nbatch, ncoil, 2, klength).
-        smap (tensor): The sensitivity maps of size (nbatch, ncoil, 2) + im_size.
+        smap (tensor): The sensitivity maps of size (nbatch, ncoil, 2) +
+            im_size.
         interpob (dictionary): A NUFFT interpolation object.
         interp_mats (dictionary, default=None): A dictionary of sparse
             interpolation matrices. If not None, the NUFFT operation will use
-            the matrices for interpolation. This is the fastest option, but more
-            memory-intensive.
+            the matrices for interpolation.
     Returns:
-        x (tensor): The images after adjoint NUFFT of size
-            (nbatch, ncoil, 2) + im_size.
+        x: The images after adjoint NUFFT of size (nbatch, ncoil, 2) + im_size.
     """
     # adjoint nufft
     x = AdjKbNufftFunction.apply(y, om, interpob, interp_mats)
