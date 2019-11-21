@@ -1,6 +1,11 @@
-conda:
-    file: docs/environment.yml
-
 python:
-    version: 3.7
-    system_packages: true
+   version: 3.7
+   install:
+      - requirements: docs/requirements.txt
+      - method: pip
+        path: .
+        extra_requirements:
+            - docs
+      - method: setuptools
+        path: another/package
+   system_packages: true
