@@ -1,12 +1,10 @@
 torchkbnufft
 ============
 
-
 .. automodule:: torchkbnufft
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 torchkbnufft.math
 -----------------

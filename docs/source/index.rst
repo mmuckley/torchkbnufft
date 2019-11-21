@@ -6,9 +6,9 @@
 TorchKbNufft Documentation
 ========================================
 
-`GitHub <https://github.com/mmuckley/torchkbnufft>`_ | `API <https://torchkbnufft.readthedocs.io>`_ | `Notebook Examples <https://github.com/mmuckley/torchkbnufft/tree/master/notebooks>`_
+`API <https://torchkbnufft.readthedocs.io>`_ | `GitHub <https://github.com/mmuckley/torchkbnufft>`_ | `Notebook Examples <https://github.com/mmuckley/torchkbnufft/tree/master/notebooks>`_
 
-TorchKbNufft is a light-weight non-uniform Fast Fourier Transform
+TorchKbNufft is a lightweight non-uniform Fast Fourier Transform
 implementation built almost entirely on PyTorch, facilitating flexible,
 device-agnostic deployment and ease of use.
 
