@@ -111,7 +111,7 @@ Similar to programming low-level code, PyTorch will throw errors if the underlyi
 
 ## Computation Speed
 
-TorchKbNufft is first and foremost designed to be lightweight with minimal dependencies outside of PyTorch. The following computation times seconds were observed on a workstation with a Xeon E5-1620 CPU and an Nvidia GTX 1080 GPU for a 15-coil, 405-spoke 2D radial problem.
+TorchKbNufft is first and foremost designed to be lightweight with minimal dependencies outside of PyTorch. The following computation times in seconds were observed on a workstation with a Xeon E5-1620 CPU and an Nvidia GTX 1080 GPU for a 15-coil, 405-spoke 2D radial problem.
 
 | Operation      | CPU (normal) | CPU (sparse matrix) | GPU (normal) | GPU (sparse matrix) |
 | -------------- | ------------:| -------------------:| ------------:| -------------------:|
