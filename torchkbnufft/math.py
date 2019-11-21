@@ -60,7 +60,8 @@ def imag_exp(a, dim=0):
 
     Args:
         a (tensor): A tensor where dimension dim is the complex dimension.
-        dim (int, default=0): An integer indicating the complex dimension.
+        dim (int, default=0): An integer indicating the complex dimension of
+            the output.
 
     Returns:
         tensor: c = exp(i*a), where i is sqrt(-1).
@@ -102,6 +103,8 @@ def absolute(t, dim=0):
     Returns:
         tensor: The absolute value of t.
     """
+    assert t.shape[dim] == 2
+
     abst = torch.sqrt(
         t.select(dim, 0) ** 2 +
         t.select(dim, 1) ** 2
@@ -120,6 +123,8 @@ def complex_sign(t, dim=0):
     Returns:
         tensor: The complex sign of t.
     """
+    assert t.shape[dim] == 2
+
     signt = torch.atan2(t.select(dim, 1), t.select(dim, 0))
     signt = imag_exp(signt, dim=dim)
 

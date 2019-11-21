@@ -16,7 +16,7 @@ def mrisensesim(size, ncoils=8, array_cent=None, coil_width=2, n_rings=None, phi
         phi (double, default: 0): Parameter for rotating coil geometry.
 
     Returns:
-        list: An array of dimensions (ncoils (N)), specifying spatially-varying
+        list: A list of dimensions (ncoils, (N)), specifying spatially-varying
             sensitivity maps for each coil.
     """
     if array_cent is None:

@@ -26,11 +26,6 @@ class KbInterpForw(nn.Module):
         table_oversamp (int, default=2^10): Table oversampling factor.
         order (ind, default=0): Order of Kaiser-Bessel kernel. Not currently
             implemented.
-        coil_broadcast (boolean, default=False): Whether to broadcast across
-            coil dimension. Much faster for many coils, but uses more memory.
-        matadj (boolean, default=False): If true, adjoint interpolation
-            constructs a sparse matrix and does the interpolation with the
-            PyTorch sparse matrix API (for backward ops).
     """
 
     def __init__(self, im_size, grid_size=None, numpoints=6, n_shift=None,

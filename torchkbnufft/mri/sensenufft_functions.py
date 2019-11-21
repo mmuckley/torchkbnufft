@@ -20,10 +20,13 @@ def coilpack_sense_forward(x, smap, om, interpob, interp_mats=None):
         x (tensor): The input images of size (nbatch, ncoil, 2) + im_size.
         smap (tensor): The sensitivity maps of size (nbatch, ncoil, 2) +
             im_size.
+        om (tensor): The k-space trajectory in units of radians/voxel of size
+            (1, ndims, klength).
         interpob (dictionary): A NUFFT interpolation object.
         interp_mats (dictionary, default=None): A dictionary of sparse
             interpolation matrices. If not None, the NUFFT operation will use
             the matrices for interpolation.
+
     Returns:
         tensor: Output off-grid k-space data of dimensions (nbatch, ncoil, 2,
             klength).
@@ -63,10 +66,13 @@ def coilpack_sense_backward(y, smap, om, interpob, interp_mats=None):
         y (tensor): The input images of size (nbatch, ncoil, 2, klength).
         smap (tensor): The sensitivity maps of size (nbatch, ncoil, 2) +
             im_size.
+        om (tensor): The k-space trajectory in units of radians/voxel of size
+            (1, ndims, klength).
         interpob (dictionary): A NUFFT interpolation object.
         interp_mats (dictionary, default=None): A dictionary of sparse
             interpolation matrices. If not None, the NUFFT operation will use
             the matrices for interpolation.
+
     Returns:
         tensor: The images after adjoint NUFFT of size (nbatch, ncoil, 2) +
             im_size.
@@ -101,6 +107,7 @@ def sense_forward(x, smap, om, interpob, interp_mats=None):
         interp_mats (dictionary, default=None): A dictionary of sparse
             interpolation matrices. If not None, the NUFFT operation will use
             the matrices for interpolation.
+
     Returns:
         tensor: Output off-grid k-space data of dimensions (nbatch, ncoil, 2,
             klength).
@@ -133,6 +140,7 @@ def sense_backward(y, smap, om, interpob, interp_mats=None):
         interp_mats (dictionary, default=None): A dictionary of sparse
             interpolation matrices. If not None, the NUFFT operation will use
             the matrices for interpolation.
+
     Returns:
         tensor: The images after adjoint NUFFT of size (nbatch, ncoil, 2) +
             im_size.

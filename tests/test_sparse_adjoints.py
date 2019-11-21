@@ -272,3 +272,48 @@ def test_mrisensenufft_3d_adjoint():
         inprod2 = inner_product(y_back, x, dim=2)
 
         assert torch.norm(inprod1 - inprod2) < norm_tol
+
+
+def test_mrisensenufft_3d_adjoint():
+    dtype = torch.double
+
+    nslice = 2
+    ncoil = 4
+    im_size = (11, 33, 24)
+    klength = 112
+
+    for device in devices:
+        x = np.random.normal(size=(nslice, 1) + im_size) + \
+            1j*np.random.normal(size=(nslice, 1) + im_size)
+        x = torch.tensor(np.stack((np.real(x), np.imag(x)), axis=2),
+                         dtype=dtype, device=device)
+
+        y = np.random.normal(size=(nslice, ncoil, klength)) + \
+            1j*np.random.normal(size=(nslice, ncoil, klength))
+        y = torch.tensor(np.stack((np.real(y), np.imag(y)), axis=2),
+                         dtype=dtype, device=device)
+
+        ktraj = torch.randn(*(1, 3, klength),
+                            dtype=dtype, device=device)
+
+        smap_sz = (nslice, ncoil, 2) + im_size
+        smap = torch.randn(*smap_sz, dtype=dtype, device=device)
+
+        sensenufft_ob = MriSenseNufft(
+            smap=smap, im_size=im_size, coilpack=True).to(dtype=dtype, device=device)
+        adjsensenufft_ob = AdjMriSenseNufft(
+            smap=smap, im_size=im_size, coilpack=True).to(dtype=dtype, device=device)
+
+        real_mat, imag_mat = precomp_sparse_mats(ktraj, sensenufft_ob)
+        interp_mats = {
+            'real_interp_mats': real_mat,
+            'imag_interp_mats': imag_mat
+        }
+
+        x_forw = sensenufft_ob(x, ktraj, interp_mats)
+        y_back = adjsensenufft_ob(y, ktraj, interp_mats)
+
+        inprod1 = inner_product(y, x_forw, dim=2)
+        inprod2 = inner_product(y_back, x, dim=2)
+
+        assert torch.norm(inprod1 - inprod2) < norm_tol
