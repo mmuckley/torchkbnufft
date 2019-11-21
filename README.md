@@ -22,7 +22,7 @@ from torchkbnufft import KbNufft
 help(KbNufft)
 ```
 
-Behavior can also be inferred by inspecting the source code at ```https://github.com/mmuckley/torchkbnufft```.
+Behavior can also be inferred by inspecting the source code at ```https://github.com/mmuckley/torchkbnufft```. An html-based API reference is at ```https://torchkbnufft.readthedocs.io```.
 
 ## Examples
 
