@@ -40,7 +40,10 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosectionlabel',
+    'autoapi.extension'
 ]
+autoapi_dirs = ['../../torchkbnufft']
+autoapi_generate_api_docs = False
 
 # autosectionlabel throws warnings if section names are duplicated.
 # The following tells autosectionlabel to not throw a warning for
