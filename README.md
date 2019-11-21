@@ -1,5 +1,7 @@
 # Torch KB-NUFFT
 
+[API](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](https://github.com/mmuckley/torchkbnufft/tree/master/notebooks)
+
 Simple installation from PyPI:
 
 ```bash
@@ -72,7 +74,7 @@ A detailed example of SENSE-NUFFT usage is included in ```notebooks/SENSE Exampl
 
 ### Sparse Matrix Precomputation
 
-In order to conserve memory, in normal operation mode the package includes a loop over interpolation offsets and calculates interpolation coefficients for each offset. This process can become slow due to calls to the Python interpreter. To avoid interpreter calls, one can instead precompute a sparse interpolation matrix:
+Previously, sparse matrix-based interpolation was the fastest operation mode. As of v0.2.0, this is no longer the case on the GPU. Nonetheless, sparse matrices can be faster than normal operation mode in certain situations (e.g., when using many coils and slices). The following code calculates sparse interpolation matrices and uses them to compute a single radial spoke of k-space data:
 
 ```python
 from torchkbnufft import AdjKbNufft
@@ -106,6 +108,21 @@ image = adjnufft_ob(kdata, ktraj)
 ```
 
 Similar to programming low-level code, PyTorch will throw errors if the underlying ```dtype``` and ```device``` of all objects are not matching. Be sure to make sure your data and NUFFT objects are on the right device and in the right format to avoid these errors.
+
+## Computation Speed
+
+TorchKbNufft is first and foremost designed to be lightweight with minimal dependencies outside of PyTorch, and may not be the fastest implementation in all cases. To provide context, the following computation times seconds were observed on a workstation with a Xeon E5-1620 CPU and an Nvidia GTX 1080 GPU for a 15-coil, 405-spoke 2D radial problem.
+
+| Operation      | CPU (normal) | CPU (sparse matrix) | GPU (normal) | GPU (sparse matrix) |
+| -------------- | ------------:| -------------------:| ------------:| -------------------:|
+| Forward NUFFT  | 3.23         | 3.38                | 9.34e-02     | 9.34e-02            |
+| Adjoint NUFFT  | 4.48         | 1.04                | 1.03e-01     | 1.15e-01            |
+
+Profiling for your machine can be done by running
+
+```python
+python profile_torchkbnufft.py
+```
 
 ## References
 
