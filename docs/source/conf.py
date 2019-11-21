@@ -44,6 +44,7 @@ extensions = [
 ]
 autoapi_dirs = ['../../torchkbnufft']
 autoapi_generate_api_docs = False
+autodoc_mock_imports = ["torch"]
 
 # autosectionlabel throws warnings if section names are duplicated.
 # The following tells autosectionlabel to not throw a warning for
