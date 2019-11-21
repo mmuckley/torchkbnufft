@@ -1,3 +1,4 @@
 sphinx
 sphinx-autoapi
 sphinx-rtd-theme
+torch
