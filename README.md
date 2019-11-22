@@ -53,7 +53,7 @@ ktraj = torch.tensor(ktraj).unsqueeze(0)
 
 nufft_ob = KbNufft(im_size=im_size)
 # outputs a (1, 1, 2, klength) vector of k-space data
-y = nufft_ob(x, ktraj)
+kdata = nufft_ob(x, ktraj)
 ```
 
 A detailed example of basic NUFFT usage is included in ```notebooks/Basic Example.ipynb```.
@@ -65,7 +65,9 @@ The package also includes utilities for working with SENSE-NUFFT operators. The 
 ```python
 from torchkbnufft import MriSenseNufft
 
+smap = torch.rand(1, 8, 2, 400, 400)
 sensenufft_ob = MriSenseNufft(im_size=im_size, smap=smap)
+sense_data = sensenufft_ob(x, ktraj)
 ```
 
 Application of the object in place of ```nufft_ob``` above would first multiply by the sensitivity coils in ```smap```, then compute a 64-length radial spoke for each coil. All operations are broadcast across coils, which minimizes interaction with the Python interpreter and maximizes computation speed.
