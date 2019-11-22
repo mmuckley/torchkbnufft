@@ -1,6 +1,6 @@
 """Package info"""
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 __author__ = 'Matthew Muckley'
 __author_email__ = 'Matthew.Muckley@nyulangone.org'
 __license__ = 'MIT'
@@ -21,6 +21,7 @@ else:
     from .kbinterp import KbInterpBack, KbInterpForw
     from .kbnufft import KbNufft, AdjKbNufft
     from .mrisensenufft import MriSenseNufft, AdjMriSenseNufft
+    from .nufft import utils as nufft_utils
 
     __all__ = [
         'KbInterpForw',

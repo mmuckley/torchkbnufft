@@ -14,8 +14,8 @@ def get_interpob(model):
     precomputation.
 
     Args:
-        model (KbNufft-type object): A KbNufft object with attributes for
-        forming a KbNufft interpolation dictionary.
+        model (TorchKbNufft object): A TorchKbNufft object with attributes for
+            forming a KbNufft interpolation dictionary.
 
     Returns:
         dict: A dictionary with interpolation parameters.
@@ -126,7 +126,7 @@ def precomp_sparse_mats(om, model):
 
     Args:
         om (tensor): The k-space trajectory in radians/voxel.
-        model (KbNufft-type object): A KbNufft type object with attributes for
+        model (TorchKbNufft object): A KbNufft type object with attributes for
             creating a KbNufft interpolation object.
 
     Returns:

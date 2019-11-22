@@ -13,11 +13,3 @@ torchkbnufft.math
    :members:
    :undoc-members:
    :show-inheritance:
-
-torchkbnufft.nufft\_utils
--------------------------
-
-.. automodule:: torchkbnufft.nufft_utils
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from .functional.mrisensenufft import (AdjMriSenseNufftFunction,
                                        MriSenseNufftFunction)
-from .nufft_utils import build_spmatrix, build_table, compute_scaling_coefs
+from .nufft.utils import build_spmatrix, build_table, compute_scaling_coefs
 
 
 class MriSenseNufft(nn.Module):
@@ -27,8 +27,8 @@ class MriSenseNufft(nn.Module):
         n_shift (int or tuple of ints, default=im_size//2): Number of points to
             shift for fftshifts.
         table_oversamp (int, default=2^10): Table oversampling factor.
-        order (ind, default=0): Order of Kaiser-Bessel kernel. Not currently
-            implemented.
+        kbwidth (double, default=2.34): Kaiser-Bessel width parameter.
+        order (double, default=0): Order of Kaiser-Bessel kernel.
         norm (str, default='None'): Normalization for FFT. Default uses no
             normalization. Use 'ortho' to use orthogonal FFTs and preserve
             energy.
@@ -39,11 +39,10 @@ class MriSenseNufft(nn.Module):
     """
 
     def __init__(self, smap, im_size, grid_size=None, numpoints=6, n_shift=None,
-                 table_oversamp=2**10, order=0, norm='None', coil_broadcast=False,
-                 coilpack=False, matadj=False):
+                 table_oversamp=2**10, kbwidth=2.34, order=0, norm='None',
+                 coil_broadcast=False, coilpack=False, matadj=False):
         super(MriSenseNufft, self).__init__()
 
-        self.alpha = 2.34
         self.im_size = im_size
         if grid_size is None:
             self.grid_size = tuple(np.array(self.im_size) * 2)
@@ -53,21 +52,28 @@ class MriSenseNufft(nn.Module):
             self.n_shift = tuple(np.array(self.im_size) // 2)
         else:
             self.n_shift = n_shift
-        if numpoints == 6:
-            self.numpoints = (6,) * len(self.grid_size)
-        elif len(numpoints) != len(self.grid_size):
+        if isinstance(numpoints, int):
             self.numpoints = (numpoints,) * len(self.grid_size)
         else:
             self.numpoints = numpoints
-        self.order = (0,)
-        self.alpha = (2.34 * self.numpoints[0],)
-        for i in range(1, len(self.numpoints)):
-            self.alpha = self.alpha + (2.34 * self.numpoints[i],)
-            self.order = self.order + (0,)
-        if table_oversamp == 2**10:
+        self.alpha = tuple(np.array(kbwidth) * np.array(self.numpoints))
+        if isinstance(order, int) or isinstance(order, float):
+            self.order = (order,) * len(self.grid_size)
+        else:
+            self.order = order
+        if isinstance(table_oversamp, int):
             self.table_oversamp = (table_oversamp,) * len(self.grid_size)
         else:
             self.table_oversamp = table_oversamp
+
+        # dimension checking
+        assert len(self.grid_size) == len(self.im_size)
+        assert len(self.n_shift) == len(self.im_size)
+        assert len(self.numpoints) == len(self.im_size)
+        assert len(self.alpha) == len(self.im_size)
+        assert len(self.order) == len(self.im_size)
+        assert len(self.table_oversamp) == len(self.im_size)
+
         table = build_table(
             numpoints=self.numpoints,
             table_oversamp=self.table_oversamp,
@@ -78,6 +84,8 @@ class MriSenseNufft(nn.Module):
             alpha=self.alpha
         )
         self.table = table
+        assert len(self.table) == len(self.im_size)
+
         scaling_coef = compute_scaling_coefs(
             im_size=self.im_size,
             grid_size=self.grid_size,
@@ -90,6 +98,7 @@ class MriSenseNufft(nn.Module):
         self.coil_broadcast = coil_broadcast
         self.coilpack = coilpack
         self.matadj = matadj
+        self.smap_shape = smap.shape
 
         if coil_broadcast == True:
             warnings.warn(
@@ -99,17 +108,6 @@ class MriSenseNufft(nn.Module):
             warnings.warn(
                 'matadj will be deprecated in a future release',
                 DeprecationWarning)
-
-        # dimension checking
-        assert len(self.grid_size) == len(self.im_size)
-        assert len(self.n_shift) == len(self.im_size)
-        assert len(self.numpoints) == len(self.im_size)
-        assert len(self.table) == len(self.im_size)
-        assert len(self.table_oversamp) == len(self.im_size)
-        assert len(self.alpha) == len(self.im_size)
-        assert len(self.order) == len(self.im_size)
-
-        self.smap_bsize = len(smap)
 
         self.register_buffer(
             'scaling_coef_tensor',
@@ -180,8 +178,9 @@ class MriSenseNufft(nn.Module):
         return y
 
     def __repr__(self):
+        filter_list = ['interpob', 'buffer', 'parameters', 'hook', 'module']
         tablecheck = False
-        out = '\nKbNufft forward object\n'
+        out = '\n{}\n'.format(self.__class__.__name__)
         out = out + '----------------------------------------\n'
         for attr, value in self.__dict__.items():
             if 'table' in attr:
@@ -189,10 +188,10 @@ class MriSenseNufft(nn.Module):
                     out = out + '   table: {} arrays, lengths: {}\n'.format(
                         len(self.table), self.table_oversamp)
                     tablecheck = True
-            elif 'traj' in attr:
-                out = out + '   traj: {} {} array\n'.format(
-                    self.traj.shape, self.traj.dtype)
-            elif 'interpob' not in attr:
+            elif 'traj' in attr or 'scaling_coef' in attr:
+                out = out + '   {}: {} {} array\n'.format(
+                    attr, value.shape, value.dtype)
+            elif not any([item in attr for item in filter_list]):
                 out = out + '   {}: {}\n'.format(attr, value)
         return out
 
@@ -214,8 +213,8 @@ class AdjMriSenseNufft(nn.Module):
         n_shift (int or tuple of ints, default=im_size//2): Number of points to
             shift for fftshifts.
         table_oversamp (int, default=2^10): Table oversampling factor.
-        order (ind, default=0): Order of Kaiser-Bessel kernel. Not currently
-            implemented.
+        kbwidth (double, default=2.34): Kaiser-Bessel width parameter.
+        order (double, default=0): Order of Kaiser-Bessel kernel.
         norm (str, default='None'): Normalization for FFT. Default uses no
             normalization. Use 'ortho' to use orthogonal FFTs and preserve
             energy.
@@ -226,11 +225,10 @@ class AdjMriSenseNufft(nn.Module):
     """
 
     def __init__(self, smap, im_size, grid_size=None, numpoints=6, n_shift=None,
-                 table_oversamp=2**10, order=0, norm='None', coil_broadcast=False,
-                 coilpack=False, matadj=False):
+                 table_oversamp=2**10, kbwidth=2.34, order=0, norm='None',
+                 coil_broadcast=False, coilpack=False, matadj=False):
         super(AdjMriSenseNufft, self).__init__()
 
-        self.alpha = 2.34
         self.im_size = im_size
         if grid_size is None:
             self.grid_size = tuple(np.array(self.im_size) * 2)
@@ -240,22 +238,29 @@ class AdjMriSenseNufft(nn.Module):
             self.n_shift = tuple(np.array(self.im_size) // 2)
         else:
             self.n_shift = n_shift
-        if numpoints == 6:
-            self.numpoints = (6,) * len(self.grid_size)
-        elif len(numpoints) != len(self.grid_size):
+        if isinstance(numpoints, int):
             self.numpoints = (numpoints,) * len(self.grid_size)
         else:
             self.numpoints = numpoints
-        self.order = (0,)
-        self.alpha = (2.34 * self.numpoints[0],)
-        for i in range(1, len(self.numpoints)):
-            self.alpha = self.alpha + (2.34 * self.numpoints[i],)
-            self.order = self.order + (0,)
-        if table_oversamp == 2**10:
+        self.alpha = tuple(np.array(kbwidth) * np.array(self.numpoints))
+        if isinstance(order, int) or isinstance(order, float):
+            self.order = (order,) * len(self.grid_size)
+        else:
+            self.order = order
+        if isinstance(table_oversamp, float) or isinstance(table_oversamp, int):
             self.table_oversamp = (table_oversamp,) * len(self.grid_size)
         else:
             self.table_oversamp = table_oversamp
-        self.table = build_table(
+
+        # dimension checking
+        assert len(self.grid_size) == len(self.im_size)
+        assert len(self.n_shift) == len(self.im_size)
+        assert len(self.numpoints) == len(self.im_size)
+        assert len(self.alpha) == len(self.im_size)
+        assert len(self.order) == len(self.im_size)
+        assert len(self.table_oversamp) == len(self.im_size)
+
+        table = build_table(
             numpoints=self.numpoints,
             table_oversamp=self.table_oversamp,
             grid_size=self.grid_size,
@@ -264,6 +269,9 @@ class AdjMriSenseNufft(nn.Module):
             order=self.order,
             alpha=self.alpha
         )
+        self.table = table
+        assert len(self.table) == len(self.im_size)
+
         scaling_coef = compute_scaling_coefs(
             im_size=self.im_size,
             grid_size=self.grid_size,
@@ -276,7 +284,7 @@ class AdjMriSenseNufft(nn.Module):
         self.coil_broadcast = coil_broadcast
         self.coilpack = coilpack
         self.matadj = matadj
-        self.smap_bsize = len(smap)
+        self.smap_shape = smap.shape
 
         if coil_broadcast == True:
             warnings.warn(
@@ -286,15 +294,6 @@ class AdjMriSenseNufft(nn.Module):
             warnings.warn(
                 'matadj will be deprecated in a future release',
                 DeprecationWarning)
-
-        # dimension checking
-        assert len(self.grid_size) == len(self.im_size)
-        assert len(self.n_shift) == len(self.im_size)
-        assert len(self.numpoints) == len(self.im_size)
-        assert len(self.table) == len(self.im_size)
-        assert len(self.table_oversamp) == len(self.im_size)
-        assert len(self.alpha) == len(self.im_size)
-        assert len(self.order) == len(self.im_size)
 
         self.register_buffer(
             'scaling_coef_tensor',
@@ -364,8 +363,9 @@ class AdjMriSenseNufft(nn.Module):
         return x
 
     def __repr__(self):
+        filter_list = ['interpob', 'buffer', 'parameters', 'hook', 'module']
         tablecheck = False
-        out = '\nKbNufft adjoint object\n'
+        out = '\n{}\n'.format(self.__class__.__name__)
         out = out + '----------------------------------------\n'
         for attr, value in self.__dict__.items():
             if 'table' in attr:
@@ -373,9 +373,9 @@ class AdjMriSenseNufft(nn.Module):
                     out = out + '   table: {} arrays, lengths: {}\n'.format(
                         len(self.table), self.table_oversamp)
                     tablecheck = True
-            elif 'traj' in attr:
-                out = out + '   traj: {} {} array\n'.format(
-                    self.traj.shape, self.traj.dtype)
-            elif 'interpob' not in attr:
+            elif 'traj' in attr or 'scaling_coef' in attr:
+                out = out + '   {}: {} {} array\n'.format(
+                    attr, value.shape, value.dtype)
+            elif not any([item in attr for item in filter_list]):
                 out = out + '   {}: {}\n'.format(attr, value)
         return out

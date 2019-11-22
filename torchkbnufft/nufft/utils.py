@@ -3,8 +3,8 @@ import torch
 from scipy import special
 from scipy.sparse import coo_matrix
 
-from .functional.kbnufft import (ifft_and_scale_on_gridded_data,
-                                 scale_and_fft_on_image_volume)
+from .fft_functions import (ifft_and_scale_on_gridded_data,
+                            scale_and_fft_on_image_volume)
 
 
 def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
@@ -12,14 +12,11 @@ def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
 
     Args:
         om (ndarray): An array of coordinates to interpolate to.
-        im_size (int or tuple of ints): Size of base image.
-        grid_size (int or tuple of ints, default=2*im_size): Size of the grid
-            to interpolate from.
-        n_shift (int or tuple of ints, default=im_size//2): Number of points to
-            shift for fftshifts.
-        order (ind, default=0): Order of Kaiser-Bessel kernel. Not currently
-            implemented.
-        alpha (double or array of doubles): KB parameter.
+        im_size (tuple): Size of base image.
+        grid_size (tuple): Size of the grid to interpolate from.
+        n_shift (tuple): Number of points to shift for fftshifts.
+        order (tuple): Order of Kaiser-Bessel kernel.
+        alpha (tuple): KB parameter.
 
     Returns:
         coo_matrix: A scipy sparse interpolation matrix.
@@ -30,19 +27,19 @@ def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
     klength = om.shape[1]
 
     # calculate interpolation coefficients using kb kernel
-    def interp_coeff(om, npts, grdsz, alpha):
+    def interp_coeff(om, npts, grdsz, alpha, order):
         gam = 2 * np.pi / grdsz
         interp_dist = om / gam - np.floor(om / gam - npts / 2)
         Jvec = np.reshape(np.array(range(1, npts + 1)), (1, npts))
         kern_in = -1 * Jvec + np.expand_dims(interp_dist, 1)
 
-        cur_coeff = np.zeros(shape=kern_in.shape, dtype=complex)
+        cur_coeff = np.zeros(shape=kern_in.shape, dtype=np.complex)
         indices = abs(kern_in) < npts / 2
         bess_arg = np.sqrt(1 - (kern_in[indices] / (npts / 2))**2)
-        denom = special.iv(0, alpha)
-        cur_coeff[indices] = special.iv(0, alpha * bess_arg) / \
-            denom
+        denom = special.iv(order, alpha)
+        cur_coeff[indices] = special.iv(order, alpha * bess_arg) / denom
         cur_coeff = np.real(cur_coeff)
+
         return cur_coeff, kern_in
 
     full_coef = []
@@ -53,7 +50,7 @@ def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
         K = grid_size[i]
 
         # get the interpolation coefficients
-        coef, kern_in = interp_coeff(om[i, :], J, K, alpha[i])
+        coef, kern_in = interp_coeff(om[i, :], J, K, alpha[i], order[i])
 
         gam = 2 * np.pi / K
         phase_scale = 1j * gam * (N - 1) / 2
@@ -109,19 +106,15 @@ def build_table(numpoints, table_oversamp, grid_size, im_size, ndims, order, alp
     """Builds an interpolation table.
 
     Args:
-        numpoints (int or tuple of ints, default=6): Number of points to use
-            for interpolation in each dimension. Default is six points in each
-            direction.
-        table_oversamp (int, default=2^10): Table oversampling factor.
-        im_size (int or tuple of ints): Size of base image.
-        grid_size (int or tuple of ints, default=2*im_size): Size of the grid
-            to interpolate from.
-        n_shift (int or tuple of ints, default=im_size//2): Number of points to
-            shift for fftshifts.
+        numpoints (tuple): Number of points to use for interpolation in each
+            dimension. Default is six points in each direction.
+        table_oversamp (tuple): Table oversampling factor.
+        im_size (tuple): Size of base image.
+        grid_size (tuple): Size of the grid to interpolate from.
+        n_shift (tuple): Number of points to shift for fftshifts.
         ndims (int): Number of image dimensions.
-        order (ind, default=0): Order of Kaiser-Bessel kernel. Not currently
-            implemented.
-        alpha (double or array of doubles): KB parameter.
+        order (tuple): Order of Kaiser-Bessel kernel.
+        alpha (tuple): KB parameter.
 
     Returns:
         list: A list of tables for each dimension.
@@ -145,7 +138,7 @@ def build_table(numpoints, table_oversamp, grid_size, im_size, ndims, order, alp
             im_size=(N,),
             grid_size=(K,),
             n_shift=(0,),
-            order=order,
+            order=(order[i],),
             alpha=(alpha[i],)
         )
         h = np.array(s1.getcol(J - 1).todense())
@@ -166,8 +159,7 @@ def kaiser_bessel_ft(om, npts, alpha, order, d):
         om (ndarray): An array of coordinates to interpolate to.
         npts (int): Number of points to use for interpolation in each
             dimension.
-        order (ind, default=0): Order of Kaiser-Bessel kernel. Not currently
-            implemented.
+        order (ind, default=0): Order of Kaiser-Bessel kernel.
         alpha (double or array of doubles): KB parameter.
 
     Returns:
@@ -186,19 +178,15 @@ def compute_scaling_coefs(im_size, grid_size, numpoints, alpha, order):
     """Computes scaling coefficients for NUFFT operation.
 
     Args:
-        im_size (int or tuple of ints): Size of base image.
-        grid_size (int or tuple of ints, default=2*im_size): Size of the grid
-            to interpolate from.
-        numpoints (int or tuple of ints, default=6): Number of points to use
-            for interpolation in each dimension. Default is six points in each
-            direction.
-        table_oversamp (int, default=2^10): Table oversampling factor.
-        im_size (int or tuple of ints): Size of base image.
-        grid_size (int or tuple of ints, default=2*im_size): Size of the grid
-            to interpolate from.
-        alpha (double or array of doubles): KB parameter.
-        order (ind, default=0): Order of Kaiser-Bessel kernel. Not currently
-            implemented.
+        im_size (tuple): Size of base image.
+        grid_size (tuple): Size of the grid to interpolate from.
+        numpoints (tuple): Number of points to use for interpolation in each
+            dimension. Default is six points in each direction.
+        table_oversamp (tuple): Table oversampling factor.
+        im_size (tuple): Size of base image.
+        grid_size (tuple): Size of the grid to interpolate from.
+        alpha (tuple): KB parameter.
+        order (tuple): Order of Kaiser-Bessel kernel.
 
     Returns:
         ndarray: The scaling coefficients.
