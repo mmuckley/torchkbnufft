@@ -26,6 +26,13 @@ torchkbnufft.nufft.sparse\_interp\_mat
    :undoc-members:
    :show-inheritance:
 
+torchkbnufft.nufft.utils
+--------------------------------------
+
+.. automodule:: torchkbnufft.nufft.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 
 .. automodule:: torchkbnufft.nufft
