@@ -176,6 +176,7 @@ def run_interp(griddat, tm, params):
     Jlist = params['Jlist']
     L = params['table_oversamp']
 
+    # extract data types
     dtype = table[0].dtype
     device = table[0].device
     int_type = torch.long
@@ -196,12 +197,14 @@ def run_interp(griddat, tm, params):
         coef, arr_ind = calc_coef_and_indices(
             tm, kofflist, Jlist[:, Jind], table, centers, L, dims)
 
-        # no danger of collisions for forward op
+        # unsqueeze coil and real/imag dimensions for on-grid indices
         arr_ind = arr_ind.unsqueeze(0).unsqueeze(0).expand(
             kdat.shape[0],
             kdat.shape[1],
             -1
         )
+
+        # multiply coefficients and gather
         kdat = kdat + complex_mult(
             coef.unsqueeze(0),
             torch.gather(griddat, 2, arr_ind),
@@ -230,7 +233,7 @@ def run_interp_back(kdat, tm, params):
     Jlist = params['Jlist']
     L = params['table_oversamp']
 
-    # store data types
+    # extract data types
     dtype = table[0].dtype
     device = table[0].device
     int_type = torch.long
@@ -251,6 +254,9 @@ def run_interp_back(kdat, tm, params):
         coef, arr_ind = calc_coef_and_indices(
             tm, kofflist, Jlist[:, Jind], table, centers, L, dims, conjcoef=True)
 
+        # the following code takes ordered data and scatters it on to an image grid
+        # profiling for a 2D problem showed drastic differences in performances
+        # for these two implementations on cpu/gpu, but they do the same thing
         if device == torch.device('cpu'):
             tmp = complex_mult(coef.unsqueeze(0), kdat, dim=1)
             for bind in range(griddat.shape[0]):
@@ -314,8 +320,8 @@ def kbinterp(x, om, interpob, interp_mats=None):
     Jgen = list(itertools.product(*Jgen))
     Jgen = torch.tensor(Jgen).permute(1, 0).to(dtype=torch.long, device=device)
 
-    # set up params if not using sparse mats
     if interp_mats is None:
+        # set up params if not using sparse mats
         params = {
             'dims': None,
             'table': interpob['table'],
@@ -323,6 +329,12 @@ def kbinterp(x, om, interpob, interp_mats=None):
             'Jlist': Jgen,
             'table_oversamp': interpob['table_oversamp'],
         }
+    else:
+        # make sure we're on the right device
+        for real_mat in interp_mats['real_interp_mats']:
+            assert real_mat.device == device
+        for imag_mat in interp_mats['imag_interp_mats']:
+            assert imag_mat.device == device
 
     y = []
     # run the table interpolator for each batch element
@@ -399,8 +411,8 @@ def adjkbinterp(y, om, interpob, interp_mats=None):
     Jgen = list(itertools.product(*Jgen))
     Jgen = torch.tensor(Jgen).permute(1, 0).to(dtype=torch.long, device=device)
 
-    # set up params if not using sparse mats
     if interp_mats is None:
+        # set up params if not using sparse mats
         params = {
             'dims': None,
             'table': interpob['table'],
@@ -408,6 +420,12 @@ def adjkbinterp(y, om, interpob, interp_mats=None):
             'Jlist': Jgen,
             'table_oversamp': interpob['table_oversamp'],
         }
+    else:
+        # make sure we're on the right device
+        for real_mat in interp_mats['real_interp_mats']:
+            assert real_mat.device == device
+        for imag_mat in interp_mats['imag_interp_mats']:
+            assert imag_mat.device == device
 
     x = []
     # run the table interpolator for each batch element

@@ -4,6 +4,7 @@ import numpy as np
 import torch
 
 from ..math import complex_mult, conj_complex_mult
+from .interp_functions import calc_coef_and_indices
 
 
 def get_interpob(model):
@@ -52,8 +53,6 @@ def compute_forw_mat(dims, table, numpoints, Jlist, L, tm):
     device = table[0].device
     int_type = torch.long
 
-    M = tm.shape[1]
-    ndims = tm.shape[0]
     nJ = Jlist.shape[1]
 
     # center of tables
@@ -62,14 +61,11 @@ def compute_forw_mat(dims, table, numpoints, Jlist, L, tm):
     kofflist = 1 + torch.floor(tm - numpoints.unsqueeze(1) / 2.0)
 
     # do a bit of type management - ints for faster index comps
-    curgridind = torch.zeros(tm.shape, dtype=dtype, device=device)
-    curdistind = torch.zeros(tm.shape, dtype=int_type, device=device)
-    arr_ind = torch.zeros((M,), dtype=int_type, device=device)
-    coef = torch.ones((2, M), dtype=dtype, device=device)
     dims = dims.to(dtype=int_type)
     kofflist = kofflist.to(dtype=int_type)
     Jlist = Jlist.to(dtype=int_type)
 
+    # initialize the sparse matrices
     coef_mat_real = torch.sparse.FloatTensor(
         tm.shape[-1], torch.prod(dims)).to(dtype=dtype, device=device)
     coef_mat_imag = torch.sparse.FloatTensor(
@@ -77,25 +73,8 @@ def compute_forw_mat(dims, table, numpoints, Jlist, L, tm):
 
     # loop over offsets and take advantage of broadcasting
     for Jind in range(nJ):
-        curgridind = (kofflist + Jlist[:, Jind].unsqueeze(1)).to(dtype)
-        curdistind = torch.round(
-            (tm - curgridind) * L.unsqueeze(1)).to(dtype=int_type)
-        curgridind = curgridind.to(int_type)
-
-        arr_ind = torch.zeros((M,), dtype=int_type, device=device)
-        coef = torch.stack((
-            torch.ones(M, dtype=dtype, device=device),
-            torch.zeros(M, dtype=dtype, device=device)
-        ))
-
-        for d in range(ndims):  # spatial dimension
-            coef = complex_mult(
-                coef,
-                table[d][:, curdistind[d, :] + centers[d]],
-                dim=0
-            )
-            arr_ind = arr_ind + torch.remainder(curgridind[d, :], dims[d]).view(-1) * \
-                torch.prod(dims[d + 1:])
+        coef, arr_ind = calc_coef_and_indices(
+            tm, kofflist, Jlist[:, Jind], table, centers, L, dims)
 
         sparse_coords = torch.stack(
             (
