@@ -10,7 +10,7 @@ from torchkbnufft.mri.mrisensesim import mrisensesim
 from torchkbnufft.nufft.sparse_interp_mat import precomp_sparse_mats
 
 
-def profile_torchkbnufft(image, ktraj, smap, device, sparse_mats_flag=False):
+def profile_torchkbnufft(image, ktraj, smap, im_size, device, sparse_mats_flag=False):
     # run double precision for CPU, float for GPU
     # these seem to be present in reference implementations
     if device == torch.device('cpu'):
@@ -50,12 +50,17 @@ def profile_torchkbnufft(image, ktraj, smap, device, sparse_mats_flag=False):
             device=device), interp_mats).to(cpudevice)
 
     # run the forward speed tests
-    torch.cuda.synchronize()
+    if device == torch.device('cuda'):
+        torch.cuda.reset_max_memory_allocated()
+        torch.cuda.synchronize()
     start_time = time.perf_counter()
     for _ in range(num_nuffts):
         y = kbsense_ob(image.to(device=device), ktraj.to(
             device=device), interp_mats)
-    torch.cuda.synchronize()
+    if device == torch.device('cuda'):
+        torch.cuda.synchronize()
+        max_mem = torch.cuda.max_memory_allocated()
+        print('GPU forward max memory: {} GB'.format(max_mem/1e9))
     end_time = time.perf_counter()
     avg_time = (end_time-start_time) / num_nuffts
     print('forward average time: {}'.format(avg_time))
@@ -66,18 +71,23 @@ def profile_torchkbnufft(image, ktraj, smap, device, sparse_mats_flag=False):
             device), interp_mats)
 
     # run the adjoint speed tests
-    torch.cuda.synchronize()
+    if device == torch.device('cuda'):
+        torch.cuda.reset_max_memory_allocated()
+        torch.cuda.synchronize()
     start_time = time.perf_counter()
     for _ in range(num_nuffts):
         x = adjkbsense_ob(y.to(device), ktraj.to(
             device), interp_mats)
-    torch.cuda.synchronize()
+    if device == torch.device('cuda'):
+        torch.cuda.synchronize()
+        max_mem = torch.cuda.max_memory_allocated()
+        print('GPU adjoint max memory: {} GB'.format(max_mem/1e9))
     end_time = time.perf_counter()
     avg_time = (end_time-start_time) / num_nuffts
     print('backward average time: {}'.format(avg_time))
 
 
-if __name__ == '__main__':
+def run_all_profiles():
     print('running profiler...')
     spokelength = 512
     nspokes = 405
@@ -115,11 +125,15 @@ if __name__ == '__main__':
     smap_sz = (1, ncoil, 2) + im_size
     smap = torch.ones(*smap_sz)
 
-    profile_torchkbnufft(image, ktraj, smap, device=torch.device(
+    profile_torchkbnufft(image, ktraj, smap, im_size, device=torch.device(
         'cpu'), sparse_mats_flag=False)
-    profile_torchkbnufft(image, ktraj, smap, device=torch.device(
+    profile_torchkbnufft(image, ktraj, smap, im_size, device=torch.device(
         'cpu'), sparse_mats_flag=True)
-    profile_torchkbnufft(image, ktraj, smap, device=torch.device(
+    profile_torchkbnufft(image, ktraj, smap, im_size, device=torch.device(
         'cuda'), sparse_mats_flag=False)
-    profile_torchkbnufft(image, ktraj, smap, device=torch.device(
+    profile_torchkbnufft(image, ktraj, smap, im_size, device=torch.device(
         'cuda'), sparse_mats_flag=True)
+
+
+if __name__ == '__main__':
+    run_all_profiles()

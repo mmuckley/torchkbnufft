@@ -20,32 +20,24 @@ def run_mat_interp(griddat, coef_mat_real, coef_mat_imag):
     Returns:
         tensor: griddat interpolated to off-grid locations.
     """
-    dtype = griddat.dtype
-    device = griddat.device
-    kdat_length = coef_mat_real.shape[0]
+    # we have to do these transposes because torch.mm requires first to be spmatrix
+    real_griddat = griddat.select(1, 0).t()
+    imag_griddat = griddat.select(1, 1).t()
 
-    # initialize output data
-    kdat = torch.zeros(size=((griddat.shape[0], 2, kdat_length)),
-                       dtype=dtype, device=device)
+    # apply multiplies
+    kdat = []
 
-    real_griddat = griddat[:, 0, :].t()
-    imag_griddat = griddat[:, 1, :].t()
+    kdat.append((
+        torch.mm(coef_mat_real, real_griddat) -
+        torch.mm(coef_mat_imag, imag_griddat)
+    ).t())
 
-    kdat[:, 0, :] = torch.mm(
-        coef_mat_real,
-        real_griddat
-    ).t() - torch.mm(
-        coef_mat_imag,
-        imag_griddat
-    ).t()
+    kdat.append((
+        torch.mm(coef_mat_real, imag_griddat) +
+        torch.mm(coef_mat_imag, real_griddat)
+    ).t())
 
-    kdat[:, 1, :] = torch.mm(
-        coef_mat_real,
-        imag_griddat
-    ).t() + torch.mm(
-        coef_mat_imag,
-        real_griddat
-    ).t()
+    kdat = torch.stack(kdat, dim=1)
 
     return kdat
 
@@ -64,34 +56,30 @@ def run_mat_interp_back(kdat, coef_mat_real, coef_mat_imag):
     Returns:
         tensor: kdat interpolated to on-grid locations.
     """
-    dtype = kdat.dtype
-    device = kdat.device
-    griddat_length = coef_mat_real.shape[1]
-
-    # initialize output data
-    griddat = torch.zeros(size=((kdat.shape[0], 2, griddat_length)),
-                          dtype=dtype, device=device)
-
-    real_kdat = kdat[:, 0, :].t().reshape(-1, kdat.shape[0])
-    imag_kdat = kdat[:, 1, :].t().reshape(-1, kdat.shape[0])
-    coef_mat_real_t = coef_mat_real.t()
-    coef_mat_imag_t = coef_mat_imag.t()
+    # we have to do these transposes because torch.mm requires first to be spmatrix
+    real_kdat = kdat.select(1, 0).t().view(-1, kdat.shape[0])
+    imag_kdat = kdat.select(1, 1).t().view(-1, kdat.shape[0])
+    coef_mat_real = coef_mat_real.t_()
+    coef_mat_imag = coef_mat_imag.t_()
 
     # apply multiplies with complex conjugate
-    griddat[:, 0, :] = torch.mm(
-        coef_mat_real_t,
-        real_kdat
-    ).t() + torch.mm(
-        coef_mat_imag_t,
-        imag_kdat
-    ).t()
-    griddat[:, 1, :] = torch.mm(
-        coef_mat_real_t,
-        imag_kdat
-    ).t() - torch.mm(
-        coef_mat_imag_t,
-        real_kdat
-    ).t()
+    griddat = []
+
+    griddat.append((
+        torch.mm(coef_mat_real, real_kdat) +
+        torch.mm(coef_mat_imag, imag_kdat)
+    ).t())
+
+    griddat.append((
+        torch.mm(coef_mat_real, imag_kdat) -
+        torch.mm(coef_mat_imag, real_kdat)
+    ).t())
+
+    griddat = torch.stack(griddat, dim=1)
+
+    # put the matrices back in the order we were given
+    coef_mat_real = coef_mat_real.t_()
+    coef_mat_imag = coef_mat_imag.t_()
 
     return griddat
 
