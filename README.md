@@ -134,7 +134,7 @@ Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). Rapid gridding reconstru
 
 ## Citation
 
-If you want to cite the  package, you can use the following:
+If you want to cite the package, you can cite the following:
 
 ```bibtex
 @misc{Muckley2019,

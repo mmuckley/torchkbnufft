@@ -4,10 +4,10 @@ import numpy as np
 from torchkbnufft import (AdjKbNufft, AdjMriSenseNufft, KbInterpBack,
                           KbInterpForw, KbNufft, MriSenseNufft)
 
-norm_tol = 1e-10
 
+def test_kb_matching(testing_tol):
+    norm_tol = testing_tol
 
-def test_kb_matching():
     def check_tables(table1, table2):
         for ind, table in enumerate(table1):
             assert np.linalg.norm(table - table2[ind]) < norm_tol
