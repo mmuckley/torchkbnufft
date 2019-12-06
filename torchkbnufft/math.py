@@ -15,13 +15,13 @@ def complex_mult(a, b, dim=0):
     assert a.shape[dim] == 2
     assert b.shape[dim] == 2
 
-    real_a = a.select(dim, 0).unsqueeze(dim)
-    imag_a = a.select(dim, 1).unsqueeze(dim)
-    real_b = b.select(dim, 0).unsqueeze(dim)
-    imag_b = b.select(dim, 1).unsqueeze(dim)
+    real_a = a.select(dim, 0)
+    imag_a = a.select(dim, 1)
+    real_b = b.select(dim, 0)
+    imag_b = b.select(dim, 1)
 
-    c = torch.cat(
-        (real_a * real_b - imag_a * imag_b, imag_a * real_b + real_a * imag_b),
+    c = torch.stack(
+        (real_a*real_b - imag_a*imag_b, imag_a*real_b + real_a*imag_b),
         dim
     )
 
@@ -42,13 +42,13 @@ def conj_complex_mult(a, b, dim=0):
     assert a.shape[dim] == 2
     assert b.shape[dim] == 2
 
-    real_a = a.select(dim, 0).unsqueeze(dim)
-    imag_a = a.select(dim, 1).unsqueeze(dim)
-    real_b = b.select(dim, 0).unsqueeze(dim)
-    imag_b = b.select(dim, 1).unsqueeze(dim)
+    real_a = a.select(dim, 0)
+    imag_a = a.select(dim, 1)
+    real_b = b.select(dim, 0)
+    imag_b = b.select(dim, 1)
 
-    c = torch.cat(
-        (real_a * real_b + imag_a * imag_b, imag_a * real_b - real_a * imag_b),
+    c = torch.stack(
+        (real_a*real_b + imag_a*imag_b, imag_a*real_b - real_a*imag_b),
         dim
     )
 
