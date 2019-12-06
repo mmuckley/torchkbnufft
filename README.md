@@ -12,6 +12,8 @@ pip install torchkbnufft
 
 Torch KB-NUFFT implements a non-uniform Fast Fourier Transform with Kaiser-Bessel gridding in PyTorch. The implementation is completely in Python, facilitating robustness and flexible deployment in human-readable code. NUFFT functions are each wrapped as a ```torch.autograd.Function```, allowing backpropagation through NUFFT operators for training neural networks.
 
+This package was inspired in large part by the implementation in the Matlab version of the Michigan Image Reconstruction Toolbox, available at <https://web.eecs.umich.edu/~fessler/code/index.html>.
+
 ## Documentation
 
 Most files are accompanied with docstrings that can be read with ```help``` while running IPython. Example:
