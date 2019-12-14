@@ -192,8 +192,8 @@ def run_interp(griddat, tm, params):
             -1
         )
 
-        # multiply coefficients and gather
-        kdat = kdat + complex_mult(
+        # gather and multiply coefficients
+        kdat += complex_mult(
             coef.unsqueeze(0),
             torch.gather(griddat, 2, arr_ind),
             dim=1
