@@ -17,9 +17,9 @@ class MriSenseNufftFunction(Function):
         x = x.clone()
 
         if interpob['coilpack']:
-            y = coilpack_sense_forward(x, smap, om, interpob)
+            y = coilpack_sense_forward(x, smap, om, interpob, interp_mats)
         else:
-            y = sense_forward(x, smap, om, interpob)
+            y = sense_forward(x, smap, om, interpob, interp_mats)
 
         ctx.save_for_backward(smap, om)
         ctx.interpob = interpob
