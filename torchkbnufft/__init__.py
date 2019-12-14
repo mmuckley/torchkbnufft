@@ -19,7 +19,7 @@ if __TORCHKBNUFFT_SETUP__:
     sys.stderr.write('Partial import of during the build process.\n')
 else:
     from .kbinterp import KbInterpBack, KbInterpForw
-    from .kbnufft import KbNufft, AdjKbNufft
+    from .kbnufft import KbNufft, AdjKbNufft, ToepNufft
     from .mrisensenufft import MriSenseNufft, AdjMriSenseNufft
     from .nufft import utils as nufft_utils
 

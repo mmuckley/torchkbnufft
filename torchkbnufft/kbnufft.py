@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from .functional.kbnufft import AdjKbNufftFunction, KbNufftFunction
+from .nufft.fft_functions import fft_filter
 from .nufft.utils import build_spmatrix, build_table, compute_scaling_coefs
 
 
@@ -333,6 +334,52 @@ class AdjKbNufft(nn.Module):
         interpob['matadj'] = self.matadj
 
         x = AdjKbNufftFunction.apply(y, om, interpob, interp_mats)
+
+        return x
+
+    def __repr__(self):
+        filter_list = ['interpob', 'buffer', 'parameters', 'hook', 'module']
+        tablecheck = False
+        out = '\n{}\n'.format(self.__class__.__name__)
+        out = out + '----------------------------------------\n'
+        for attr, value in self.__dict__.items():
+            if 'table' in attr:
+                if not tablecheck:
+                    out = out + '   table: {} arrays, lengths: {}\n'.format(
+                        len(self.table), self.table_oversamp)
+                    tablecheck = True
+            elif 'traj' in attr or 'scaling_coef' in attr:
+                out = out + '   {}: {} {} array\n'.format(
+                    attr, value.shape, value.dtype)
+            elif not any([item in attr for item in filter_list]):
+                out = out + '   {}: {}\n'.format(attr, value)
+        return out
+
+class ToepNufft(nn.Module):
+    """Forward/backward NUFFT with Toeplitz embedding.
+
+    This essentially is an torch.nn.Module wrapper for the
+    torchkbnufft.nufft.fft_functions.fft_filter function.
+    """
+
+    def __init__(self):
+        super(ToepNufft, self).__init__()
+
+    def forward(self, x, kern, norm=None):
+        """Toeplitz NUFFT forward function.
+
+        Args:
+            x (tensor): The image (or images) to apply the forward/backward
+                Toeplitz-embedded NUFFT to.
+            kern (tensor): The filter response taking into account Toeplitz
+                embedding.
+            norm (str, default=None): Use 'ortho' if kern was designed to use
+                orthogonal FFTs.
+
+        Returns:
+            tensor: x after applying the Toeplitz NUFFT.
+        """
+        x = fft_filter(x, kern, norm=norm)        
 
         return x
 
