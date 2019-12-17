@@ -150,15 +150,15 @@ def sense_backward(y, smap, om, interpob, interp_mats=None):
     x = AdjKbNufftFunction.apply(y, om, interpob, interp_mats)
 
     # conjugate sum
-    out_x = []
-    for i, im in enumerate(x):
-        out_x.append(torch.sum(conj_complex_mult(
-            im, smap[i], dim=1), dim=0, keepdim=True))
+    x = list(x)
+    for i in range(len(x)):
+        x[i] = torch.sum(conj_complex_mult(
+            x[i], smap[i], dim=1), dim=0, keepdim=True)
 
     if isinstance(smap, torch.Tensor):
-        out_x = torch.stack(out_x)
+        x = torch.stack(x)
 
-    return out_x
+    return x
 
 
 def sense_toeplitz(x, smap, kern, norm=None):
@@ -169,7 +169,7 @@ def sense_toeplitz(x, smap, kern, norm=None):
     interpolation and using only FFTs (very fast).
 
     Args:
-        x (tensor): The input images of size (nbatch, ncoil, 2) + im_size.
+        x (tensor): The input images of size (nbatch, 1, 2) + im_size.
         smap (tensor): The sensitivity maps of size (nbatch, ncoil, 2) +
             im_size.
         kern (tensor): Embedded Toeplitz NUFFT kernel of size
@@ -179,22 +179,46 @@ def sense_toeplitz(x, smap, kern, norm=None):
 
     Returns:
         tensor: The images after forward and adjoint NUFFT of size
-            (nbatch, ncoil, 2) + im_size.
+            (nbatch, 1, 2) + im_size.
     """
+    x = list(x)
+
     # handle batch dimension to avoid exploding memory
-    for i in range(x):
-        # multiply sensitivities
-        x[i] = complex_mult(x[i], smap[i], dim=1)
+    for i in range(len(x)):
+        x[i] = _sense_toep_filt(x[i], smap[i], kern[i], norm)
 
-        # Toeplitz NUFFT
-        x[i] = fft_filter(
-            x[i].unsqueeze(0),
-            kern[i].unsqueeze(0),
-            norm=norm
-        ).squeeze(0)
+    x = torch.stack(x)
 
-        # conjugate sum
-        x[i] = torch.sum(conj_complex_mult(
-            x[i], smap[i], dim=1), dim=0, keepdim=True)
+    return x
+
+
+def _sense_toep_filt(x, smap, kern, norm):
+    """Subroutine for sense_toeplitz().
+
+    Args:
+        x (tensor): The input images of size (1, 2) + im_size.
+        smap (tensor): The sensitivity maps of size (ncoil, 2) +
+            im_size.
+        kern (tensor): Embedded Toeplitz NUFFT kernel of size
+            (ncoil, 2) + im_size*2.
+        norm (str, default=None): If 'ortho', use orthogonal FFTs for Toeplitz
+            NUFFT filter.
+
+    Returns:
+        tensor: The images after forward and adjoint NUFFT of size
+            (1, 2) + im_size.
+    """
+    # multiply sensitivities
+    x = complex_mult(x, smap, dim=1)
+
+    # Toeplitz NUFFT
+    x = fft_filter(
+        x.unsqueeze(0),
+        kern.unsqueeze(0),
+        norm=norm
+    ).squeeze(0)
+
+    # conjugate sum
+    x = torch.sum(conj_complex_mult(x, smap, dim=1), dim=0, keepdim=True)
 
     return x

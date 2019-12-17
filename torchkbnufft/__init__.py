@@ -20,7 +20,7 @@ if __TORCHKBNUFFT_SETUP__:
 else:
     from .kbinterp import KbInterpBack, KbInterpForw
     from .kbnufft import KbNufft, AdjKbNufft, ToepNufft
-    from .mrisensenufft import MriSenseNufft, AdjMriSenseNufft
+    from .mrisensenufft import MriSenseNufft, AdjMriSenseNufft, ToepSenseNufft
     from .nufft import utils as nufft_utils
 
     __all__ = [

@@ -8,7 +8,7 @@ from ..math import absolute
 
 
 def calc_toep_kernel(adj_ob, om, weights=None):
-    """Calculates an FFT kernel for Toeplitz embedding.
+    """Calculates an FFT kernel for Toeplitz embedding over batches.
 
     The kernel is calculated using a adjoint NUFFT object. If the adjoint
     applies A', then this script calculates D where F'DF = A'WA, where F is a
@@ -23,16 +23,22 @@ def calc_toep_kernel(adj_ob, om, weights=None):
 
     Returns:
         tensor: The FFT kernel for approximating the forward/backward
-            operation.
+            operation for all batches.
     """
     adj_ob = copy.deepcopy(adj_ob)
     dtype, device = om.dtype, om.device
     ndims = om.shape[1]
 
+    # remove sensitivities if dealing with MriSenseNufft
+    if 'Sense' in adj_ob.__class__.__name__:
+        adj_ob.smap_tensor = torch.ones(
+            adj_ob.smap_tensor.shape, dtype=dtype, device=device)
+        adj_ob.smap_tensor = adj_ob.smap_tensor[:, 0:1]
+        adj_ob.smap_tensor[:, :, 1] = 0
+
     # remove this because we won't need it
     adj_ob.n_shift = tuple(np.array(adj_ob.n_shift) * 0)
-    adj_ob.n_shift_tensor = torch.tensor(
-        np.array(adj_ob.n_shift_tensor) * 0).to(dtype=dtype, device=device)
+    adj_ob.n_shift_tensor = adj_ob.n_shift_tensor * 0
 
     # if we don't have any weights, just use ones
     if weights is None:
@@ -41,8 +47,38 @@ def calc_toep_kernel(adj_ob, om, weights=None):
         ).to(dtype=dtype, device=device)
         weights = weights.unsqueeze(0).unsqueeze(0)
 
-    flip_list = itertools.product(*list([range(2)] * (ndims-1)))
+    flip_list = list(itertools.product(*list([range(2)] * (ndims-1))))
     base_flip = torch.tensor([1], dtype=dtype, device=device)
+
+    kern = []
+    for ind in range(om.shape[0]):
+        kern.append(_get_kern(om[ind].unsqueeze(0), weights,
+                              flip_list, base_flip, adj_ob))
+
+    kern = torch.cat(kern, dim=0)
+
+    return kern
+
+
+def _get_kern(om, weights, flip_list, base_flip, adj_ob):
+    """Calculates a single FFT kernel for Toeplitz embedding.
+
+    This function is called by calc_toep_kernel() in a loop.
+
+    Args:
+        om (tensor): The k-space trajectory in radians/voxel.
+        weights (tensor, default=None): Non-Cartesian k-space weights (e.g.,
+            density compensation).
+        flip_list (list): A list of flipping directions.
+        base_flip (tensor): A base flip list.
+        adj_ob (object): The adjoint NUFFT object.
+
+    Returns:
+        tensor: The FFT kernel for approximating the forward/backward
+            operation.
+    """
+    dtype, device = om.dtype, om.device
+    ndims = om.shape[1]
     kern = []
 
     # flip across each dimension except last to get full kernel
@@ -80,7 +116,7 @@ def calc_toep_kernel(adj_ob, om, weights=None):
 
     if adj_ob.norm == 'ortho':
         kern = kern / torch.sqrt(torch.prod(torch.tensor(
-            kern.shape[3:], dtype=torch.double)))
+            kern.shape[3:], dtype=dtype)))
 
     return kern
 
@@ -147,7 +183,10 @@ def reflect_conj_concat(kern, dim):
     tmpblock = conj_arr * kern
     for d in flipdims:
         tmpblock = tmpblock.index_select(
-            d, torch.remainder(-1 * torch.arange(tmpblock.shape[d]), tmpblock.shape[d]))
+            d,
+            torch.remainder(
+                -1 * torch.arange(tmpblock.shape[d], device=device), tmpblock.shape[d])
+        )
     tmpblock = torch.cat(
         (zblock, tmpblock.narrow(dim, 1, tmpblock.shape[dim]-1)), dim)
 
@@ -178,7 +217,10 @@ def hermitify(kern, dim):
     # reverse coordinates for each dimension
     for d in range(dim, kern.ndim):
         kern = kern.index_select(
-            d, torch.remainder(-1 * torch.arange(kern.shape[d]), kern.shape[d]))
+            d,
+            torch.remainder(
+                -1 * torch.arange(kern.shape[d], device=device), kern.shape[d])
+        )
 
     # conjugate
     conj_arr = torch.tensor([1, -1], dtype=dtype, device=device)
