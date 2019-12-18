@@ -25,8 +25,8 @@ def calc_toep_kernel(adj_ob, om, weights=None):
         tensor: The FFT kernel for approximating the forward/backward
             operation for all batches.
     """
-    adj_ob = copy.deepcopy(adj_ob)
     dtype, device = om.dtype, om.device
+    adj_ob = copy.deepcopy(adj_ob).to(dtype=dtype, device=device)
     ndims = om.shape[1]
 
     # remove sensitivities if dealing with MriSenseNufft
@@ -46,6 +46,11 @@ def calc_toep_kernel(adj_ob, om, weights=None):
             (torch.ones(om.shape[-1]), torch.zeros(om.shape[-1]))
         ).to(dtype=dtype, device=device)
         weights = weights.unsqueeze(0).unsqueeze(0)
+    elif weights.shape[2] == 1:
+        weights = torch.cat(
+            (weights, torch.zeros(weights.shape, dtype=dtype, device=device)),
+            2
+        )
 
     flip_list = list(itertools.product(*list([range(2)] * (ndims-1))))
     base_flip = torch.tensor([1], dtype=dtype, device=device)

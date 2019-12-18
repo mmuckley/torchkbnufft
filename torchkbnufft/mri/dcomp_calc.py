@@ -38,10 +38,11 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj):
     dtype = nufftob_forw.scaling_coef_tensor.dtype
     device = nufftob_forw.scaling_coef_tensor.device
 
-    adj_ob = copy.deepcopy(adj_ob)
+    nufftob_forw = copy.deepcopy(nufftob_forw).to(dtype=dtype, device=device)
+    nufftob_back = copy.deepcopy(nufftob_back).to(dtype=dtype, device=device)
 
     # remove sensitivities if dealing with MriSenseNufft
-    if 'Sense' in adj_ob.__class__.__name__:
+    if 'Sense' in nufftob_forw.__class__.__name__:
         nufftob_forw = copy.deepcopy(nufftob_forw)
         nufftob_back = copy.deepcopy(nufftob_back)
 
@@ -50,7 +51,7 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj):
         nufftob_forw.smap_tensor = nufftob_forw.smap_tensor[:, 0:1]
         nufftob_forw.smap_tensor[:, :, 1] = 0
 
-        nufftob_back = nufftob_forw.smap_tensor.clone()
+        nufftob_back.smap_tensor = nufftob_forw.smap_tensor.clone()
 
     if not nufftob_forw.norm == 'ortho':
         if not nufftob_back.norm == 'ortho':

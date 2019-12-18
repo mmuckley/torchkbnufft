@@ -5,20 +5,28 @@ import torch
 from PIL import Image
 from skimage.data import camera
 
-from torchkbnufft import AdjKbNufft, AdjMriSenseNufft, MriSenseNufft
+from torchkbnufft import AdjKbNufft, AdjMriSenseNufft, MriSenseNufft, ToepSenseNufft
 from torchkbnufft.mri.mrisensesim import mrisensesim
 from torchkbnufft.nufft.sparse_interp_mat import precomp_sparse_mats
+from torchkbnufft.nufft.toep_functions import calc_toep_kernel
 
 
-def profile_torchkbnufft(image, ktraj, smap, im_size, device, sparse_mats_flag=False):
+def profile_torchkbnufft(image, ktraj, smap, im_size, device, sparse_mats_flag=False,
+                         use_toep=False):
     # run double precision for CPU, float for GPU
     # these seem to be present in reference implementations
     if device == torch.device('cpu'):
         dtype = torch.double
-        num_nuffts = 5
+        if use_toep:
+            num_nuffts = 20
+        else:
+            num_nuffts = 5
     else:
         dtype = torch.float
-        num_nuffts = 20
+        if use_toep:
+            num_nuffts = 50
+        else:
+            num_nuffts = 20
     cpudevice = torch.device('cpu')
 
     image = image.to(dtype=dtype)
@@ -32,6 +40,12 @@ def profile_torchkbnufft(image, ktraj, smap, im_size, device, sparse_mats_flag=F
 
     adjkbnufft_ob = AdjKbNufft(im_size=im_size).to(dtype=dtype, device=device)
 
+    # precompute toeplitz kernel if using toeplitz
+    if use_toep:
+        print('using toeplitz for forward/backward')
+        kern = calc_toep_kernel(adjkbsense_ob, ktraj)
+        toep_ob = ToepSenseNufft(smap=smap).to(dtype=dtype, device=device)
+
     # precompute the sparse interpolation matrices
     if sparse_mats_flag:
         print('using sparse interpolation matrices')
@@ -44,47 +58,68 @@ def profile_torchkbnufft(image, ktraj, smap, im_size, device, sparse_mats_flag=F
         print('not using sparse interpolation matrices')
         interp_mats = None
 
-    # warm-up computation
-    for _ in range(num_nuffts):
-        y = kbsense_ob(image.to(device=device), ktraj.to(
-            device=device), interp_mats).to(cpudevice)
+    if use_toep:
+        # warm-up computation
+        for _ in range(num_nuffts):
+            x = toep_ob(image.to(device=device), kern.to(
+                device=device)).to(cpudevice)
+        # run the speed tests
+        if device == torch.device('cuda'):
+            torch.cuda.reset_max_memory_allocated()
+            torch.cuda.synchronize()
+        start_time = time.perf_counter()
+        for _ in range(num_nuffts):
+            x = toep_ob(image.to(device=device), kern.to(
+                device=device))
+        if device == torch.device('cuda'):
+            torch.cuda.synchronize()
+            max_mem = torch.cuda.max_memory_allocated()
+            print('GPU forward max memory: {} GB'.format(max_mem/1e9))
+        end_time = time.perf_counter()
+        avg_time = (end_time-start_time) / num_nuffts
+        print('toeplitz forward/backward average time: {}'.format(avg_time))
+    else:
+        # warm-up computation
+        for _ in range(num_nuffts):
+            y = kbsense_ob(image.to(device=device), ktraj.to(
+                device=device), interp_mats).to(cpudevice)
 
-    # run the forward speed tests
-    if device == torch.device('cuda'):
-        torch.cuda.reset_max_memory_allocated()
-        torch.cuda.synchronize()
-    start_time = time.perf_counter()
-    for _ in range(num_nuffts):
-        y = kbsense_ob(image.to(device=device), ktraj.to(
-            device=device), interp_mats)
-    if device == torch.device('cuda'):
-        torch.cuda.synchronize()
-        max_mem = torch.cuda.max_memory_allocated()
-        print('GPU forward max memory: {} GB'.format(max_mem/1e9))
-    end_time = time.perf_counter()
-    avg_time = (end_time-start_time) / num_nuffts
-    print('forward average time: {}'.format(avg_time))
+        # run the forward speed tests
+        if device == torch.device('cuda'):
+            torch.cuda.reset_max_memory_allocated()
+            torch.cuda.synchronize()
+        start_time = time.perf_counter()
+        for _ in range(num_nuffts):
+            y = kbsense_ob(image.to(device=device), ktraj.to(
+                device=device), interp_mats)
+        if device == torch.device('cuda'):
+            torch.cuda.synchronize()
+            max_mem = torch.cuda.max_memory_allocated()
+            print('GPU forward max memory: {} GB'.format(max_mem/1e9))
+        end_time = time.perf_counter()
+        avg_time = (end_time-start_time) / num_nuffts
+        print('forward average time: {}'.format(avg_time))
 
-    # warm-up computation
-    for _ in range(num_nuffts):
-        x = adjkbsense_ob(y.to(device), ktraj.to(
-            device), interp_mats)
+        # warm-up computation
+        for _ in range(num_nuffts):
+            x = adjkbsense_ob(y.to(device), ktraj.to(
+                device), interp_mats)
 
-    # run the adjoint speed tests
-    if device == torch.device('cuda'):
-        torch.cuda.reset_max_memory_allocated()
-        torch.cuda.synchronize()
-    start_time = time.perf_counter()
-    for _ in range(num_nuffts):
-        x = adjkbsense_ob(y.to(device), ktraj.to(
-            device), interp_mats)
-    if device == torch.device('cuda'):
-        torch.cuda.synchronize()
-        max_mem = torch.cuda.max_memory_allocated()
-        print('GPU adjoint max memory: {} GB'.format(max_mem/1e9))
-    end_time = time.perf_counter()
-    avg_time = (end_time-start_time) / num_nuffts
-    print('backward average time: {}'.format(avg_time))
+        # run the adjoint speed tests
+        if device == torch.device('cuda'):
+            torch.cuda.reset_max_memory_allocated()
+            torch.cuda.synchronize()
+        start_time = time.perf_counter()
+        for _ in range(num_nuffts):
+            x = adjkbsense_ob(y.to(device), ktraj.to(
+                device), interp_mats)
+        if device == torch.device('cuda'):
+            torch.cuda.synchronize()
+            max_mem = torch.cuda.max_memory_allocated()
+            print('GPU adjoint max memory: {} GB'.format(max_mem/1e9))
+        end_time = time.perf_counter()
+        avg_time = (end_time-start_time) / num_nuffts
+        print('backward average time: {}'.format(avg_time))
 
 
 def run_all_profiles():
@@ -130,9 +165,13 @@ def run_all_profiles():
     profile_torchkbnufft(image, ktraj, smap, im_size, device=torch.device(
         'cpu'), sparse_mats_flag=True)
     profile_torchkbnufft(image, ktraj, smap, im_size, device=torch.device(
+        'cpu'), use_toep=True)
+    profile_torchkbnufft(image, ktraj, smap, im_size, device=torch.device(
         'cuda'), sparse_mats_flag=False)
     profile_torchkbnufft(image, ktraj, smap, im_size, device=torch.device(
         'cuda'), sparse_mats_flag=True)
+    profile_torchkbnufft(image, ktraj, smap, im_size, device=torch.device(
+        'cuda'), use_toep=True)
 
 
 if __name__ == '__main__':

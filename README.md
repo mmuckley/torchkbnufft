@@ -12,7 +12,19 @@ pip install torchkbnufft
 
 Torch KB-NUFFT implements a non-uniform Fast Fourier Transform with Kaiser-Bessel gridding in PyTorch. The implementation is completely in Python, facilitating robustness and flexible deployment in human-readable code. NUFFT functions are each wrapped as a ```torch.autograd.Function```, allowing backpropagation through NUFFT operators for training neural networks.
 
-This package was inspired in large part by the implementation in the Matlab version of the Michigan Image Reconstruction Toolbox, available at <https://web.eecs.umich.edu/~fessler/code/index.html>.
+This package was inspired in large part by the implementation of NUFFT operations in the Matlab version of the Michigan Image Reconstruction Toolbox, available at <https://web.eecs.umich.edu/~fessler/code/index.html>.
+
+### Operation Modes and Stages
+
+The package has three major classes of NUFFT operation mode: table-based NUFFT interpolation, sparse matrix-based NUFFT interpolation, and forward/backward operators with Toeplitz-embedded FFTs. In most cases, computation speed follows
+
+table < sparse matrix < Toeplitz embedding,
+
+but better computation speed can require increased memory usage.
+
+In addition to the three main operation modes, the package separates SENSE-NUFFT operations into three stages that can be used individually as PyTorch modules: interpolation (```torchkbnufft.KbInterp```), NUFFT (```torchkbnufft.KbNufft```), and SENSE-NUFFT (```torchkbnufft.MriSenseNufft```). The interpolation modules only apply interpolation (without scaling coefficients). The NUFFT applies the full the NUFFT for a single image into non-Cartesian k-space, including scaling coefficients. The SENSE-NUFFT can be used to include sensitivity coil multiplications, which by default at a lower level will use PyTorch broadcasting backends that enable faster multiplications across the coils.
+
+Where appropriate, each of the NUFFT stages can be used with each NUFFT operation mode. Simple examples follow.
 
 ## Documentation
 
@@ -72,13 +84,13 @@ sensenufft_ob = MriSenseNufft(im_size=im_size, smap=smap)
 sense_data = sensenufft_ob(x, ktraj)
 ```
 
-Application of the object in place of ```nufft_ob``` above would first multiply by the sensitivity coils in ```smap```, then compute a 64-length radial spoke for each coil. All operations are broadcast across coils, which minimizes interaction with the Python interpreter and maximizes computation speed.
+Application of the object in place of ```nufft_ob``` above would first multiply by the sensitivity coils in ```smap```, then compute a 64-length radial spoke for each coil. All operations are broadcast across coils, which minimizes interaction with the Python interpreter, helping computation speed.
 
 A detailed example of SENSE-NUFFT usage is included in ```notebooks/SENSE Example.ipynb```.
 
 ### Sparse Matrix Precomputation
 
-Sparse matrices are the fastest operation mode always on the CPU and for very large problems (>32 coils) on the GPU at the cost of more memory usage. The following code calculates sparse interpolation matrices and uses them to compute a single radial spoke of k-space data:
+Sparse matrices are a fast operation mode on the CPU and for large problems at the cost of more memory usage. The following code calculates sparse interpolation matrices and uses them to compute a single radial spoke of k-space data:
 
 ```python
 from torchkbnufft import AdjKbNufft
@@ -99,6 +111,26 @@ image = adjnufft_ob(kdata, ktraj, interp_mats)
 
 A detailed example of sparse matrix precomputation usage is included in ```notebooks/Sparse Matrix Example.ipynb```.
 
+### Toeplitz Embedding
+
+The package includes routines for calculating embedded Toeplitz kernels and using them as FFT filters for the forward/backward NUFFT operations. This is very useful for gradient descent algorithms that must use the forward/backward ops in calculating the gradient. The following minimalist code shows an example:
+
+```python
+from torchkbnufft import AdjKbNufft, ToepNufft
+from torchkbnufft.nufft.toep_functions import calc_toep_kernel
+
+adjnufft_ob = AdjKbNufft(im_size=im_size)
+toep_ob = ToepNufft()
+
+# precompute the embedded Toeplitz FFT kernel
+kern = calc_toep_kernel(adjnufft_ob, ktraj)
+
+# use FFT kernel from embedded Toeplitz matrix
+image = toep_ob(image, kern)
+```
+
+A detailed example of sparse matrix precomputation usage is included in ```notebooks/Toeplitz Example.ipynb```.
+
 ### Running on the GPU
 
 All of the examples included in this repository can be run on the GPU by sending the NUFFT object and data to the GPU prior to the function call, e.g.:
@@ -115,12 +147,16 @@ Similar to programming low-level code, PyTorch will throw errors if the underlyi
 
 ## Computation Speed
 
-TorchKbNufft is first and foremost designed to be lightweight with minimal dependencies outside of PyTorch. Speed compared to other packages depends on problem size and usage mode - generally, favorable performance can be observed with large problems (2-3 times faster than some packages with 64 coils) when using spare matrices, whereas unfavorable performance occurs with small problems in table interpolation mode (2-3 times as slow as other packages). The following computation times in seconds were observed on a workstation with a Xeon E5-1620 CPU and an Nvidia GTX 1080 GPU for a 15-coil, 405-spoke 2D radial problem. CPU computations were done with 64-bit floats, whereas GPU computations were done with 32-bit floats (v0.2.2).
+TorchKbNufft is first and foremost designed to be lightweight with minimal dependencies outside of PyTorch. Speed compared to other packages depends on problem size and usage mode - generally, favorable performance can be observed with large problems (2-3 times faster than some packages with 64 coils) when using spare matrices, whereas unfavorable performance occurs with small problems in table interpolation mode (2-3 times as slow as other packages).
 
-| Operation      | CPU (normal) | CPU (sparse matrix) | GPU (normal) | GPU (sparse matrix) |
-| -------------- | ------------:| -------------------:| ------------:| -------------------:|
-| Forward NUFFT  | 3.57         | 1.61                | 1.00e-01     | 1.57e-01            |
-| Adjoint NUFFT  | 4.52         | 1.04                | 1.06e-01     | 1.63e-01            |
+The following computation times in seconds were observed on a workstation with a Xeon E5-1620 CPU and an Nvidia GTX 1080 GPU for a 15-coil, 405-spoke 2D radial problem. CPU computations were done with 64-bit floats, whereas GPU computations were done with 32-bit floats (v0.2.2).
+
+(n) = normal, (spm) = sparse matrix, (toep) = Toeplitz embedding, (f/b) = forward/backward combined
+
+| Operation      | CPU (n) | CPU (spm) | CPU (toep)  | GPU (n)  | GPU (spm) | GPU (toep)     |
+| -------------- | -------:| ---------:| -----------:| --------:| ---------:| --------------:|
+| Forward NUFFT  | 3.57    | 1.61      | 0.145 (f/b) | 1.00e-01 | 1.57e-01  | 5.16e-03 (f/b) |
+| Adjoint NUFFT  | 4.52    | 1.04      | N/A         | 1.06e-01 | 1.63e-01  | N/A            |
 
 Profiling for your machine can be done by running
 
@@ -134,12 +170,14 @@ Fessler, J. A., & Sutton, B. P. (2003). Nonuniform fast Fourier transforms using
 
 Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). Rapid gridding reconstruction with a minimal oversampling ratio. *IEEE transactions on medical imaging*, 24(6), 799-808.
 
+Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). Efficient numerical methods in non-uniform sampling theory. Numerische Mathematik, 69(4), 423-440.
+
 ## Citation
 
 If you want to cite the package, you can use any of the following:
 
 ```bibtex
-@CONFERENCE{muckley:20:tah,
+@conference{muckley:20:tah,
   author = {M. J. Muckley and R. Stern and T. Murrell and F. Knoll},
   title = {{TorchKbNufft}: A High-Level, Hardware-Agnostic Non-Uniform Fast Fourier Transform},
   booktitle = {ISMRM Workshop on Data Sampling \& Image Reconstruction},
