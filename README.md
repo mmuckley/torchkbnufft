@@ -78,7 +78,7 @@ A detailed example of SENSE-NUFFT usage is included in ```notebooks/SENSE Exampl
 
 ### Sparse Matrix Precomputation
 
-Previously, sparse matrix-based interpolation was the fastest operation mode. As of v0.2.0, this is no longer the case on the GPU. Nonetheless, sparse matrices can be faster than normal operation mode in certain situations (e.g., when using many coils and slices). The following code calculates sparse interpolation matrices and uses them to compute a single radial spoke of k-space data:
+Sparse matrices are the fastest operation mode always on the CPU and for very large problems (>32 coils) on the GPU at the cost of more memory usage. The following code calculates sparse interpolation matrices and uses them to compute a single radial spoke of k-space data:
 
 ```python
 from torchkbnufft import AdjKbNufft
@@ -115,12 +115,12 @@ Similar to programming low-level code, PyTorch will throw errors if the underlyi
 
 ## Computation Speed
 
-TorchKbNufft is first and foremost designed to be lightweight with minimal dependencies outside of PyTorch. The following computation times in seconds were observed on a workstation with a Xeon E5-1620 CPU and an Nvidia GTX 1080 GPU for a 15-coil, 405-spoke 2D radial problem.
+TorchKbNufft is first and foremost designed to be lightweight with minimal dependencies outside of PyTorch. Speed compared to other packages depends on problem size and usage mode - generally, favorable performance can be observed with large problems (2-3 times faster than some packages with 64 coils) when using spare matrices, whereas unfavorable performance occurs with small problems in table interpolation mode (2-3 times as slow as other packages). The following computation times in seconds were observed on a workstation with a Xeon E5-1620 CPU and an Nvidia GTX 1080 GPU for a 15-coil, 405-spoke 2D radial problem. CPU computations were done with 64-bit floats, whereas GPU computations were done with 32-bit floats (v0.2.2).
 
 | Operation      | CPU (normal) | CPU (sparse matrix) | GPU (normal) | GPU (sparse matrix) |
 | -------------- | ------------:| -------------------:| ------------:| -------------------:|
-| Forward NUFFT  | 3.23         | 3.38                | 9.34e-02     | 9.34e-02            |
-| Adjoint NUFFT  | 4.48         | 1.04                | 1.03e-01     | 1.15e-01            |
+| Forward NUFFT  | 3.57         | 1.61                | 1.00e-01     | 1.57e-01            |
+| Adjoint NUFFT  | 4.52         | 1.04                | 1.06e-01     | 1.63e-01            |
 
 Profiling for your machine can be done by running
 
@@ -136,9 +136,16 @@ Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). Rapid gridding reconstru
 
 ## Citation
 
-If you want to cite the package, you can cite the following:
+If you want to cite the package, you can use any of the following:
 
 ```bibtex
+@CONFERENCE{muckley:20:tah,
+  author = {M. J. Muckley and R. Stern and T. Murrell and F. Knoll},
+  title = {{TorchKbNufft}: A High-Level, Hardware-Agnostic Non-Uniform Fast Fourier Transform},
+  booktitle = {ISMRM Workshop on Data Sampling \& Image Reconstruction},
+  year = 2020
+}
+
 @misc{Muckley2019,
   author = {Muckley, M.J. et al.},
   title = {Torch KB-NUFFT},
