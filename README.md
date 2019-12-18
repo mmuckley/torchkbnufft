@@ -10,13 +10,13 @@ pip install torchkbnufft
 
 ## About
 
-Torch KB-NUFFT implements a non-uniform Fast Fourier Transform with Kaiser-Bessel gridding in PyTorch. The implementation is completely in Python, facilitating robustness and flexible deployment in human-readable code. NUFFT functions are each wrapped as a ```torch.autograd.Function```, allowing backpropagation through NUFFT operators for training neural networks.
+Torch KB-NUFFT implements a non-uniform Fast Fourier Transform [1, 2] with Kaiser-Bessel gridding in PyTorch. The implementation is completely in Python, facilitating robustness and flexible deployment in human-readable code. NUFFT functions are each wrapped as a ```torch.autograd.Function```, allowing backpropagation through NUFFT operators for training neural networks.
 
 This package was inspired in large part by the implementation of NUFFT operations in the Matlab version of the Michigan Image Reconstruction Toolbox, available at <https://web.eecs.umich.edu/~fessler/code/index.html>.
 
 ### Operation Modes and Stages
 
-The package has three major classes of NUFFT operation mode: table-based NUFFT interpolation, sparse matrix-based NUFFT interpolation, and forward/backward operators with Toeplitz-embedded FFTs. In most cases, computation speed follows
+The package has three major classes of NUFFT operation mode: table-based NUFFT interpolation, sparse matrix-based NUFFT interpolation, and forward/backward operators with Toeplitz-embedded FFTs [3]. In most cases, computation speed follows
 
 table < sparse matrix < Toeplitz embedding,
 
@@ -113,7 +113,7 @@ A detailed example of sparse matrix precomputation usage is included in ```noteb
 
 ### Toeplitz Embedding
 
-The package includes routines for calculating embedded Toeplitz kernels and using them as FFT filters for the forward/backward NUFFT operations. This is very useful for gradient descent algorithms that must use the forward/backward ops in calculating the gradient. The following minimalist code shows an example:
+The package includes routines for calculating embedded Toeplitz kernels and using them as FFT filters for the forward/backward NUFFT operations [3]. This is very useful for gradient descent algorithms that must use the forward/backward ops in calculating the gradient. The following minimalist code shows an example:
 
 ```python
 from torchkbnufft import AdjKbNufft, ToepNufft
@@ -166,11 +166,11 @@ python profile_torchkbnufft.py
 
 ## References
 
-Fessler, J. A., & Sutton, B. P. (2003). Nonuniform fast Fourier transforms using min-max interpolation. *IEEE transactions on signal processing*, 51(2), 560-574.
+1. Fessler, J. A., & Sutton, B. P. (2003). Nonuniform fast Fourier transforms using min-max interpolation. *IEEE transactions on signal processing*, 51(2), 560-574.
 
-Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). Rapid gridding reconstruction with a minimal oversampling ratio. *IEEE transactions on medical imaging*, 24(6), 799-808.
+2. Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). Rapid gridding reconstruction with a minimal oversampling ratio. *IEEE transactions on medical imaging*, 24(6), 799-808.
 
-Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). Efficient numerical methods in non-uniform sampling theory. Numerische Mathematik, 69(4), 423-440.
+3. Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). Efficient numerical methods in non-uniform sampling theory. Numerische Mathematik, 69(4), 423-440.
 
 ## Citation
 
