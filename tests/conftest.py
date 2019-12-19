@@ -52,7 +52,7 @@ def params_2d():
         1j*np.random.normal(size=(batch_size, ncoil, klength))
     y = torch.tensor(np.stack((np.real(y), np.imag(y)), axis=2))
 
-    ktraj = torch.randn(*(batch_size, 2, klength))
+    ktraj = (torch.rand(*(batch_size, 2, klength)) - 0.5) * 2*np.pi
 
     smap_sz = (batch_size, ncoil, 2) + im_size
     smap = torch.randn(*smap_sz)
@@ -83,8 +83,8 @@ def params_3d():
         1j*np.random.normal(size=(batch_size, ncoil, klength))
     y = torch.tensor(np.stack((np.real(y), np.imag(y)), axis=2))
 
-    ktraj = torch.randn(*(batch_size, 3, klength))
-    coilpack_ktraj = torch.randn(*(1, 2, klength))
+    ktraj = (torch.rand(*(batch_size, 3, klength)) - 0.5) * 2*np.pi
+    coilpack_ktraj = (torch.rand(*(1, 2, klength)) - 0.5) * 2*np.pi
 
     smap_sz = (batch_size, ncoil, 2) + im_size
     smap = torch.randn(*smap_sz)
