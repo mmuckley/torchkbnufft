@@ -3,9 +3,9 @@ import warnings
 import numpy as np
 import torch
 
-from .functional.kbnufft import AdjKbNufftFunction, KbNufftFunction
+from .functional.kbnufft import (AdjKbNufftFunction, KbNufftFunction,
+                                 ToepNufftFunction)
 from .kbmodule import KbModule
-from .nufft.fft_functions import fft_filter
 from .nufft.utils import build_spmatrix, build_table, compute_scaling_coefs
 
 
@@ -257,8 +257,19 @@ class AdjKbNufft(KbNufftModule):
 class ToepNufft(KbModule):
     """Forward/backward NUFFT with Toeplitz embedding.
 
-    This essentially is an torch.nn.Module wrapper for the
-    torchkbnufft.nufft.fft_functions.fft_filter function.
+    This module applies Tx, where T is a matrix such that T = A'A, where A is
+    a NUFFT matrix. Using Toeplitz embedding, this module computes the A'A
+    operation without interpolations, which is extremely fast.
+
+    The module is intended to be used in combination with an fft kernel
+    computed to be the frequency response of an embedded Toeplitz matrix. The
+    kernel is calculated offline via
+    
+    torchkbnufft.nufft.toep_functions.calc_toep_kernel
+
+    The corresponding kernel is then passed to this module in its forward
+    forward operation, which applies a (zero-padded) fft filter using the
+    kernel.
     """
 
     def __init__(self):
@@ -278,6 +289,6 @@ class ToepNufft(KbModule):
         Returns:
             tensor: x after applying the Toeplitz NUFFT.
         """
-        x = fft_filter(x, kern, norm=norm)
+        x = ToepNufftFunction.apply(x, kern, norm)
 
         return x

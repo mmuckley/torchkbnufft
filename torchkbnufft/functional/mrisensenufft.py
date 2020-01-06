@@ -2,7 +2,7 @@ from torch.autograd import Function
 
 from ..mri.sensenufft_functions import (coilpack_sense_backward,
                                         coilpack_sense_forward, sense_backward,
-                                        sense_forward)
+                                        sense_forward, sense_toeplitz)
 from .kbnufft import AdjKbNufftFunction, KbNufftFunction
 
 
@@ -88,3 +88,31 @@ class AdjMriSenseNufftFunction(Function):
             y = sense_forward(x, smap, om, interpob, interp_mats)
 
         return y, None, None, None, None
+
+
+class ToepSenseNufftFunction(Function):
+    @staticmethod
+    def forward(ctx, x, smap, kern, norm=None):
+        """Apply forward (or adjoint) ToepSense NUFFT.
+
+        This function wraps sense_toeplitz.
+        """
+        x = sense_toeplitz(x, smap, kern, norm=norm)
+
+        ctx.save_for_backward(smap, kern)
+        ctx.norm = norm
+
+        return x
+
+    @staticmethod
+    def backward(ctx, x):
+        """Apply adjoint (or forward) ToepSense NUFFT for gradient calculation.
+
+        This function wraps sense_toeplitz.
+        """
+        smap, kern, = ctx.saved_tensors
+        norm = ctx.norm
+
+        x = sense_toeplitz(x, smap, kern, norm=norm)
+
+        return x, None, None, None

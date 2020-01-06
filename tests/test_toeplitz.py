@@ -90,7 +90,7 @@ def test_toeplitz_mrisensenufft_2d(params_2d, testing_tol, testing_dtype, device
         assert diff < norm_tol
 
 
-def test_toeplitz_nufft_3d_adjoint(params_3d, testing_tol, testing_dtype, device_list):
+def test_toeplitz_nufft_3d(params_3d, testing_tol, testing_dtype, device_list):
     dtype = testing_dtype
     # this tolerance looks really bad, but toep struggles with random traj
     # for radial it's more like 1e-06

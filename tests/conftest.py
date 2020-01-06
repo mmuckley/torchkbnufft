@@ -37,7 +37,7 @@ def testing_dtype():
 
 @pytest.fixture
 def testing_tol():
-    return 1e-9
+    return 5e-9
 
 
 @pytest.fixture

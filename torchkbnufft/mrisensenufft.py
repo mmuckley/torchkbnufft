@@ -4,7 +4,8 @@ import numpy as np
 import torch
 
 from .functional.mrisensenufft import (AdjMriSenseNufftFunction,
-                                       MriSenseNufftFunction)
+                                       MriSenseNufftFunction,
+                                       ToepSenseNufftFunction)
 from .kbmodule import KbModule
 from .mri.sensenufft_functions import sense_toeplitz
 from .nufft.utils import build_spmatrix, build_table, compute_scaling_coefs
@@ -287,8 +288,17 @@ class AdjMriSenseNufft(SenseNufftModule):
 class ToepSenseNufft(KbModule):
     """Forward/backward SENSE-NUFFT with Toeplitz embedding.
 
-    This essentially is an torch.nn.Module wrapper for the
-    mri.sensenufft_functions.sense_toeplitz function.
+    This module applies Tx, where T = A'A and A is a SENSE-NUFFT matrix. The
+    module computes this operation without NUFFT interpolations, enabling very
+    fast computation speeds. It accomplishes this with a precomputed FFT kernel
+    that embeds the Toeplitz matrix into an FFT matrix. The FFT kernel can be
+    precomputed using 
+
+    torchkbnufft.nufft.toep_functions.calc_toep_kernel
+
+    The corresponding kernel is then passed to this module in its forward
+    forward operation, which applies a SENSE expansion, a (zero-padded) fft
+    filter using the kernel, and then finally a SENSE reduction.
 
     Args:
         smap (tensor): Sensitivity coils of size (batch_size, real/imag,) +
@@ -321,6 +331,6 @@ class ToepSenseNufft(KbModule):
         if smap is None:
             smap = self.smap_tensor
 
-        x = sense_toeplitz(x, smap, kern, norm=norm)
+        x = ToepSenseNufftFunction.apply(x, smap, kern, norm)
 
         return x

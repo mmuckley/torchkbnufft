@@ -1,7 +1,8 @@
 from torch.autograd import Function
 
 from ..nufft.fft_functions import (ifft_and_scale_on_gridded_data,
-                                   scale_and_fft_on_image_volume)
+                                   scale_and_fft_on_image_volume,
+                                   fft_filter)
 from .kbinterp import AdjKbInterpFunction, KbInterpFunction
 
 
@@ -106,3 +107,31 @@ class AdjKbNufftFunction(Function):
         y = KbInterpFunction.apply(x, om, interpob, interp_mats)
 
         return y, None, None, None
+
+
+class ToepNufftFunction(Function):
+    @staticmethod
+    def forward(ctx, x, kern, norm=None):
+        """Apply forward (or adjoint) Toeplitz NUFFT.
+
+        This function wraps fft_filter.
+        """
+        x = fft_filter(x, kern, norm=norm)
+
+        ctx.save_for_backward(kern)
+        ctx.norm = norm
+
+        return x
+
+    @staticmethod
+    def backward(ctx, x):
+        """Apply adjoint (or forward) Toeplitz NUFFT for gradient calculation.
+
+        This function wraps fft_filter.
+        """
+        kern, = ctx.saved_tensors
+        norm = ctx.norm
+
+        x = fft_filter(x, kern, norm=norm)
+
+        return x, None, None
