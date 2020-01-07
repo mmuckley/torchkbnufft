@@ -264,7 +264,7 @@ class ToepNufft(KbModule):
     The module is intended to be used in combination with an fft kernel
     computed to be the frequency response of an embedded Toeplitz matrix. The
     kernel is calculated offline via
-    
+
     torchkbnufft.nufft.toep_functions.calc_toep_kernel
 
     The corresponding kernel is then passed to this module in its forward
