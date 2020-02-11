@@ -1,6 +1,6 @@
 # Torch KB-NUFFT
 
-[API](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](https://github.com/mmuckley/torchkbnufft/tree/master/notebooks)
+[API](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](https://github.com/mmuckley/torchkbnufft/tree/master/notebooks) | [Sedona Workshop Demo](https://github.com/mmuckley/torchkbnufft_demo)
 
 Simple installation from PyPI:
 
