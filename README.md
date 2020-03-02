@@ -168,7 +168,7 @@ python profile_torchkbnufft.py
 
 For users interested in NUFFT implementations for other computing platforms, the following is a partial list of other projects:
 
-1. [TF KB-NUFFT](https://github.com/zaccharieramzi/tfkbnufft) (Torch KB-NUFFT for TensorFlow)
+1. [TF KB-NUFFT](https://github.com/zaccharieramzi/tfkbnufft) (KB-NUFFT for TensorFlow)
 2. [SigPy](https://github.com/mikgroup/sigpy) (for Numpy arrays, Numba (for CPU) and CuPy (for GPU) backends)
 3. [FINUFFT](https://github.com/flatironinstitute/finufft) (for MATLAB, Python, Julia, C, etc., very efficient)
 4. [NFFT](https://github.com/NFFT/nfft) (for Julia)
