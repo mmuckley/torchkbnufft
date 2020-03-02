@@ -94,7 +94,6 @@ def test_toepnufft_2d_adjoint(params_2d, testing_tol, testing_dtype, device_list
     x = params_2d['x']
     y = torch.randn(x.shape)
     ktraj = params_2d['ktraj']
-    smap = params_2d['smap']
 
     for device in device_list:
         x = x.detach().to(dtype=dtype, device=device)
