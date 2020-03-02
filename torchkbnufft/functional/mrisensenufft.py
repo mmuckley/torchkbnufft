@@ -14,8 +14,6 @@ class MriSenseNufftFunction(Function):
         This function wraps sense_forward and coilpack_sense_forward for PyTorch
         autograd.
         """
-        x = x.clone()
-
         if interpob['coilpack']:
             y = coilpack_sense_forward(x, smap, om, interpob, interp_mats)
         else:
@@ -38,8 +36,6 @@ class MriSenseNufftFunction(Function):
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
 
-        y = y.clone()
-
         if interpob['coilpack']:
             x = coilpack_sense_backward(y, smap, om, interpob, interp_mats)
         else:
@@ -56,8 +52,6 @@ class AdjMriSenseNufftFunction(Function):
         This function wraps sense_backward and coilpack_sense_backward for PyTorch
         autograd.
         """
-        y = y.clone()
-
         if interpob['coilpack']:
             x = coilpack_sense_backward(y, smap, om, interpob, interp_mats)
         else:
@@ -79,8 +73,6 @@ class AdjMriSenseNufftFunction(Function):
         smap, om = ctx.saved_tensors
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
-
-        x = x.clone()
 
         if interpob['coilpack']:
             y = coilpack_sense_forward(x, smap, om, interpob, interp_mats)

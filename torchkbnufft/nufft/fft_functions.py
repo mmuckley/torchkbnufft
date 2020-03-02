@@ -120,8 +120,6 @@ def ifft_and_scale_on_gridded_data(x, scaling_coef, grid_size, im_size, norm):
 def fft_filter(x, kern, norm=None):
     """FFT-based filtering on a 2-size oversampled grid.
     """
-    x = x.clone()
-
     im_size = torch.tensor(x.shape).to(torch.long)[3:]
     grid_size = im_size * 2
 

@@ -14,18 +14,16 @@ class KbNufftFunction(Function):
         This function wraps scale_and_fft_on_image_volume and KbInterpFunction
         for PyTorch autograd.
         """
-        x = x.clone()
-
         # extract interpolation params
         scaling_coef = interpob['scaling_coef']
         grid_size = interpob['grid_size']
         im_size = interpob['im_size']
         norm = interpob['norm']
 
-        x = scale_and_fft_on_image_volume(
+        y = scale_and_fft_on_image_volume(
             x, scaling_coef, grid_size, im_size, norm)
 
-        y = KbInterpFunction.apply(x, om, interpob, interp_mats)
+        y = KbInterpFunction.apply(y, om, interpob, interp_mats)
 
         ctx.save_for_backward(om)
         ctx.interpob = interpob
@@ -90,8 +88,6 @@ class AdjKbNufftFunction(Function):
         This function wraps scale_and_fft_on_image_volume and KbInterpFunction
         for PyTorch autograd.
         """
-        x = x.clone()
-
         om, = ctx.saved_tensors
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
@@ -101,10 +97,10 @@ class AdjKbNufftFunction(Function):
         im_size = interpob['im_size']
         norm = interpob['norm']
 
-        x = scale_and_fft_on_image_volume(
+        y = scale_and_fft_on_image_volume(
             x, scaling_coef, grid_size, im_size, norm)
 
-        y = KbInterpFunction.apply(x, om, interpob, interp_mats)
+        y = KbInterpFunction.apply(y, om, interpob, interp_mats)
 
         return y, None, None, None
 

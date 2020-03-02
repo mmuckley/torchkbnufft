@@ -324,26 +324,24 @@ def kbinterp(x, om, interpob, interp_mats=None):
         for imag_mat in interp_mats['imag_interp_mats']:
             assert imag_mat.device == device
 
-    y = []
+    y = [None] * len(x)
     # run the table interpolator for each batch element
     for b in range(x.shape[0]):
         if interp_mats is None:
             params['dims'] = torch.tensor(
                 x[b].shape[2:], dtype=torch.long, device=device)
 
-            y.append(run_interp(x[b].view((x.shape[1], 2, -1)), tm[b], params))
+            y[b] = run_interp(x[b].view((x.shape[1], 2, -1)), tm[b], params)
         else:
-            y.append(
-                run_mat_interp(
-                    x[b].view((x.shape[1], 2, -1)),
-                    interp_mats['real_interp_mats'][b],
-                    interp_mats['imag_interp_mats'][b],
-                )
+            y[b] = run_mat_interp(
+                x[b].view((x.shape[1], 2, -1)),
+                interp_mats['real_interp_mats'][b],
+                interp_mats['imag_interp_mats'][b],
             )
 
         # phase for fftshift
-        y[-1] = complex_mult(
-            y[-1],
+        y[b] = complex_mult(
+            y[b],
             imag_exp(torch.mv(torch.transpose(
                 om[b], 1, 0), n_shift)).unsqueeze(0),
             dim=1
@@ -376,8 +374,6 @@ def adjkbinterp(y, om, interpob, interp_mats=None):
     Returns:
         tensor: The signal interpolated to on-grid locations.
     """
-    y = y.clone()
-
     n_shift = interpob['n_shift']
     grid_size = interpob['grid_size']
     numpoints = interpob['numpoints']
@@ -415,11 +411,11 @@ def adjkbinterp(y, om, interpob, interp_mats=None):
         for imag_mat in interp_mats['imag_interp_mats']:
             assert imag_mat.device == device
 
-    x = []
+    x = [None] * len(y)
     # run the table interpolator for each batch element
     for b in range(y.shape[0]):
         # phase for fftshift
-        y[b] = conj_complex_mult(
+        x[b] = conj_complex_mult(
             y[b],
             imag_exp(torch.mv(torch.transpose(
                 om[b], 1, 0), n_shift)).unsqueeze(0),
@@ -429,14 +425,12 @@ def adjkbinterp(y, om, interpob, interp_mats=None):
         if interp_mats is None:
             params['dims'] = grid_size.to(dtype=torch.long, device=device)
 
-            x.append(run_interp_back(y[b], tm[b], params))
+            x[b] = run_interp_back(x[b], tm[b], params)
         else:
-            x.append(
-                run_mat_interp_back(
-                    y[b],
-                    interp_mats['real_interp_mats'][b],
-                    interp_mats['imag_interp_mats'][b],
-                )
+            x[b] = run_mat_interp_back(
+                x[b],
+                interp_mats['real_interp_mats'][b],
+                interp_mats['imag_interp_mats'][b],
             )
 
     x = torch.stack(x)

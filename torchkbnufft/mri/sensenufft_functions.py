@@ -35,14 +35,14 @@ def coilpack_sense_forward(x, smap, om, interpob, interp_mats=None):
     ncoil = smap.shape[1]
 
     # multiply coils
-    x = complex_mult(x, smap, dim=2)
+    y = complex_mult(x, smap, dim=2)
 
     # pack slice dim into coil dim
     new_sz = (1, -1, 2) + tuple(smap.shape[3:])
-    x = x.view(*new_sz)
+    y = y.view(*new_sz)
 
     # nufft
-    y = KbNufftFunction.apply(x, om, interpob, interp_mats)
+    y = KbNufftFunction.apply(y, om, interpob, interp_mats)
 
     # unpack slice dim from coil dim
     new_sz = (-1, ncoil, 2, y.shape[-1])
@@ -116,16 +116,16 @@ def sense_forward(x, smap, om, interpob, interp_mats=None):
     if isinstance(smap, torch.Tensor):
         dtype = smap.dtype
         device = smap.device
-        mult_x = torch.zeros(smap.shape, dtype=dtype, device=device)
+        y = torch.zeros(smap.shape, dtype=dtype, device=device)
     else:
-        mult_x = [None] * len(smap)
+        y = [None] * len(smap)
 
     # handle batch dimension
     for i, im in enumerate(x):
         # multiply sensitivities
-        mult_x[i] = complex_mult(im, smap[i], dim=1)
+        y[i] = complex_mult(im, smap[i], dim=1)
 
-    y = KbNufftFunction.apply(mult_x, om, interpob, interp_mats)
+    y = KbNufftFunction.apply(y, om, interpob, interp_mats)
 
     return y
 

@@ -1,6 +1,6 @@
 """Package info"""
 
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 __author__ = 'Matthew Muckley'
 __author_email__ = 'Matthew.Muckley@nyulangone.org'
 __license__ = 'MIT'

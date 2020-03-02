@@ -172,6 +172,15 @@ python profile_torchkbnufft.py
 
 3. Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). Efficient numerical methods in non-uniform sampling theory. Numerische Mathematik, 69(4), 423-440.
 
+## Other Packages
+
+For users interested in NUFFT implementations for other computing platforms, the following is a partial list of other projects:
+
+1. [TF KB-NUFFT](https://github.com/zaccharieramzi/tfkbnufft) (Torch KB-NUFFT for TensorFlow)
+2. [SigPy](https://github.com/mikgroup/sigpy) (for Numpy arrays, Numba (for CPU) and CuPy (for GPU) backends)
+3. [FINUFFT](https://github.com/flatironinstitute/finufft) (for MATLAB, Python, Julia, C, etc., very efficient)
+4. [NFFT](https://github.com/NFFT/nfft) (for Julia)
+
 ## Citation
 
 If you want to cite the package, you can use any of the following:
