@@ -70,7 +70,7 @@ nufft_ob = KbNufft(im_size=im_size)
 kdata = nufft_ob(x, ktraj)
 ```
 
-A detailed example of basic NUFFT usage is included in ```notebooks/Basic Example.ipynb```.
+A detailed example of basic NUFFT usage is [here](https://github.com/mmuckley/torchkbnufft/blob/master/notebooks/Basic%20Example.ipynb).
 
 ### SENSE-NUFFT
 
@@ -86,7 +86,7 @@ sense_data = sensenufft_ob(x, ktraj)
 
 Application of the object in place of ```nufft_ob``` above would first multiply by the sensitivity coils in ```smap```, then compute a 64-length radial spoke for each coil. All operations are broadcast across coils, which minimizes interaction with the Python interpreter, helping computation speed.
 
-A detailed example of SENSE-NUFFT usage is included in ```notebooks/SENSE Example.ipynb```.
+A detailed example of SENSE-NUFFT usage is [here](https://github.com/mmuckley/torchkbnufft/blob/master/notebooks/SENSE%20Example.ipynb).
 
 ### Sparse Matrix Precomputation
 
@@ -109,7 +109,7 @@ interp_mats = {
 image = adjnufft_ob(kdata, ktraj, interp_mats)
 ```
 
-A detailed example of sparse matrix precomputation usage is included in ```notebooks/Sparse Matrix Example.ipynb```.
+A detailed example of sparse matrix precomputation usage is [here](https://github.com/mmuckley/torchkbnufft/blob/master/notebooks/Sparse%20Matrix%20Example.ipynb).
 
 ### Toeplitz Embedding
 
@@ -129,7 +129,7 @@ kern = calc_toep_kernel(adjnufft_ob, ktraj)
 image = toep_ob(image, kern)
 ```
 
-A detailed example of sparse matrix precomputation usage is included in ```notebooks/Toeplitz Example.ipynb```.
+A detailed example of sparse matrix precomputation usage is included in [here](https://github.com/mmuckley/torchkbnufft/blob/master/notebooks/Toeplitz%20Example.ipynb).
 
 ### Running on the GPU
 
