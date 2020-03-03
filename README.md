@@ -172,6 +172,7 @@ For users interested in NUFFT implementations for other computing platforms, the
 2. [SigPy](https://github.com/mikgroup/sigpy) (for Numpy arrays, Numba (for CPU) and CuPy (for GPU) backends)
 3. [FINUFFT](https://github.com/flatironinstitute/finufft) (for MATLAB, Python, Julia, C, etc., very efficient)
 4. [NFFT](https://github.com/NFFT/nfft) (for Julia)
+5. [PyNUFFT](https://github.com/jyhmiinlin/pynufft) (for Numpy, also has PyCUDA/PyOpenCL backends)
 
 ## References
 
