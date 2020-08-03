@@ -164,6 +164,12 @@ Profiling for your machine can be done by running
 python profile_torchkbnufft.py
 ```
 
+You will need to install some other packages to run this profiling
+
+```
+pip install scikit-image Pillow
+```
+
 ## Other Packages
 
 For users interested in NUFFT implementations for other computing platforms, the following is a partial list of other projects:
