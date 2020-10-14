@@ -92,10 +92,11 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj):
         threshold_levels[batch_ind] = 1 / query_point
 
         # compute the new dcomp for the batch in batch_ind
+        ndims = len(nufftob_forw.im_size)
         dcomps.append(
             torch.max(
                 torch.sqrt(
-                    torch.sum(batch_traj[-2:, ...] ** 2, dim=0)) * 1 / np.pi,
+                    torch.sum(batch_traj[-ndims:, ...] ** 2, dim=0)) * 1 / np.pi,
                 threshold_levels[batch_ind]
             )
         )
