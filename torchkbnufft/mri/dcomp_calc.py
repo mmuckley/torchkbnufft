@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 
-def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj):
+def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj, stacks=True):
     """Numerical density compensation estimation for a radial trajectory.
 
     Estimates the density compensation function numerically using a NUFFT
@@ -27,6 +27,10 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj):
             dimension, d is the number of spatial dimensions, and m is the
             length of the trajectory. Trajectories of different sizes can be
             passed in using a list.
+        stacks (bool): whether the trajectory is actually a stacks of radial
+            for 3D imaging rather than a pure radial trajectory. The stacks
+            dimension must be the first dimension of the trajectory.
+            Defaults to True.
 
     Returns:
         tensor or list of tensors: The density compensation coefficients for
@@ -34,6 +38,7 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj):
             size of 1. If b > 1, then dcomps is a list. If all input
             trajectories are of the same size, then torch.stack(dcomps) can be
             used to get an array of size (b, m).
+
     """
     dtype = nufftob_forw.scaling_coef_tensor.dtype
     device = nufftob_forw.scaling_coef_tensor.device
@@ -92,10 +97,15 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj):
         threshold_levels[batch_ind] = 1 / query_point
 
         # compute the new dcomp for the batch in batch_ind
+        ndims = len(nufftob_forw.im_size)
+        if stacks:
+            batch_traj_thresh = batch_traj[-2:]
+        else:
+            batch_traj_thresh = batch_traj[-ndims:]
         dcomps.append(
             torch.max(
                 torch.sqrt(
-                    torch.sum(batch_traj[-2:, ...] ** 2, dim=0)) * 1 / np.pi,
+                    torch.sum(batch_traj_thresh ** 2, dim=0)) * 1 / np.pi,
                 threshold_levels[batch_ind]
             )
         )
