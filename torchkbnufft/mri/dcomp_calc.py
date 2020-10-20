@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 
-def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj, stacks=False):
+def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj, stacks=True):
     """Numerical density compensation estimation for a radial trajectory.
 
     Estimates the density compensation function numerically using a NUFFT
@@ -27,6 +27,10 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj, stacks=Fal
             dimension, d is the number of spatial dimensions, and m is the
             length of the trajectory. Trajectories of different sizes can be
             passed in using a list.
+        stacks (bool): whether the trajectory is actually a stacks of radial
+            for 3D imaging rather than a pure radial trajectory. The stacks
+            dimension must be the first dimension of the trajectory.
+            Defaults to True.
 
     Returns:
         tensor or list of tensors: The density compensation coefficients for
@@ -34,10 +38,7 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj, stacks=Fal
             size of 1. If b > 1, then dcomps is a list. If all input
             trajectories are of the same size, then torch.stack(dcomps) can be
             used to get an array of size (b, m).
-        stacks (bool): whether the trajectory is actually a stacks of radial
-            for 3D imaging rather than a pure radial trajectory. The stacks
-            dimension must be the first dimension of the trajectory.
-            Defaults to False.
+
     """
     dtype = nufftob_forw.scaling_coef_tensor.dtype
     device = nufftob_forw.scaling_coef_tensor.device
