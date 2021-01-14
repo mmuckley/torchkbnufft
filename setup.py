@@ -19,19 +19,7 @@ builtins.__TORCHKBNUFFT_SETUP__ = True
 
 import torchkbnufft  # noqa: E402
 
-
-def load_requirements(path_dir=HERE, comment_char='#'):
-    with open(path_dir / 'requirements.txt', 'r') as file:
-        lines = [ln.strip() for ln in file.readlines()]
-    reqs = []
-    for ln in lines:
-        # filer all comments
-        if comment_char in ln:
-            ln = ln[:ln.index(comment_char)]
-        if ln:  # if requirement is not empty
-            reqs.append(ln)
-    return reqs
-
+install_requires = ['torch', 'numpy', 'scipy']
 
 # https://packaging.python.org/discussions/install-requires-vs-requirements
 setup(
@@ -53,7 +41,7 @@ setup(
     keywords=['MRI', 'pytorch'],
     python_requires='>=3.5',
     setup_requires=[],
-    install_requires=load_requirements(HERE),
+    install_requires=install_requires,
 
     classifiers=[
         'Environment :: Console',

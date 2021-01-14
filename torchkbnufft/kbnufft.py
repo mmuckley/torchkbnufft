@@ -105,8 +105,8 @@ class KbNufftModule(KbModule):
             'scaling_coef_tensor',
             torch.stack(
                 (
-                    torch.tensor(np.real(self.scaling_coef)),
-                    torch.tensor(np.imag(self.scaling_coef))
+                    torch.tensor(np.copy(np.real(self.scaling_coef))),
+                    torch.tensor(np.copy(np.imag(self.scaling_coef)))
                 )
             )
         )
