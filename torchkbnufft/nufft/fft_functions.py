@@ -44,7 +44,7 @@ def scale_and_fft_on_image_volume(x, scaling_coef, grid_size, im_size, norm):
     x = F.pad(x, pad_sizes)
     x = x.permute(permute_dims)
     x = torch.fft(x, grid_size.numel())
-    if norm == 'ortho':
+    if norm == "ortho":
         x = x / torch.sqrt(torch.prod(grid_size))
     x = x.permute(inv_permute_dims)
 
@@ -89,7 +89,7 @@ def ifft_and_scale_on_gridded_data(x, scaling_coef, grid_size, im_size, norm):
     x = x[tuple(map(slice, crop_starts, crop_ends))]
 
     # scaling
-    if norm == 'ortho':
+    if norm == "ortho":
         x = x * torch.sqrt(torch.prod(grid_size))
     else:
         x = x * torch.prod(grid_size)
@@ -103,11 +103,12 @@ def ifft_and_scale_on_gridded_data(x, scaling_coef, grid_size, im_size, norm):
     try:
         x = conj_complex_mult(x, scaling_coef, dim=2)
     except RuntimeError as e:
-        if 'out of memory' in str(e) and not raise_error:
+        if "out of memory" in str(e) and not raise_error:
             torch.cuda.empty_cache()
             for coilind in range(x.shape[1]):
                 x[:, coilind, ...] = conj_complex_mult(
-                    x[:, coilind:coilind + 1, ...], scaling_coef, dim=2)
+                    x[:, coilind : coilind + 1, ...], scaling_coef, dim=2
+                )
             raise_error = True
         else:
             raise e
@@ -118,8 +119,7 @@ def ifft_and_scale_on_gridded_data(x, scaling_coef, grid_size, im_size, norm):
 
 
 def fft_filter(x, kern, norm=None):
-    """FFT-based filtering on a 2-size oversampled grid.
-    """
+    """FFT-based filtering on a 2-size oversampled grid."""
     im_size = torch.tensor(x.shape).to(torch.long)[3:]
     grid_size = im_size * 2
 
@@ -141,7 +141,7 @@ def fft_filter(x, kern, norm=None):
     x = F.pad(x, pad_sizes)
     x = x.permute(permute_dims)
     x = torch.fft(x, grid_size.numel())
-    if norm == 'ortho':
+    if norm == "ortho":
         x = x / torch.sqrt(torch.prod(grid_size.to(torch.double)))
     x = x.permute(inv_permute_dims)
 
@@ -161,7 +161,7 @@ def fft_filter(x, kern, norm=None):
     x = x[tuple(map(slice, crop_starts, crop_ends))]
 
     # scaling, assume user handled adjoint scaling with their kernel
-    if norm == 'ortho':
+    if norm == "ortho":
         x = x / torch.sqrt(torch.prod(grid_size.to(torch.double)))
 
     return x

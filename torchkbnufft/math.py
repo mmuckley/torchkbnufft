@@ -21,8 +21,7 @@ def complex_mult(a, b, dim=0):
     imag_b = b.select(dim, 1)
 
     c = torch.stack(
-        (real_a*real_b - imag_a*imag_b, imag_a*real_b + real_a*imag_b),
-        dim
+        (real_a * real_b - imag_a * imag_b, imag_a * real_b + real_a * imag_b), dim
     )
 
     return c
@@ -48,8 +47,7 @@ def conj_complex_mult(a, b, dim=0):
     imag_b = b.select(dim, 1)
 
     c = torch.stack(
-        (real_a*real_b + imag_a*imag_b, imag_a*real_b - real_a*imag_b),
-        dim
+        (real_a * real_b + imag_a * imag_b, imag_a * real_b - real_a * imag_b), dim
     )
 
     return c
@@ -105,10 +103,7 @@ def absolute(t, dim=0):
     """
     assert t.shape[dim] == 2
 
-    abst = torch.sqrt(
-        t.select(dim, 0) ** 2 +
-        t.select(dim, 1) ** 2
-    ).unsqueeze(dim)
+    abst = torch.sqrt(t.select(dim, 0) ** 2 + t.select(dim, 1) ** 2).unsqueeze(dim)
 
     return abst
 
