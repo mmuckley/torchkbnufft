@@ -1,8 +1,14 @@
 import torch
 import numpy as np
 
-from torchkbnufft import (AdjKbNufft, AdjMriSenseNufft, KbInterpBack,
-                          KbInterpForw, KbNufft, MriSenseNufft)
+from torchkbnufft import (
+    AdjKbNufft,
+    AdjMriSenseNufft,
+    KbInterpBack,
+    KbInterpForw,
+    KbNufft,
+    MriSenseNufft,
+)
 
 
 def test_kb_matching(testing_tol):
@@ -22,26 +28,25 @@ def test_kb_matching(testing_tol):
             for im_sz in im_szs:
                 smap = torch.randn(*((1,) + im_sz))
 
-                base_table = AdjKbNufft(
-                    im_sz, order=order, kbwidth=kbwidth).table
+                base_table = AdjKbNufft(im_sz, order=order, kbwidth=kbwidth).table
 
                 cur_table = KbNufft(im_sz, order=order, kbwidth=kbwidth).table
                 check_tables(base_table, cur_table)
 
-                cur_table = KbInterpBack(
-                    im_sz, order=order, kbwidth=kbwidth).table
+                cur_table = KbInterpBack(im_sz, order=order, kbwidth=kbwidth).table
                 check_tables(base_table, cur_table)
 
-                cur_table = KbInterpForw(
-                    im_sz, order=order, kbwidth=kbwidth).table
+                cur_table = KbInterpForw(im_sz, order=order, kbwidth=kbwidth).table
                 check_tables(base_table, cur_table)
 
                 cur_table = MriSenseNufft(
-                    smap, im_sz, order=order, kbwidth=kbwidth).table
+                    smap, im_sz, order=order, kbwidth=kbwidth
+                ).table
                 check_tables(base_table, cur_table)
 
                 cur_table = AdjMriSenseNufft(
-                    smap, im_sz, order=order, kbwidth=kbwidth).table
+                    smap, im_sz, order=order, kbwidth=kbwidth
+                ).table
                 check_tables(base_table, cur_table)
 
 
@@ -55,31 +60,73 @@ def test_2d_init_inputs():
     grid_sz = (512, 512)
     n_shift = (128, 128)
     numpoints = 6
-    table_oversamp = 2**10
+    table_oversamp = 2 ** 10
     kbwidth = 2.34
     order = 0
-    norm = 'None'
+    norm = "None"
 
     ob = KbInterpForw(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+    )
     ob = KbInterpBack(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+    )
 
     ob = KbNufft(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
     ob = AdjKbNufft(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
 
     ob = MriSenseNufft(
-        smap=smap, im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        smap=smap,
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
     ob = AdjMriSenseNufft(
-        smap=smap, im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        smap=smap,
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
 
     # test 2d tuple inputs
     im_sz = (256, 256)
@@ -87,31 +134,73 @@ def test_2d_init_inputs():
     grid_sz = (512, 512)
     n_shift = (128, 128)
     numpoints = (6, 6)
-    table_oversamp = (2**10, 2**10)
+    table_oversamp = (2 ** 10, 2 ** 10)
     kbwidth = (2.34, 2.34)
     order = (0, 0)
-    norm = 'None'
+    norm = "None"
 
     ob = KbInterpForw(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+    )
     ob = KbInterpBack(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+    )
 
     ob = KbNufft(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
     ob = AdjKbNufft(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
 
     ob = MriSenseNufft(
-        smap=smap, im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        smap=smap,
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
     ob = AdjMriSenseNufft(
-        smap=smap, im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        smap=smap,
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
 
 
 def test_3d_init_inputs():
@@ -124,31 +213,73 @@ def test_3d_init_inputs():
     grid_sz = (10, 512, 512)
     n_shift = (5, 128, 128)
     numpoints = 6
-    table_oversamp = 2**10
+    table_oversamp = 2 ** 10
     kbwidth = 2.34
     order = 0
-    norm = 'None'
+    norm = "None"
 
     ob = KbInterpForw(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+    )
     ob = KbInterpBack(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+    )
 
     ob = KbNufft(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
     ob = AdjKbNufft(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
 
     ob = MriSenseNufft(
-        smap=smap, im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        smap=smap,
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
     ob = AdjMriSenseNufft(
-        smap=smap, im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        smap=smap,
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
 
     # test 3d tuple inputs
     im_sz = (10, 256, 256)
@@ -156,28 +287,70 @@ def test_3d_init_inputs():
     grid_sz = (10, 512, 512)
     n_shift = (5, 128, 128)
     numpoints = (6, 6, 6)
-    table_oversamp = (2**10, 2**10, 2**10)
+    table_oversamp = (2 ** 10, 2 ** 10, 2 ** 10)
     kbwidth = (2.34, 2.34, 2.34)
     order = (0, 0, 0)
-    norm = 'None'
+    norm = "None"
 
     ob = KbInterpForw(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+    )
     ob = KbInterpBack(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+    )
 
     ob = KbNufft(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
     ob = AdjKbNufft(
-        im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
 
     ob = MriSenseNufft(
-        smap=smap, im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        smap=smap,
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )
     ob = AdjMriSenseNufft(
-        smap=smap, im_size=im_sz, grid_size=grid_sz, n_shift=n_shift, numpoints=numpoints,
-        table_oversamp=table_oversamp, kbwidth=kbwidth, order=order, norm=norm)
+        smap=smap,
+        im_size=im_sz,
+        grid_size=grid_sz,
+        n_shift=n_shift,
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        norm=norm,
+    )

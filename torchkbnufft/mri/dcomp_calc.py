@@ -47,33 +47,38 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj, stacks=Tru
     nufftob_back = copy.deepcopy(nufftob_back).to(dtype=dtype, device=device)
 
     # remove sensitivities if dealing with MriSenseNufft
-    if 'Sense' in nufftob_forw.__class__.__name__:
+    if "Sense" in nufftob_forw.__class__.__name__:
         nufftob_forw = copy.deepcopy(nufftob_forw)
         nufftob_back = copy.deepcopy(nufftob_back)
 
         nufftob_forw.smap_tensor = torch.ones(
-            nufftob_forw.smap_tensor.shape, dtype=dtype, device=device)
+            nufftob_forw.smap_tensor.shape, dtype=dtype, device=device
+        )
         nufftob_forw.smap_tensor = nufftob_forw.smap_tensor[:, 0:1]
         nufftob_forw.smap_tensor[:, :, 1] = 0
 
         nufftob_back.smap_tensor = nufftob_forw.smap_tensor.clone()
 
-    if not nufftob_forw.norm == 'ortho':
-        if not nufftob_back.norm == 'ortho':
+    if not nufftob_forw.norm == "ortho":
+        if not nufftob_back.norm == "ortho":
             norm_factor = torch.prod(torch.tensor(nufftob_back.grid_size)).to(
-                dtype=dtype, device=device)
+                dtype=dtype, device=device
+            )
         else:
-            print('warning: forward/backward operators mismatched norm setting')
+            print("warning: forward/backward operators mismatched norm setting")
             norm_factor = 1
-    elif not nufftob_back.norm == 'ortho':
-        print('warning: forward/backward operators mismatched norm setting')
+    elif not nufftob_back.norm == "ortho":
+        print("warning: forward/backward operators mismatched norm setting")
         norm_factor = 1
     else:
         norm_factor = 1
 
     # append 0s for batch, first coil, real part
-    image_loc = (0, 0, 0, ) + \
-        tuple((np.array(nufftob_forw.im_size) // 2).astype(np.int))
+    image_loc = (
+        0,
+        0,
+        0,
+    ) + tuple((np.array(nufftob_forw.im_size) // 2).astype(np.int))
 
     # get the size of the test signal (add batch, coil, real/imag dim)
     test_size = (1, 1, 2) + nufftob_forw.im_size
@@ -85,13 +90,13 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj, stacks=Tru
     threshold_levels = torch.zeros(len(ktraj), dtype=dtype, device=device)
     for batch_ind, batch_traj in enumerate(ktraj):
         # extract the signal amplitude increase from center of image
-        query_point = nufftob_back(
-            nufftob_forw(
-                test_sig,
-                om=batch_traj.unsqueeze(0)
-            ),
-            om=batch_traj.unsqueeze(0)
-        )[image_loc] / norm_factor
+        query_point = (
+            nufftob_back(
+                nufftob_forw(test_sig, om=batch_traj.unsqueeze(0)),
+                om=batch_traj.unsqueeze(0),
+            )[image_loc]
+            / norm_factor
+        )
 
         # use query point to get ramp intercept
         threshold_levels[batch_ind] = 1 / query_point
@@ -104,9 +109,8 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj, stacks=Tru
             batch_traj_thresh = batch_traj[-ndims:]
         dcomps.append(
             torch.max(
-                torch.sqrt(
-                    torch.sum(batch_traj_thresh ** 2, dim=0)) * 1 / np.pi,
-                threshold_levels[batch_ind]
+                torch.sqrt(torch.sum(batch_traj_thresh ** 2, dim=0)) * 1 / np.pi,
+                threshold_levels[batch_ind],
             )
         )
 

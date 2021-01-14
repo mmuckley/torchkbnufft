@@ -28,9 +28,18 @@ class KbInterpModule(KbModule):
         order (double, default=0): Order of Kaiser-Bessel kernel.
     """
 
-    def __init__(self, im_size, grid_size=None, numpoints=6, n_shift=None,
-                 table_oversamp=2**10, kbwidth=2.34, order=0, coil_broadcast=False,
-                 matadj=False):
+    def __init__(
+        self,
+        im_size,
+        grid_size=None,
+        numpoints=6,
+        n_shift=None,
+        table_oversamp=2 ** 10,
+        kbwidth=2.34,
+        order=0,
+        coil_broadcast=False,
+        matadj=False,
+    ):
         super(KbInterpModule, self).__init__()
 
         self.im_size = im_size
@@ -71,7 +80,7 @@ class KbInterpModule(KbModule):
             im_size=self.im_size,
             ndims=len(self.im_size),
             order=self.order,
-            alpha=self.alpha
+            alpha=self.alpha,
         )
         self.table = table
         assert len(self.table) == len(self.im_size)
@@ -81,26 +90,32 @@ class KbInterpModule(KbModule):
 
         if coil_broadcast == True:
             warnings.warn(
-                'coil_broadcast will be deprecated in a future release',
-                DeprecationWarning)
+                "coil_broadcast will be deprecated in a future release",
+                DeprecationWarning,
+            )
         if matadj == True:
             warnings.warn(
-                'matadj will be deprecated in a future release',
-                DeprecationWarning)
+                "matadj will be deprecated in a future release", DeprecationWarning
+            )
 
         for i, item in enumerate(self.table):
             self.register_buffer(
-                'table_tensor_' + str(i),
-                torch.tensor(np.stack((np.real(item), np.imag(item))))
+                "table_tensor_" + str(i),
+                torch.tensor(np.stack((np.real(item), np.imag(item)))),
             )
-        self.register_buffer('n_shift_tensor', torch.tensor(
-            np.array(self.n_shift, dtype=np.double)))
-        self.register_buffer('grid_size_tensor', torch.tensor(
-            np.array(self.grid_size, dtype=np.double)))
-        self.register_buffer('numpoints_tensor', torch.tensor(
-            np.array(self.numpoints, dtype=np.double)))
-        self.register_buffer('table_oversamp_tensor', torch.tensor(
-            np.array(self.table_oversamp, dtype=np.double)))
+        self.register_buffer(
+            "n_shift_tensor", torch.tensor(np.array(self.n_shift, dtype=np.double))
+        )
+        self.register_buffer(
+            "grid_size_tensor", torch.tensor(np.array(self.grid_size, dtype=np.double))
+        )
+        self.register_buffer(
+            "numpoints_tensor", torch.tensor(np.array(self.numpoints, dtype=np.double))
+        )
+        self.register_buffer(
+            "table_oversamp_tensor",
+            torch.tensor(np.array(self.table_oversamp, dtype=np.double)),
+        )
 
     def _extract_interpob(self):
         """Extracts interpolation object from self.
@@ -109,15 +124,15 @@ class KbInterpModule(KbModule):
             dict: An interpolation object for the NUFFT operation.
         """
         interpob = dict()
-        interpob['table'] = []
+        interpob["table"] = []
         for i in range(len(self.table)):
-            interpob['table'].append(getattr(self, 'table_tensor_' + str(i)))
-        interpob['n_shift'] = self.n_shift_tensor
-        interpob['grid_size'] = self.grid_size_tensor
-        interpob['numpoints'] = self.numpoints_tensor
-        interpob['table_oversamp'] = self.table_oversamp_tensor
-        interpob['coil_broadcast'] = self.coil_broadcast
-        interpob['matadj'] = self.matadj
+            interpob["table"].append(getattr(self, "table_tensor_" + str(i)))
+        interpob["n_shift"] = self.n_shift_tensor
+        interpob["grid_size"] = self.grid_size_tensor
+        interpob["numpoints"] = self.numpoints_tensor
+        interpob["table_oversamp"] = self.table_oversamp_tensor
+        interpob["coil_broadcast"] = self.coil_broadcast
+        interpob["matadj"] = self.matadj
 
         return interpob
 
@@ -157,7 +172,7 @@ class KbInterpForw(KbInterpModule):
                 interpolate to in radians/voxel.
             interp_mats (dict, default=None): A dictionary with keys
                 'real_interp_mats' and 'imag_interp_mats', each key containing
-                a list of interpolation matrices (see 
+                a list of interpolation matrices (see
                 mri.sparse_interp_mat.precomp_sparse_mats for construction).
                 If None, then a standard interpolation is run.
 
@@ -207,7 +222,7 @@ class KbInterpBack(KbInterpModule):
                 interpolate from in radians/voxel.
             interp_mats (dict, default=None): A dictionary with keys
                 'real_interp_mats' and 'imag_interp_mats', each key containing
-                a list of interpolation matrices (see 
+                a list of interpolation matrices (see
                 mri.sparse_interp_mat.precomp_sparse_mats for construction).
                 If None, then a standard interpolation is run.
 

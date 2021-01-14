@@ -30,9 +30,10 @@ def calc_toep_kernel(adj_ob, om, weights=None):
     ndims = om.shape[1]
 
     # remove sensitivities if dealing with MriSenseNufft
-    if 'Sense' in adj_ob.__class__.__name__:
+    if "Sense" in adj_ob.__class__.__name__:
         adj_ob.smap_tensor = torch.ones(
-            adj_ob.smap_tensor.shape, dtype=dtype, device=device)
+            adj_ob.smap_tensor.shape, dtype=dtype, device=device
+        )
         adj_ob.smap_tensor = adj_ob.smap_tensor[:, 0:1]
         adj_ob.smap_tensor[:, :, 1] = 0
 
@@ -42,23 +43,23 @@ def calc_toep_kernel(adj_ob, om, weights=None):
 
     # if we don't have any weights, just use ones
     if weights is None:
-        weights = torch.stack(
-            (torch.ones(om.shape[-1]), torch.zeros(om.shape[-1]))
-        ).to(dtype=dtype, device=device)
+        weights = torch.stack((torch.ones(om.shape[-1]), torch.zeros(om.shape[-1]))).to(
+            dtype=dtype, device=device
+        )
         weights = weights.unsqueeze(0).unsqueeze(0)
     elif weights.shape[2] == 1:
         weights = torch.cat(
-            (weights, torch.zeros(weights.shape, dtype=dtype, device=device)),
-            2
+            (weights, torch.zeros(weights.shape, dtype=dtype, device=device)), 2
         )
 
-    flip_list = list(itertools.product(*list([range(2)] * (ndims-1))))
+    flip_list = list(itertools.product(*list([range(2)] * (ndims - 1))))
     base_flip = torch.tensor([1], dtype=dtype, device=device)
 
     kern = []
     for ind in range(om.shape[0]):
-        kern.append(_get_kern(om[ind].unsqueeze(0), weights,
-                              flip_list, base_flip, adj_ob))
+        kern.append(
+            _get_kern(om[ind].unsqueeze(0), weights, flip_list, base_flip, adj_ob)
+        )
 
     kern = torch.cat(kern, dim=0)
 
@@ -102,26 +103,26 @@ def _get_kern(om, weights, flip_list, base_flip, adj_ob):
                 kern[-1] = kern[-1].flip(dim)
 
     # concatenate all calculated blocks, walking back from last dim
-    for dim in range(ndims-1):
+    for dim in range(ndims - 1):
         kern = cat_blocks(kern, dim)
     kern = kern[0]
 
     # now that we have half the kernel we can use Hermitian symmetry
-    kern = reflect_conj_concat(kern, ndims-1)
+    kern = reflect_conj_concat(kern, ndims - 1)
 
     # make sure kernel is Hermitian symmetric
-    kern = hermitify(kern, ndims-1)
+    kern = hermitify(kern, ndims - 1)
 
     permute_dims = (0, 1) + tuple(range(3, kern.ndim)) + (2,)
-    inv_permute_dims = (0, 1, kern.ndim-1) + tuple(range(2, kern.ndim-1))
+    inv_permute_dims = (0, 1, kern.ndim - 1) + tuple(range(2, kern.ndim - 1))
 
     # put the kernel in fft space
-    kern = torch.fft(kern.permute(permute_dims),
-                     kern.ndim-3).permute(inv_permute_dims)
+    kern = torch.fft(kern.permute(permute_dims), kern.ndim - 3).permute(
+        inv_permute_dims
+    )
 
-    if adj_ob.norm == 'ortho':
-        kern = kern / torch.sqrt(torch.prod(torch.tensor(
-            kern.shape[3:], dtype=dtype)))
+    if adj_ob.norm == "ortho":
+        kern = kern / torch.sqrt(torch.prod(torch.tensor(kern.shape[3:], dtype=dtype)))
 
     return kern
 
@@ -152,7 +153,7 @@ def cat_blocks(blocks, dim):
     # loop over pairwise elements, concatenating with the zero block and
     # removing duplicates
     for ind in range(0, len(blocks), 2):
-        tmpblock = blocks[ind+1].narrow(dim, 1, blocks[ind+1].shape[dim]-1)
+        tmpblock = blocks[ind + 1].narrow(dim, 1, blocks[ind + 1].shape[dim] - 1)
         tmpblock = torch.cat((zblock, tmpblock.flip(dim)), dim)
         kern.append(torch.cat((blocks[ind], tmpblock), dim))
 
@@ -190,10 +191,12 @@ def reflect_conj_concat(kern, dim):
         tmpblock = tmpblock.index_select(
             d,
             torch.remainder(
-                -1 * torch.arange(tmpblock.shape[d], device=device), tmpblock.shape[d])
+                -1 * torch.arange(tmpblock.shape[d], device=device), tmpblock.shape[d]
+            ),
         )
     tmpblock = torch.cat(
-        (zblock, tmpblock.narrow(dim, 1, tmpblock.shape[dim]-1)), dim)
+        (zblock, tmpblock.narrow(dim, 1, tmpblock.shape[dim] - 1)), dim
+    )
 
     # concatenate and return
     return torch.cat((kern, tmpblock), dim)
@@ -224,7 +227,8 @@ def hermitify(kern, dim):
         kern = kern.index_select(
             d,
             torch.remainder(
-                -1 * torch.arange(kern.shape[d], device=device), kern.shape[d])
+                -1 * torch.arange(kern.shape[d], device=device), kern.shape[d]
+            ),
         )
 
     # conjugate

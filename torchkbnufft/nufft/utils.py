@@ -3,8 +3,7 @@ import torch
 from scipy import special
 from scipy.sparse import coo_matrix
 
-from .fft_functions import (ifft_and_scale_on_gridded_data,
-                            scale_and_fft_on_image_volume)
+from .fft_functions import ifft_and_scale_on_gridded_data, scale_and_fft_on_image_volume
 
 
 def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
@@ -35,7 +34,7 @@ def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
 
         cur_coeff = np.zeros(shape=kern_in.shape, dtype=np.complex)
         indices = abs(kern_in) < npts / 2
-        bess_arg = np.sqrt(1 - (kern_in[indices] / (npts / 2))**2)
+        bess_arg = np.sqrt(1 - (kern_in[indices] / (npts / 2)) ** 2)
         denom = special.iv(order, alpha)
         cur_coeff[indices] = special.iv(order, alpha * bess_arg) / denom
         cur_coeff = np.real(cur_coeff)
@@ -64,28 +63,25 @@ def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
         kd.append(np.mod(Jvec + koff, K) + 1)
 
     for i in range(len(kd)):
-        kd[i] = (kd[i] - 1) * np.prod(grid_size[i + 1:])
+        kd[i] = (kd[i] - 1) * np.prod(grid_size[i + 1 :])
 
     # build the sparse matrix
     kk = kd[0]
     spmat_coef = full_coef[0]
     for i in range(1, ndims):
-        Jprod = np.prod(numpoints[:i + 1])
+        Jprod = np.prod(numpoints[: i + 1])
         # block outer sum
         kk = np.reshape(
-            np.expand_dims(kk, 1) + np.expand_dims(kd[i], 2),
-            (klength, Jprod)
+            np.expand_dims(kk, 1) + np.expand_dims(kd[i], 2), (klength, Jprod)
         )
         # block outer prod
         spmat_coef = np.reshape(
-            np.expand_dims(spmat_coef, 1) *
-            np.expand_dims(full_coef[i], 2),
-            (klength, Jprod)
+            np.expand_dims(spmat_coef, 1) * np.expand_dims(full_coef[i], 2),
+            (klength, Jprod),
         )
 
     # build in fftshift
-    phase = np.exp(1j * np.dot(np.transpose(om),
-                               np.expand_dims(n_shift, 1)))
+    phase = np.exp(1j * np.dot(np.transpose(om), np.expand_dims(n_shift, 1)))
     spmat_coef = np.conj(spmat_coef) * phase
 
     # get coordinates in sparse matrix
@@ -93,10 +89,9 @@ def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
     trajind = np.repeat(trajind, np.prod(numpoints), axis=1)
 
     # build the sparse matrix
-    spmat = coo_matrix((
-        spmat_coef.flatten(),
-        (trajind.flatten(), kk.flatten())),
-        shape=(klength, np.prod(grid_size))
+    spmat = coo_matrix(
+        (spmat_coef.flatten(), (trajind.flatten(), kk.flatten())),
+        shape=(klength, np.prod(grid_size)),
     )
 
     return spmat
@@ -138,12 +133,11 @@ def build_table(numpoints, table_oversamp, grid_size, im_size, ndims, order, alp
             grid_size=(K,),
             n_shift=(0,),
             order=(order[i],),
-            alpha=(alpha[i],)
+            alpha=(alpha[i],),
         )
         h = np.array(s1.getcol(J - 1).todense())
         for col in range(J - 2, -1, -1):
-            h = np.concatenate(
-                (h, np.array(s1.getcol(col).todense())), axis=0)
+            h = np.concatenate((h, np.array(s1.getcol(col).todense())), axis=0)
         h = np.concatenate((h.flatten(), np.array([0])))
 
         table.append(h)
@@ -165,10 +159,16 @@ def kaiser_bessel_ft(om, npts, alpha, order, d):
     Returns:
         ndarray: The scaling coefficients.
     """
-    z = np.sqrt((2 * np.pi * (npts / 2) * om)**2 - alpha**2 + 0j)
+    z = np.sqrt((2 * np.pi * (npts / 2) * om) ** 2 - alpha ** 2 + 0j)
     nu = d / 2 + order
-    scaling_coef = (2 * np.pi)**(d / 2) * ((npts / 2)**d) * (alpha**order) / \
-        special.iv(order, alpha) * special.jv(nu, z) / (z**nu)
+    scaling_coef = (
+        (2 * np.pi) ** (d / 2)
+        * ((npts / 2) ** d)
+        * (alpha ** order)
+        / special.iv(order, alpha)
+        * special.jv(nu, z)
+        / (z ** nu)
+    )
     scaling_coef = np.real(scaling_coef)
 
     return scaling_coef
@@ -190,11 +190,7 @@ def compute_scaling_coefs(im_size, grid_size, numpoints, alpha, order):
     """
     num_coefs = np.array(range(im_size[0])) - (im_size[0] - 1) / 2
     scaling_coef = 1 / kaiser_bessel_ft(
-        num_coefs / grid_size[0],
-        numpoints[0],
-        alpha[0],
-        order[0],
-        1
+        num_coefs / grid_size[0], numpoints[0], alpha[0], order[0], 1
     )
     if numpoints[0] == 1:
         scaling_coef = np.ones(scaling_coef.shape)
@@ -202,11 +198,7 @@ def compute_scaling_coefs(im_size, grid_size, numpoints, alpha, order):
         indlist = np.array(range(im_size[i])) - (im_size[i] - 1) / 2
         scaling_coef = np.expand_dims(scaling_coef, axis=-1)
         tmp = 1 / kaiser_bessel_ft(
-            indlist / grid_size[i],
-            numpoints[i],
-            alpha[i],
-            order[i],
-            1
+            indlist / grid_size[i], numpoints[i], alpha[i], order[i], 1
         )
 
         for _ in range(i):

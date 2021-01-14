@@ -152,8 +152,7 @@ def sense_backward(y, smap, om, interpob, interp_mats=None):
     # conjugate sum
     x = list(x)
     for i in range(len(x)):
-        x[i] = torch.sum(conj_complex_mult(
-            x[i], smap[i], dim=1), dim=0, keepdim=True)
+        x[i] = torch.sum(conj_complex_mult(x[i], smap[i], dim=1), dim=0, keepdim=True)
 
     if isinstance(smap, torch.Tensor):
         x = torch.stack(x)
@@ -212,11 +211,7 @@ def _sense_toep_filt(x, smap, kern, norm):
     x = complex_mult(x, smap, dim=1)
 
     # Toeplitz NUFFT
-    x = fft_filter(
-        x.unsqueeze(0),
-        kern.unsqueeze(0),
-        norm=norm
-    ).squeeze(0)
+    x = fft_filter(x.unsqueeze(0), kern.unsqueeze(0), norm=norm).squeeze(0)
 
     # conjugate sum
     x = torch.sum(conj_complex_mult(x, smap, dim=1), dim=0, keepdim=True)

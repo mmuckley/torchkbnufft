@@ -21,6 +21,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r dev-requirements.txt
         pip install -e .
+    - name: Format and lint
+      run: |
+        black --check .
     - name: Test with pytest
       run: |
         pytest tests

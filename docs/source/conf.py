@@ -12,17 +12,18 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))
+
+sys.path.insert(0, os.path.abspath("../.."))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'torchkbnufft'
-copyright = '2019, Matthew Muckley'
-author = 'Matthew Muckley'
+project = "torchkbnufft"
+copyright = "2019, Matthew Muckley"
+author = "Matthew Muckley"
 
 # The full version, including alpha/beta/rc tags
-release = 'v0.3.2.post1'
+release = "v0.3.2.post1"
 
 
 # -- General configuration ---------------------------------------------------
@@ -31,18 +32,18 @@ release = 'v0.3.2.post1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.coverage',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.autosectionlabel',
-    'autoapi.extension'
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.todo",
+    "sphinx.ext.coverage",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.autosectionlabel",
+    "autoapi.extension",
 ]
-autoapi_dirs = ['../../torchkbnufft']
+autoapi_dirs = ["../../torchkbnufft"]
 autoapi_generate_api_docs = False
 autodoc_mock_imports = ["torch"]
 
@@ -52,11 +53,11 @@ autodoc_mock_imports = ["torch"]
 autosectionlabel_prefix_document = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
-html_sidebars = {'**': ['globaltoc.html', 'searchbox.html']}
+html_sidebars = {"**": ["globaltoc.html", "searchbox.html"]}
 
-master_doc = 'index'
+master_doc = "index"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -71,9 +72,9 @@ add_module_names = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'classic'
+html_theme = "classic"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
