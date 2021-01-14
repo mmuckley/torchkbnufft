@@ -1,8 +1,8 @@
 """Package info"""
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 __author__ = "Matthew Muckley"
-__author_email__ = "Matthew.Muckley@nyulangone.org"
+__author_email__ = "matt.muckley@gmail.com"
 __license__ = "MIT"
 __homepage__ = "https://github.com/mmuckley/torchkbnufft"
 __docs__ = "A robust, easy-to-deploy non-uniform Fast Fourier Transform in PyTorch."
