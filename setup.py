@@ -19,46 +19,43 @@ builtins.__TORCHKBNUFFT_SETUP__ = True
 
 import torchkbnufft  # noqa: E402
 
-install_requires = ['torch', 'numpy', 'scipy']
+install_requires = ["torch", "numpy", "scipy"]
 
 # https://packaging.python.org/discussions/install-requires-vs-requirements
 setup(
-    name='torchkbnufft',
+    name="torchkbnufft",
     version=torchkbnufft.__version__,
     description=torchkbnufft.__docs__,
     author=torchkbnufft.__author__,
     author_email=torchkbnufft.__author_email__,
     url=torchkbnufft.__homepage__,
-    download_url='https://github.com/mmuckley/torchkbnufft',
+    download_url="https://github.com/mmuckley/torchkbnufft",
     license=torchkbnufft.__license__,
-    packages=find_packages(exclude=['tests', 'notebooks', 'speedtests']),
-
-    long_description=open('README.md', encoding='utf-8').read(),
-    long_description_content_type='text/markdown',
+    packages=find_packages(exclude=["tests", "notebooks", "speedtests"]),
+    long_description=open("README.md", encoding="utf-8").read(),
+    long_description_content_type="text/markdown",
     include_package_data=True,
     zip_safe=False,
-
-    keywords=['MRI', 'pytorch'],
-    python_requires='>=3.5',
+    keywords=["MRI", "pytorch"],
+    python_requires=">=3.5",
     setup_requires=[],
     install_requires=install_requires,
-
     classifiers=[
-        'Environment :: Console',
-        'Natural Language :: English',
+        "Environment :: Console",
+        "Natural Language :: English",
         # How mature is this project? Common values are
         #   3 - Alpha, 4 - Beta, 5 - Production/Stable
-        'Development Status :: 4 - Beta',
+        "Development Status :: 4 - Beta",
         # Indicate who your project is intended for
-        'Topic :: Scientific/Engineering :: Artificial Intelligence',
-        'Topic :: Scientific/Engineering :: Mathematics',
-        'Topic :: Scientific/Engineering :: Medical Science Apps.',
-        'Topic :: Scientific/Engineering :: Physics',
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Scientific/Engineering :: Mathematics",
+        "Topic :: Scientific/Engineering :: Medical Science Apps.",
+        "Topic :: Scientific/Engineering :: Physics",
         # Pick your license as you wish
         "License :: OSI Approved :: MIT License",
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
     ],
 )

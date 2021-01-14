@@ -22,12 +22,12 @@ def get_interpob(model):
         dict: A dictionary with interpolation parameters.
     """
     interpob = dict()
-    interpob['table'] = []
+    interpob["table"] = []
     for i in range(len(model.table)):
-        interpob['table'].append(getattr(model, 'table_tensor_' + str(i)))
-    interpob['grid_size'] = model.grid_size_tensor
-    interpob['numpoints'] = model.numpoints_tensor
-    interpob['table_oversamp'] = model.table_oversamp_tensor
+        interpob["table"].append(getattr(model, "table_tensor_" + str(i)))
+    interpob["grid_size"] = model.grid_size_tensor
+    interpob["numpoints"] = model.numpoints_tensor
+    interpob["table_oversamp"] = model.table_oversamp_tensor
 
     return interpob
 
@@ -66,35 +66,32 @@ def compute_forw_mat(dims, table, numpoints, Jlist, L, tm):
     Jlist = Jlist.to(dtype=int_type)
 
     # initialize the sparse matrices
-    coef_mat_real = torch.sparse.FloatTensor(
-        tm.shape[-1], torch.prod(dims)).to(dtype=dtype, device=device)
-    coef_mat_imag = torch.sparse.FloatTensor(
-        tm.shape[-1], torch.prod(dims)).to(dtype=dtype, device=device)
+    coef_mat_real = torch.sparse.FloatTensor(tm.shape[-1], torch.prod(dims)).to(
+        dtype=dtype, device=device
+    )
+    coef_mat_imag = torch.sparse.FloatTensor(tm.shape[-1], torch.prod(dims)).to(
+        dtype=dtype, device=device
+    )
 
     # loop over offsets and take advantage of broadcasting
     for Jind in range(nJ):
         coef, arr_ind = calc_coef_and_indices(
-            tm, kofflist, Jlist[:, Jind], table, centers, L, dims)
+            tm, kofflist, Jlist[:, Jind], table, centers, L, dims
+        )
 
         sparse_coords = torch.stack(
             (
                 torch.arange(
-                    arr_ind.shape[0],
-                    dtype=arr_ind.dtype,
-                    device=arr_ind.device
+                    arr_ind.shape[0], dtype=arr_ind.dtype, device=arr_ind.device
                 ),
-                arr_ind
+                arr_ind,
             )
         )
         coef_mat_real = coef_mat_real + torch.sparse.FloatTensor(
-            sparse_coords,
-            coef[0],
-            torch.Size((arr_ind.shape[0], torch.prod(dims)))
+            sparse_coords, coef[0], torch.Size((arr_ind.shape[0], torch.prod(dims)))
         )
         coef_mat_imag = coef_mat_imag + torch.sparse.FloatTensor(
-            sparse_coords,
-            coef[1],
-            torch.Size((arr_ind.shape[0], torch.prod(dims)))
+            sparse_coords, coef[1], torch.Size((arr_ind.shape[0], torch.prod(dims)))
         )
 
     return coef_mat_real, coef_mat_imag
@@ -115,14 +112,14 @@ def precomp_sparse_mats(om, model):
     """
     interpob = get_interpob(model)
 
-    dtype = interpob['table'][0].dtype
-    device = interpob['table'][0].device
+    dtype = interpob["table"][0].dtype
+    device = interpob["table"][0].device
 
     # extract interpolation params and match device and dtype to input
-    table = interpob['table']
-    grid_size = interpob['grid_size']
-    numpoints = interpob['numpoints']
-    table_oversamp = interpob['table_oversamp']
+    table = interpob["table"]
+    grid_size = interpob["grid_size"]
+    numpoints = interpob["numpoints"]
+    table_oversamp = interpob["table_oversamp"]
 
     ndims = om.shape[1]
     M = om.shape[2]
@@ -131,7 +128,7 @@ def precomp_sparse_mats(om, model):
     tm = torch.zeros(size=om.shape, dtype=dtype, device=device)
     Jgen = []
     for i in range(ndims):
-        gam = (2 * np.pi / grid_size[i])
+        gam = 2 * np.pi / grid_size[i]
         tm[:, i, :] = om[:, i, :] / gam
         Jgen.append(range(np.array(numpoints[i].cpu(), dtype=np.int)))
 
@@ -145,13 +142,9 @@ def precomp_sparse_mats(om, model):
             grid_size.to(dtype=dtype, device=device),
             table,
             numpoints,
-            torch.tensor(
-                np.transpose(np.array(Jgen)),
-                dtype=dtype,
-                device=device
-            ),
+            torch.tensor(np.transpose(np.array(Jgen)), dtype=dtype, device=device),
             table_oversamp,
-            norm_traj
+            norm_traj,
         )
 
         coef_real_mats.append(coef_mat_real)

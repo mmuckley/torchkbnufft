@@ -27,15 +27,19 @@ def run_mat_interp(griddat, coef_mat_real, coef_mat_imag):
     # apply multiplies
     kdat = []
 
-    kdat.append((
-        torch.mm(coef_mat_real, real_griddat) -
-        torch.mm(coef_mat_imag, imag_griddat)
-    ).t())
+    kdat.append(
+        (
+            torch.mm(coef_mat_real, real_griddat)
+            - torch.mm(coef_mat_imag, imag_griddat)
+        ).t()
+    )
 
-    kdat.append((
-        torch.mm(coef_mat_real, imag_griddat) +
-        torch.mm(coef_mat_imag, real_griddat)
-    ).t())
+    kdat.append(
+        (
+            torch.mm(coef_mat_real, imag_griddat)
+            + torch.mm(coef_mat_imag, real_griddat)
+        ).t()
+    )
 
     kdat = torch.stack(kdat, dim=1)
 
@@ -65,15 +69,13 @@ def run_mat_interp_back(kdat, coef_mat_real, coef_mat_imag):
     # apply multiplies with complex conjugate
     griddat = []
 
-    griddat.append((
-        torch.mm(coef_mat_real, real_kdat) +
-        torch.mm(coef_mat_imag, imag_kdat)
-    ).t())
+    griddat.append(
+        (torch.mm(coef_mat_real, real_kdat) + torch.mm(coef_mat_imag, imag_kdat)).t()
+    )
 
-    griddat.append((
-        torch.mm(coef_mat_real, imag_kdat) -
-        torch.mm(coef_mat_imag, real_kdat)
-    ).t())
+    griddat.append(
+        (torch.mm(coef_mat_real, imag_kdat) - torch.mm(coef_mat_imag, real_kdat)).t()
+    )
 
     griddat = torch.stack(griddat, dim=1)
 
@@ -116,31 +118,27 @@ def calc_coef_and_indices(tm, kofflist, Jval, table, centers, L, dims, conjcoef=
 
     # indexing locations
     gridind = (kofflist + Jval.unsqueeze(1)).to(dtype)
-    distind = torch.round(
-        (tm - gridind) * L.unsqueeze(1)).to(dtype=int_type)
+    distind = torch.round((tm - gridind) * L.unsqueeze(1)).to(dtype=int_type)
     gridind = gridind.to(int_type)
 
     arr_ind = torch.zeros((M,), dtype=int_type, device=device)
-    coef = torch.stack((
-        torch.ones(M, dtype=dtype, device=device),
-        torch.zeros(M, dtype=dtype, device=device)
-    ))
+    coef = torch.stack(
+        (
+            torch.ones(M, dtype=dtype, device=device),
+            torch.zeros(M, dtype=dtype, device=device),
+        )
+    )
 
     for d in range(ndims):  # spatial dimension
         if conjcoef:
             coef = conj_complex_mult(
-                coef,
-                table[d][:, distind[d, :] + centers[d]],
-                dim=0
+                coef, table[d][:, distind[d, :] + centers[d]], dim=0
             )
         else:
-            coef = complex_mult(
-                coef,
-                table[d][:, distind[d, :] + centers[d]],
-                dim=0
-            )
-        arr_ind = arr_ind + torch.remainder(gridind[d, :], dims[d]).view(-1) * \
-            torch.prod(dims[d + 1:])
+            coef = complex_mult(coef, table[d][:, distind[d, :] + centers[d]], dim=0)
+        arr_ind = arr_ind + torch.remainder(gridind[d, :], dims[d]).view(
+            -1
+        ) * torch.prod(dims[d + 1 :])
 
     return coef, arr_ind
 
@@ -158,11 +156,11 @@ def run_interp(griddat, tm, params):
         tensor: griddat interpolated to off-grid locations.
     """
     # extract parameters
-    dims = params['dims']
-    table = params['table']
-    numpoints = params['numpoints']
-    Jlist = params['Jlist']
-    L = params['table_oversamp']
+    dims = params["dims"]
+    table = params["table"]
+    numpoints = params["numpoints"]
+    Jlist = params["Jlist"]
+    L = params["table_oversamp"]
 
     # extract data types
     dtype = table[0].dtype
@@ -173,30 +171,27 @@ def run_interp(griddat, tm, params):
     centers = torch.floor(numpoints * L / 2).to(dtype=int_type)
 
     # offset from k-space to first coef loc
-    kofflist = 1 + \
-        torch.floor(tm - numpoints.unsqueeze(1) / 2.0).to(dtype=int_type)
+    kofflist = 1 + torch.floor(tm - numpoints.unsqueeze(1) / 2.0).to(dtype=int_type)
 
     # initialize output array
-    kdat = torch.zeros(size=((griddat.shape[0], 2, tm.shape[-1])),
-                       dtype=dtype, device=device)
+    kdat = torch.zeros(
+        size=((griddat.shape[0], 2, tm.shape[-1])), dtype=dtype, device=device
+    )
 
     # loop over offsets and take advantage of broadcasting
     for Jind in range(Jlist.shape[1]):
         coef, arr_ind = calc_coef_and_indices(
-            tm, kofflist, Jlist[:, Jind], table, centers, L, dims)
+            tm, kofflist, Jlist[:, Jind], table, centers, L, dims
+        )
 
         # unsqueeze coil and real/imag dimensions for on-grid indices
-        arr_ind = arr_ind.unsqueeze(0).unsqueeze(0).expand(
-            kdat.shape[0],
-            kdat.shape[1],
-            -1
+        arr_ind = (
+            arr_ind.unsqueeze(0).unsqueeze(0).expand(kdat.shape[0], kdat.shape[1], -1)
         )
 
         # gather and multiply coefficients
         kdat += complex_mult(
-            coef.unsqueeze(0),
-            torch.gather(griddat, 2, arr_ind),
-            dim=1
+            coef.unsqueeze(0), torch.gather(griddat, 2, arr_ind), dim=1
         )
 
     return kdat
@@ -215,11 +210,11 @@ def run_interp_back(kdat, tm, params):
         tensor: kdat interpolated to on-grid locations.
     """
     # extract parameters
-    dims = params['dims']
-    table = params['table']
-    numpoints = params['numpoints']
-    Jlist = params['Jlist']
-    L = params['table_oversamp']
+    dims = params["dims"]
+    table = params["table"]
+    numpoints = params["numpoints"]
+    Jlist = params["Jlist"]
+    L = params["table_oversamp"]
 
     # extract data types
     dtype = table[0].dtype
@@ -230,36 +225,31 @@ def run_interp_back(kdat, tm, params):
     centers = torch.floor(numpoints * L / 2).to(dtype=int_type)
 
     # offset from k-space to first coef loc
-    kofflist = 1 + \
-        torch.floor(tm - numpoints.unsqueeze(1) / 2.0).to(dtype=torch.long)
+    kofflist = 1 + torch.floor(tm - numpoints.unsqueeze(1) / 2.0).to(dtype=torch.long)
 
     # initialize output array
-    griddat = torch.zeros(size=(kdat.shape[0], 2, torch.prod(dims)),
-                          dtype=dtype, device=device)
+    griddat = torch.zeros(
+        size=(kdat.shape[0], 2, torch.prod(dims)), dtype=dtype, device=device
+    )
 
     # loop over offsets and take advantage of numpy broadcasting
     for Jind in range(Jlist.shape[1]):
         coef, arr_ind = calc_coef_and_indices(
-            tm, kofflist, Jlist[:, Jind], table, centers, L, dims, conjcoef=True)
+            tm, kofflist, Jlist[:, Jind], table, centers, L, dims, conjcoef=True
+        )
 
         # the following code takes ordered data and scatters it on to an image grid
         # profiling for a 2D problem showed drastic differences in performances
         # for these two implementations on cpu/gpu, but they do the same thing
-        if device == torch.device('cpu'):
+        if device == torch.device("cpu"):
             tmp = complex_mult(coef.unsqueeze(0), kdat, dim=1)
             for bind in range(griddat.shape[0]):
                 for riind in range(griddat.shape[1]):
                     griddat[bind, riind].index_put_(
-                        tuple(arr_ind.unsqueeze(0)),
-                        tmp[bind, riind],
-                        accumulate=True
+                        tuple(arr_ind.unsqueeze(0)), tmp[bind, riind], accumulate=True
                     )
         else:
-            griddat.index_add_(
-                2,
-                arr_ind,
-                complex_mult(coef.unsqueeze(0), kdat, dim=1)
-            )
+            griddat.index_add_(2, arr_ind, complex_mult(coef.unsqueeze(0), kdat, dim=1))
 
     return griddat
 
@@ -286,13 +276,13 @@ def kbinterp(x, om, interpob, interp_mats=None):
     Returns:
         tensor: The signal interpolated to off-grid locations.
     """
-    dtype = interpob['table'][0].dtype
-    device = interpob['table'][0].device
+    dtype = interpob["table"][0].dtype
+    device = interpob["table"][0].device
 
     # extract interpolation params
-    n_shift = interpob['n_shift']
-    grid_size = interpob['grid_size']
-    numpoints = interpob['numpoints']
+    n_shift = interpob["n_shift"]
+    grid_size = interpob["grid_size"]
+    numpoints = interpob["numpoints"]
 
     ndims = om.shape[1]
 
@@ -300,7 +290,7 @@ def kbinterp(x, om, interpob, interp_mats=None):
     tm = torch.zeros(size=om.shape, dtype=dtype, device=device)
     Jgen = []
     for i in range(ndims):
-        gam = (2 * np.pi / grid_size[i])
+        gam = 2 * np.pi / grid_size[i]
         tm[:, i, :] = om[:, i, :] / gam
         Jgen.append(range(np.array(numpoints[i].cpu(), dtype=np.int)))
 
@@ -311,40 +301,40 @@ def kbinterp(x, om, interpob, interp_mats=None):
     if interp_mats is None:
         # set up params if not using sparse mats
         params = {
-            'dims': None,
-            'table': interpob['table'],
-            'numpoints': numpoints,
-            'Jlist': Jgen,
-            'table_oversamp': interpob['table_oversamp'],
+            "dims": None,
+            "table": interpob["table"],
+            "numpoints": numpoints,
+            "Jlist": Jgen,
+            "table_oversamp": interpob["table_oversamp"],
         }
     else:
         # make sure we're on the right device
-        for real_mat in interp_mats['real_interp_mats']:
+        for real_mat in interp_mats["real_interp_mats"]:
             assert real_mat.device == device
-        for imag_mat in interp_mats['imag_interp_mats']:
+        for imag_mat in interp_mats["imag_interp_mats"]:
             assert imag_mat.device == device
 
     y = [None] * len(x)
     # run the table interpolator for each batch element
     for b in range(x.shape[0]):
         if interp_mats is None:
-            params['dims'] = torch.tensor(
-                x[b].shape[2:], dtype=torch.long, device=device)
+            params["dims"] = torch.tensor(
+                x[b].shape[2:], dtype=torch.long, device=device
+            )
 
             y[b] = run_interp(x[b].view((x.shape[1], 2, -1)), tm[b], params)
         else:
             y[b] = run_mat_interp(
                 x[b].view((x.shape[1], 2, -1)),
-                interp_mats['real_interp_mats'][b],
-                interp_mats['imag_interp_mats'][b],
+                interp_mats["real_interp_mats"][b],
+                interp_mats["imag_interp_mats"][b],
             )
 
         # phase for fftshift
         y[b] = complex_mult(
             y[b],
-            imag_exp(torch.mv(torch.transpose(
-                om[b], 1, 0), n_shift)).unsqueeze(0),
-            dim=1
+            imag_exp(torch.mv(torch.transpose(om[b], 1, 0), n_shift)).unsqueeze(0),
+            dim=1,
         )
 
     y = torch.stack(y)
@@ -374,12 +364,12 @@ def adjkbinterp(y, om, interpob, interp_mats=None):
     Returns:
         tensor: The signal interpolated to on-grid locations.
     """
-    n_shift = interpob['n_shift']
-    grid_size = interpob['grid_size']
-    numpoints = interpob['numpoints']
+    n_shift = interpob["n_shift"]
+    grid_size = interpob["grid_size"]
+    numpoints = interpob["numpoints"]
 
-    dtype = interpob['table'][0].dtype
-    device = interpob['table'][0].device
+    dtype = interpob["table"][0].dtype
+    device = interpob["table"][0].device
 
     ndims = om.shape[1]
 
@@ -398,17 +388,17 @@ def adjkbinterp(y, om, interpob, interp_mats=None):
     if interp_mats is None:
         # set up params if not using sparse mats
         params = {
-            'dims': None,
-            'table': interpob['table'],
-            'numpoints': numpoints,
-            'Jlist': Jgen,
-            'table_oversamp': interpob['table_oversamp'],
+            "dims": None,
+            "table": interpob["table"],
+            "numpoints": numpoints,
+            "Jlist": Jgen,
+            "table_oversamp": interpob["table_oversamp"],
         }
     else:
         # make sure we're on the right device
-        for real_mat in interp_mats['real_interp_mats']:
+        for real_mat in interp_mats["real_interp_mats"]:
             assert real_mat.device == device
-        for imag_mat in interp_mats['imag_interp_mats']:
+        for imag_mat in interp_mats["imag_interp_mats"]:
             assert imag_mat.device == device
 
     x = [None] * len(y)
@@ -417,20 +407,19 @@ def adjkbinterp(y, om, interpob, interp_mats=None):
         # phase for fftshift
         x[b] = conj_complex_mult(
             y[b],
-            imag_exp(torch.mv(torch.transpose(
-                om[b], 1, 0), n_shift)).unsqueeze(0),
-            dim=1
+            imag_exp(torch.mv(torch.transpose(om[b], 1, 0), n_shift)).unsqueeze(0),
+            dim=1,
         )
 
         if interp_mats is None:
-            params['dims'] = grid_size.to(dtype=torch.long, device=device)
+            params["dims"] = grid_size.to(dtype=torch.long, device=device)
 
             x[b] = run_interp_back(x[b], tm[b], params)
         else:
             x[b] = run_mat_interp_back(
                 x[b],
-                interp_mats['real_interp_mats'][b],
-                interp_mats['imag_interp_mats'][b],
+                interp_mats["real_interp_mats"][b],
+                interp_mats["imag_interp_mats"][b],
             )
 
     x = torch.stack(x)
