@@ -1,8 +1,16 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
+from packaging import version
 
 from ..math import complex_mult, conj_complex_mult
+
+if version.parse(torch.__version__) >= version.parse("1.7.0"):
+    from .fft_compatibility import fft_new as fft_fn
+    from .fft_compatibility import ifft_new as ifft_fn
+else:
+    from .fft_compatibility import fft_old as fft_fn
+    from .fft_compatibility import ifft_old as ifft_fn
 
 
 def scale_and_fft_on_image_volume(x, scaling_coef, grid_size, im_size, norm):
@@ -43,7 +51,7 @@ def scale_and_fft_on_image_volume(x, scaling_coef, grid_size, im_size, norm):
     # zero pad and fft
     x = F.pad(x, pad_sizes)
     x = x.permute(permute_dims)
-    x = torch.fft(x, grid_size.numel())
+    x = fft_fn(x, grid_size.numel())
     if norm == "ortho":
         x = x / torch.sqrt(torch.prod(grid_size))
     x = x.permute(inv_permute_dims)
@@ -78,7 +86,7 @@ def ifft_and_scale_on_gridded_data(x, scaling_coef, grid_size, im_size, norm):
 
     # do the inverse fft
     x = x.permute(permute_dims)
-    x = torch.ifft(x, grid_size.numel())
+    x = ifft_fn(x, grid_size.numel())
     x = x.permute(inv_permute_dims)
 
     # crop to output size
@@ -140,7 +148,7 @@ def fft_filter(x, kern, norm=None):
     # zero pad and fft
     x = F.pad(x, pad_sizes)
     x = x.permute(permute_dims)
-    x = torch.fft(x, grid_size.numel())
+    x = fft_fn(x, grid_size.numel())
     if norm == "ortho":
         x = x / torch.sqrt(torch.prod(grid_size.to(torch.double)))
     x = x.permute(inv_permute_dims)
@@ -150,7 +158,7 @@ def fft_filter(x, kern, norm=None):
 
     # inverse fft
     x = x.permute(permute_dims)
-    x = torch.ifft(x, grid_size.numel())
+    x = ifft_fn(x, grid_size.numel())
     x = x.permute(inv_permute_dims)
 
     # crop to input size

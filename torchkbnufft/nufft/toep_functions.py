@@ -3,8 +3,12 @@ import itertools
 
 import numpy as np
 import torch
+from packaging import version
 
-from ..math import absolute
+if version.parse(torch.__version__) >= version.parse("1.7.0"):
+    from .fft_compatibility import fft_new as fft_fn
+else:
+    from .fft_compatibility import fft_old as fft_fn
 
 
 def calc_toep_kernel(adj_ob, om, weights=None):
@@ -117,9 +121,7 @@ def _get_kern(om, weights, flip_list, base_flip, adj_ob):
     inv_permute_dims = (0, 1, kern.ndim - 1) + tuple(range(2, kern.ndim - 1))
 
     # put the kernel in fft space
-    kern = torch.fft(kern.permute(permute_dims), kern.ndim - 3).permute(
-        inv_permute_dims
-    )
+    kern = fft_fn(kern.permute(permute_dims), kern.ndim - 3).permute(inv_permute_dims)
 
     if adj_ob.norm == "ortho":
         kern = kern / torch.sqrt(torch.prod(torch.tensor(kern.shape[3:], dtype=dtype)))
