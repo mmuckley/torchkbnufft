@@ -1,5 +1,8 @@
 # Torch KB-NUFFT
 
+[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/facebookresearch/fastMRI/blob/master/LICENSE.md)
+![CI Badge](https://github.com/mmuckley/torchkbnufft/workflows/Build%20and%20test/badge.svg?branch=master)
+
 [API](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](https://github.com/mmuckley/torchkbnufft/tree/master/notebooks) | [Sedona Workshop Demo](https://github.com/mmuckley/torchkbnufft_demo)
 
 Simple installation from PyPI:
