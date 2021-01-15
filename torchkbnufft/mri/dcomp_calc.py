@@ -3,6 +3,8 @@ import copy
 import numpy as np
 import torch
 
+from ..nufft.interp_functions import kbinterp, adjkbinterp
+
 
 def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj, stacks=True):
     """Numerical density compensation estimation for a radial trajectory.
@@ -114,3 +116,39 @@ def calculate_radial_dcomp_pytorch(nufftob_forw, nufftob_back, ktraj, stacks=Tru
         dcomps = torch.stack(dcomps)
 
     return dcomps
+
+
+def calculate_density_compensator(interpob, ktraj, num_iterations=10):
+    """Numerical density compensation estimation for a any trajectory.
+
+    Estimates the density compensation function numerically using a NUFFT
+    interpolator operator and a k-space trajectory (ktraj).
+    This function implements Pipe et al
+
+    This function uses a nufft hyper parameter dictionary, the associated nufft
+    operators and k-space trajectory.
+
+    Args:
+        interpob (dict): the output of `KbNufftModule._extract_nufft_interpob`
+            containing all the hyper-parameters for the nufft computation.
+        ktraj (tensor): The k-space trajectory in radians/voxel dimension (d, m).
+            d is the number of spatial dimensions, and m is the length of the
+            trajectory.
+        num_iterations (int): default 10
+            number of iterations
+
+    Returns:
+        tensor: The density compensation coefficients for ktraj of size (m).
+    """
+    test_sig = torch.ones([1, 1, ktraj.shape[-1]])
+    test_sig = torch.stack([test_sig, torch.zeros_like(test_sig)], 2)
+    for i in range(num_iterations):
+        new_sig = kbinterp(
+            adjkbinterp(test_sig, ktraj, interpob),
+            ktraj,
+            interpob
+        )
+        # Basically we are doing abs here, do we have utils for this?
+        norm_new_sig = torch.norm(new_sig, dim=2)
+        test_sig = test_sig / norm_new_sig
+    return test_sig[0][0][0].unsqueeze(0)
