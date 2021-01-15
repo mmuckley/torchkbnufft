@@ -147,11 +147,7 @@ def calculate_density_compensator(interpob, ktraj, num_iterations=10):
     test_sig = torch.ones([1, 1, ktraj.shape[-1]])
     test_sig = torch.stack([test_sig, torch.zeros_like(test_sig)], 2)
     for i in range(num_iterations):
-        new_sig = kbinterp(
-            adjkbinterp(test_sig, ktraj, interpob),
-            ktraj,
-            interpob
-        )
+        new_sig = kbinterp(adjkbinterp(test_sig, ktraj, interpob), ktraj, interpob)
         # Basically we are doing abs here, do we have utils for this?
         norm_new_sig = torch.norm(new_sig, dim=2)
         test_sig = test_sig / norm_new_sig
