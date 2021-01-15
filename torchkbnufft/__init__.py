@@ -1,11 +1,11 @@
 """Package info"""
 
-__version__ = '0.3.3'
-__author__ = 'Matthew Muckley'
-__author_email__ = 'Matthew.Muckley@nyulangone.org'
-__license__ = 'MIT'
-__homepage__ = 'https://github.com/mmuckley/torchkbnufft'
-__docs__ = 'A robust, easy-to-deploy non-uniform Fast Fourier Transform in PyTorch.'
+__version__ = "0.3.4"
+__author__ = "Matthew Muckley"
+__author_email__ = "matt.muckley@gmail.com"
+__license__ = "MIT"
+__homepage__ = "https://github.com/mmuckley/torchkbnufft"
+__docs__ = "A robust, easy-to-deploy non-uniform Fast Fourier Transform in PyTorch."
 
 try:
     # This variable is injected in the __builtins__ by the build
@@ -16,7 +16,8 @@ except NameError:
 
 if __TORCHKBNUFFT_SETUP__:
     import sys
-    sys.stderr.write('Partial import of during the build process.\n')
+
+    sys.stderr.write("Partial import of during the build process.\n")
 else:
     from .kbinterp import KbInterpBack, KbInterpForw
     from .kbnufft import KbNufft, AdjKbNufft, ToepNufft
@@ -24,10 +25,10 @@ else:
     from .nufft import utils as nufft_utils
 
     __all__ = [
-        'KbInterpForw',
-        'KbInterpBack',
-        'KbNufft',
-        'AdjKbNufft',
-        'MriSenseNufft',
-        'AdjMriSenseNufft'
+        "KbInterpForw",
+        "KbInterpBack",
+        "KbNufft",
+        "AdjKbNufft",
+        "MriSenseNufft",
+        "AdjMriSenseNufft",
     ]

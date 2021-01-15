@@ -3,9 +3,11 @@ import warnings
 import numpy as np
 import torch
 
-from .functional.mrisensenufft import (AdjMriSenseNufftFunction,
-                                       MriSenseNufftFunction,
-                                       ToepSenseNufftFunction)
+from .functional.mrisensenufft import (
+    AdjMriSenseNufftFunction,
+    MriSenseNufftFunction,
+    ToepSenseNufftFunction,
+)
 from .kbmodule import KbModule
 from .mri.sensenufft_functions import sense_toeplitz
 from .nufft.utils import build_spmatrix, build_table, compute_scaling_coefs
@@ -40,9 +42,21 @@ class SenseNufftModule(KbModule):
             to have batch dim of 1).
     """
 
-    def __init__(self, smap, im_size, grid_size=None, numpoints=6, n_shift=None,
-                 table_oversamp=2**10, kbwidth=2.34, order=0, norm='None',
-                 coil_broadcast=False, coilpack=False, matadj=False):
+    def __init__(
+        self,
+        smap,
+        im_size,
+        grid_size=None,
+        numpoints=6,
+        n_shift=None,
+        table_oversamp=2 ** 10,
+        kbwidth=2.34,
+        order=0,
+        norm="None",
+        coil_broadcast=False,
+        coilpack=False,
+        matadj=False,
+    ):
         super(SenseNufftModule, self).__init__()
 
         self.im_size = im_size
@@ -83,7 +97,7 @@ class SenseNufftModule(KbModule):
             im_size=self.im_size,
             ndims=len(self.im_size),
             order=self.order,
-            alpha=self.alpha
+            alpha=self.alpha,
         )
         self.table = table
         assert len(self.table) == len(self.im_size)
@@ -93,7 +107,7 @@ class SenseNufftModule(KbModule):
             grid_size=self.grid_size,
             numpoints=self.numpoints,
             alpha=self.alpha,
-            order=self.order
+            order=self.order,
         )
         self.scaling_coef = scaling_coef
         self.norm = norm
@@ -104,38 +118,45 @@ class SenseNufftModule(KbModule):
 
         if coil_broadcast == True:
             warnings.warn(
-                'coil_broadcast will be deprecated in a future release',
-                DeprecationWarning)
+                "coil_broadcast will be deprecated in a future release",
+                DeprecationWarning,
+            )
         if matadj == True:
             warnings.warn(
-                'matadj will be deprecated in a future release',
-                DeprecationWarning)
+                "matadj will be deprecated in a future release", DeprecationWarning
+            )
 
         self.register_buffer(
-            'scaling_coef_tensor',
+            "scaling_coef_tensor",
             torch.stack(
                 (
                     torch.tensor(np.copy(np.real(self.scaling_coef))),
-                    torch.tensor(np.copy(np.imag(self.scaling_coef)))
+                    torch.tensor(np.copy(np.imag(self.scaling_coef))),
                 )
-            )
+            ),
         )
         for i, item in enumerate(self.table):
             self.register_buffer(
-                'table_tensor_' + str(i),
-                torch.tensor(np.stack((np.real(item), np.imag(item))))
+                "table_tensor_" + str(i),
+                torch.tensor(np.stack((np.real(item), np.imag(item)))),
             )
-        self.register_buffer('smap_tensor', smap)
-        self.register_buffer('n_shift_tensor', torch.tensor(
-            np.array(self.n_shift, dtype=np.double)))
-        self.register_buffer('grid_size_tensor', torch.tensor(
-            np.array(self.grid_size, dtype=np.double)))
-        self.register_buffer('im_size_tensor', torch.tensor(
-            np.array(self.im_size, dtype=np.double)))
-        self.register_buffer('numpoints_tensor', torch.tensor(
-            np.array(self.numpoints, dtype=np.double)))
-        self.register_buffer('table_oversamp_tensor', torch.tensor(
-            np.array(self.table_oversamp, dtype=np.double)))
+        self.register_buffer("smap_tensor", smap)
+        self.register_buffer(
+            "n_shift_tensor", torch.tensor(np.array(self.n_shift, dtype=np.double))
+        )
+        self.register_buffer(
+            "grid_size_tensor", torch.tensor(np.array(self.grid_size, dtype=np.double))
+        )
+        self.register_buffer(
+            "im_size_tensor", torch.tensor(np.array(self.im_size, dtype=np.double))
+        )
+        self.register_buffer(
+            "numpoints_tensor", torch.tensor(np.array(self.numpoints, dtype=np.double))
+        )
+        self.register_buffer(
+            "table_oversamp_tensor",
+            torch.tensor(np.array(self.table_oversamp, dtype=np.double)),
+        )
 
     def _extract_sense_interpob(self):
         """Extracts interpolation object from self.
@@ -144,19 +165,19 @@ class SenseNufftModule(KbModule):
             dict: An interpolation object for the NUFFT operation.
         """
         interpob = dict()
-        interpob['scaling_coef'] = self.scaling_coef_tensor
-        interpob['table'] = []
+        interpob["scaling_coef"] = self.scaling_coef_tensor
+        interpob["table"] = []
         for i in range(len(self.table)):
-            interpob['table'].append(getattr(self, 'table_tensor_' + str(i)))
-        interpob['n_shift'] = self.n_shift_tensor
-        interpob['grid_size'] = self.grid_size_tensor
-        interpob['im_size'] = self.im_size_tensor
-        interpob['numpoints'] = self.numpoints_tensor
-        interpob['table_oversamp'] = self.table_oversamp_tensor
-        interpob['norm'] = self.norm
-        interpob['coil_broadcast'] = self.coil_broadcast
-        interpob['coilpack'] = self.coilpack
-        interpob['matadj'] = self.matadj
+            interpob["table"].append(getattr(self, "table_tensor_" + str(i)))
+        interpob["n_shift"] = self.n_shift_tensor
+        interpob["grid_size"] = self.grid_size_tensor
+        interpob["im_size"] = self.im_size_tensor
+        interpob["numpoints"] = self.numpoints_tensor
+        interpob["table_oversamp"] = self.table_oversamp_tensor
+        interpob["norm"] = self.norm
+        interpob["coil_broadcast"] = self.coil_broadcast
+        interpob["coilpack"] = self.coilpack
+        interpob["matadj"] = self.matadj
 
         return interpob
 
@@ -205,7 +226,7 @@ class MriSenseNufft(SenseNufftModule):
                 calculate the signal.
             interp_mats (dict, default=None): A dictionary with keys
                 'real_interp_mats' and 'imag_interp_mats', each key containing
-                a list of interpolation matrices (see 
+                a list of interpolation matrices (see
                 mri.sparse_interp_mat.precomp_sparse_mats for construction).
                 If None, then a standard interpolation is run.
             smap (tensor, default=None): If passed in, uses input smap tensor
@@ -266,7 +287,7 @@ class AdjMriSenseNufft(SenseNufftModule):
             om (tensor, optional): The off-grid coordinates.
             interp_mats (dict, default=None): A dictionary with keys
                 'real_interp_mats' and 'imag_interp_mats', each key containing
-                a list of interpolation matrices (see 
+                a list of interpolation matrices (see
                 mri.sparse_interp_mat.precomp_sparse_mats for construction).
                 If None, then a standard interpolation is run.
             smap (tensor, default=None): If passed in, uses input smap tensor
@@ -292,7 +313,7 @@ class ToepSenseNufft(KbModule):
     module computes this operation without NUFFT interpolations, enabling very
     fast computation speeds. It accomplishes this with a precomputed FFT kernel
     that embeds the Toeplitz matrix into an FFT matrix. The FFT kernel can be
-    precomputed using 
+    precomputed using
 
     torchkbnufft.nufft.toep_functions.calc_toep_kernel
 
@@ -310,7 +331,7 @@ class ToepSenseNufft(KbModule):
 
         self.smap_shape = smap.shape
 
-        self.register_buffer('smap_tensor', smap)
+        self.register_buffer("smap_tensor", smap)
 
     def forward(self, x, kern, smap=None, norm=None):
         """Toeplitz SENSE-NUFFT forward function.

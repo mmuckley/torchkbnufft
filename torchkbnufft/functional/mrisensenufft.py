@@ -1,8 +1,12 @@
 from torch.autograd import Function
 
-from ..mri.sensenufft_functions import (coilpack_sense_backward,
-                                        coilpack_sense_forward, sense_backward,
-                                        sense_forward, sense_toeplitz)
+from ..mri.sensenufft_functions import (
+    coilpack_sense_backward,
+    coilpack_sense_forward,
+    sense_backward,
+    sense_forward,
+    sense_toeplitz,
+)
 from .kbnufft import AdjKbNufftFunction, KbNufftFunction
 
 
@@ -14,7 +18,7 @@ class MriSenseNufftFunction(Function):
         This function wraps sense_forward and coilpack_sense_forward for PyTorch
         autograd.
         """
-        if interpob['coilpack']:
+        if interpob["coilpack"]:
             y = coilpack_sense_forward(x, smap, om, interpob, interp_mats)
         else:
             y = sense_forward(x, smap, om, interpob, interp_mats)
@@ -36,7 +40,7 @@ class MriSenseNufftFunction(Function):
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
 
-        if interpob['coilpack']:
+        if interpob["coilpack"]:
             x = coilpack_sense_backward(y, smap, om, interpob, interp_mats)
         else:
             x = sense_backward(y, smap, om, interpob, interp_mats)
@@ -52,7 +56,7 @@ class AdjMriSenseNufftFunction(Function):
         This function wraps sense_backward and coilpack_sense_backward for PyTorch
         autograd.
         """
-        if interpob['coilpack']:
+        if interpob["coilpack"]:
             x = coilpack_sense_backward(y, smap, om, interpob, interp_mats)
         else:
             x = sense_backward(y, smap, om, interpob, interp_mats)
@@ -74,7 +78,7 @@ class AdjMriSenseNufftFunction(Function):
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
 
-        if interpob['coilpack']:
+        if interpob["coilpack"]:
             y = coilpack_sense_forward(x, smap, om, interpob, interp_mats)
         else:
             y = sense_forward(x, smap, om, interpob, interp_mats)
@@ -102,7 +106,10 @@ class ToepSenseNufftFunction(Function):
 
         This function wraps sense_toeplitz.
         """
-        smap, kern, = ctx.saved_tensors
+        (
+            smap,
+            kern,
+        ) = ctx.saved_tensors
         norm = ctx.norm
 
         x = sense_toeplitz(x, smap, kern, norm=norm)

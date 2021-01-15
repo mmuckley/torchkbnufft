@@ -1,8 +1,10 @@
 from torch.autograd import Function
 
-from ..nufft.fft_functions import (ifft_and_scale_on_gridded_data,
-                                   scale_and_fft_on_image_volume,
-                                   fft_filter)
+from ..nufft.fft_functions import (
+    ifft_and_scale_on_gridded_data,
+    scale_and_fft_on_image_volume,
+    fft_filter,
+)
 from .kbinterp import AdjKbInterpFunction, KbInterpFunction
 
 
@@ -15,13 +17,12 @@ class KbNufftFunction(Function):
         for PyTorch autograd.
         """
         # extract interpolation params
-        scaling_coef = interpob['scaling_coef']
-        grid_size = interpob['grid_size']
-        im_size = interpob['im_size']
-        norm = interpob['norm']
+        scaling_coef = interpob["scaling_coef"]
+        grid_size = interpob["grid_size"]
+        im_size = interpob["im_size"]
+        norm = interpob["norm"]
 
-        y = scale_and_fft_on_image_volume(
-            x, scaling_coef, grid_size, im_size, norm)
+        y = scale_and_fft_on_image_volume(x, scaling_coef, grid_size, im_size, norm)
 
         y = KbInterpFunction.apply(y, om, interpob, interp_mats)
 
@@ -38,21 +39,20 @@ class KbNufftFunction(Function):
         This function wraps ifft_and_scale_on_gridded_data and AdjKbInterpFunction
         for PyTorch autograd.
         """
-        om, = ctx.saved_tensors
+        (om,) = ctx.saved_tensors
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
 
-        scaling_coef = interpob['scaling_coef']
-        grid_size = interpob['grid_size']
-        im_size = interpob['im_size']
-        norm = interpob['norm']
+        scaling_coef = interpob["scaling_coef"]
+        grid_size = interpob["grid_size"]
+        im_size = interpob["im_size"]
+        norm = interpob["norm"]
 
         interp_mats = ctx.interp_mats
 
         x = AdjKbInterpFunction.apply(y, om, interpob, interp_mats)
 
-        x = ifft_and_scale_on_gridded_data(
-            x, scaling_coef, grid_size, im_size, norm)
+        x = ifft_and_scale_on_gridded_data(x, scaling_coef, grid_size, im_size, norm)
 
         return x, None, None, None
 
@@ -67,13 +67,12 @@ class AdjKbNufftFunction(Function):
         """
         x = AdjKbInterpFunction.apply(y, om, interpob, interp_mats)
 
-        scaling_coef = interpob['scaling_coef']
-        grid_size = interpob['grid_size']
-        im_size = interpob['im_size']
-        norm = interpob['norm']
+        scaling_coef = interpob["scaling_coef"]
+        grid_size = interpob["grid_size"]
+        im_size = interpob["im_size"]
+        norm = interpob["norm"]
 
-        x = ifft_and_scale_on_gridded_data(
-            x, scaling_coef, grid_size, im_size, norm)
+        x = ifft_and_scale_on_gridded_data(x, scaling_coef, grid_size, im_size, norm)
 
         ctx.save_for_backward(om)
         ctx.interpob = interpob
@@ -88,17 +87,16 @@ class AdjKbNufftFunction(Function):
         This function wraps scale_and_fft_on_image_volume and KbInterpFunction
         for PyTorch autograd.
         """
-        om, = ctx.saved_tensors
+        (om,) = ctx.saved_tensors
         interpob = ctx.interpob
         interp_mats = ctx.interp_mats
 
-        scaling_coef = interpob['scaling_coef']
-        grid_size = interpob['grid_size']
-        im_size = interpob['im_size']
-        norm = interpob['norm']
+        scaling_coef = interpob["scaling_coef"]
+        grid_size = interpob["grid_size"]
+        im_size = interpob["im_size"]
+        norm = interpob["norm"]
 
-        y = scale_and_fft_on_image_volume(
-            x, scaling_coef, grid_size, im_size, norm)
+        y = scale_and_fft_on_image_volume(x, scaling_coef, grid_size, im_size, norm)
 
         y = KbInterpFunction.apply(y, om, interpob, interp_mats)
 
@@ -125,7 +123,7 @@ class ToepNufftFunction(Function):
 
         This function wraps fft_filter.
         """
-        kern, = ctx.saved_tensors
+        (kern,) = ctx.saved_tensors
         norm = ctx.norm
 
         x = fft_filter(x, kern, norm=norm)
