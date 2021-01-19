@@ -19,7 +19,7 @@ builtins.__TORCHKBNUFFT_SETUP__ = True
 
 import torchkbnufft  # noqa: E402
 
-install_requires = ["torch", "numpy", "scipy"]
+install_requires = ["torch>=1.6", "numpy", "scipy"]
 
 # https://packaging.python.org/discussions/install-requires-vs-requirements
 setup(

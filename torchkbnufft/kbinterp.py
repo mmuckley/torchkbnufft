@@ -1,11 +1,15 @@
-import warnings
+from typing import Optional, Sequence, Tuple, Union
 
-import numpy as np
 import torch
+from torch import Tensor
 
-from .functional.kbinterp import AdjKbInterpFunction, KbInterpFunction
+from .functional.kbinterp import (
+    KbSpmatInterpAdjoint,
+    KbSpmatInterpForward,
+    KbTableInterpAdjoint,
+    KbTableInterpForward,
+)
 from .kbmodule import KbModule
-from .nufft.utils import build_table
 
 
 class KbInterpModule(KbModule):
@@ -15,129 +19,40 @@ class KbInterpModule(KbModule):
     from torch.nn.Module via torchkbnufft.kbmodule.KbModule.
 
     Args:
-        im_size (int or tuple of ints): Size of base image.
-        grid_size (int or tuple of ints, default=2*im_size): Size of the grid
-            to interpolate to.
-        numpoints (int or tuple of ints, default=6): Number of points to use
-            for interpolation in each dimension. Default is six points in each
-            direction.
-        n_shift (int or tuple of ints, default=im_size//2): Number of points to
-            shift for fftshifts.
-        table_oversamp (int, default=2^10): Table oversampling factor.
-        kbwidth (double, default=2.34): Kaiser-Bessel width parameter.
-        order (double, default=0): Order of Kaiser-Bessel kernel.
+        im_size: Size of base image.
+        grid_size; Optional: Size of the grid to interpolate to.
+        numpoints: Number of points to use for interpolation in each dimension.
+            Default is six points in each direction.
+        n_shift; Optional: Number of points to shift for fftshifts.
+        table_oversamp: Table oversampling factor.
+        kbwidth: Kaiser-Bessel width parameter.
+        order: Order of Kaiser-Bessel kernel.
     """
 
     def __init__(
         self,
-        im_size,
-        grid_size=None,
-        numpoints=6,
-        n_shift=None,
-        table_oversamp=2 ** 10,
-        kbwidth=2.34,
-        order=0,
-        coil_broadcast=False,
-        matadj=False,
+        im_size: Sequence[int],
+        grid_size: Optional[Sequence[int]] = None,
+        numpoints: Union[int, Sequence[int]] = 6,
+        n_shift: Optional[Sequence[int]] = None,
+        table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+        kbwidth: float = 2.34,
+        order: Union[float, Sequence[float]] = 0.0,
+        dtype: torch.dtype = None,
     ):
-        super(KbInterpModule, self).__init__()
-
-        self.im_size = im_size
-        if grid_size is None:
-            self.grid_size = tuple(np.array(self.im_size) * 2)
-        else:
-            self.grid_size = grid_size
-        if n_shift is None:
-            self.n_shift = tuple(np.array(self.im_size) // 2)
-        else:
-            self.n_shift = n_shift
-        if isinstance(numpoints, int):
-            self.numpoints = (numpoints,) * len(self.grid_size)
-        else:
-            self.numpoints = numpoints
-        self.alpha = tuple(np.array(kbwidth) * np.array(self.numpoints))
-        if isinstance(order, int) or isinstance(order, float):
-            self.order = (order,) * len(self.grid_size)
-        else:
-            self.order = order
-        if isinstance(table_oversamp, float) or isinstance(table_oversamp, int):
-            self.table_oversamp = (table_oversamp,) * len(self.grid_size)
-        else:
-            self.table_oversamp = table_oversamp
-
-        # dimension checking
-        assert len(self.grid_size) == len(self.im_size)
-        assert len(self.n_shift) == len(self.im_size)
-        assert len(self.numpoints) == len(self.im_size)
-        assert len(self.alpha) == len(self.im_size)
-        assert len(self.order) == len(self.im_size)
-        assert len(self.table_oversamp) == len(self.im_size)
-
-        table = build_table(
-            numpoints=self.numpoints,
-            table_oversamp=self.table_oversamp,
-            grid_size=self.grid_size,
-            im_size=self.im_size,
-            ndims=len(self.im_size),
-            order=self.order,
-            alpha=self.alpha,
-        )
-        self.table = table
-        assert len(self.table) == len(self.im_size)
-
-        self.coil_broadcast = coil_broadcast
-        self.matadj = matadj
-
-        if coil_broadcast == True:
-            warnings.warn(
-                "coil_broadcast will be deprecated in a future release",
-                DeprecationWarning,
-            )
-        if matadj == True:
-            warnings.warn(
-                "matadj will be deprecated in a future release", DeprecationWarning
-            )
-
-        for i, item in enumerate(self.table):
-            self.register_buffer(
-                "table_tensor_" + str(i),
-                torch.tensor(np.stack((np.real(item), np.imag(item)))),
-            )
-        self.register_buffer(
-            "n_shift_tensor", torch.tensor(np.array(self.n_shift, dtype=np.double))
-        )
-        self.register_buffer(
-            "grid_size_tensor", torch.tensor(np.array(self.grid_size, dtype=np.double))
-        )
-        self.register_buffer(
-            "numpoints_tensor", torch.tensor(np.array(self.numpoints, dtype=np.double))
-        )
-        self.register_buffer(
-            "table_oversamp_tensor",
-            torch.tensor(np.array(self.table_oversamp, dtype=np.double)),
+        super().__init__(
+            im_size=im_size,
+            grid_size=grid_size,
+            numpoints=numpoints,
+            n_shift=n_shift,
+            table_oversamp=table_oversamp,
+            kbwidth=kbwidth,
+            order=order,
+            dtype=dtype,
         )
 
-    def _extract_interpob(self):
-        """Extracts interpolation object from self.
 
-        Returns:
-            dict: An interpolation object for the NUFFT operation.
-        """
-        interpob = dict()
-        interpob["table"] = []
-        for i in range(len(self.table)):
-            interpob["table"].append(getattr(self, "table_tensor_" + str(i)))
-        interpob["n_shift"] = self.n_shift_tensor
-        interpob["grid_size"] = self.grid_size_tensor
-        interpob["numpoints"] = self.numpoints_tensor
-        interpob["table_oversamp"] = self.table_oversamp_tensor
-        interpob["coil_broadcast"] = self.coil_broadcast
-        interpob["matadj"] = self.matadj
-
-        return interpob
-
-
-class KbInterpForw(KbInterpModule):
+class KbInterpForward(KbInterpModule):
     """Non-uniform FFT forward interpolation PyTorch layer.
 
     This object interpolates a grid of Fourier data to off-grid locations
@@ -157,36 +72,69 @@ class KbInterpForw(KbInterpModule):
         order (double, default=0): Order of Kaiser-Bessel kernel.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(KbInterpForw, self).__init__(*args, **kwargs)
+    def __init__(
+        self,
+        im_size: Sequence[int],
+        grid_size: Optional[Sequence[int]] = None,
+        numpoints: Union[int, Sequence[int]] = 6,
+        n_shift: Optional[Sequence[int]] = None,
+        table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+        kbwidth: float = 2.34,
+        order: Union[float, Sequence[float]] = 0.0,
+        dtype: torch.dtype = None,
+    ):
+        super().__init__(
+            im_size=im_size,
+            grid_size=grid_size,
+            numpoints=numpoints,
+            n_shift=n_shift,
+            table_oversamp=table_oversamp,
+            kbwidth=kbwidth,
+            order=order,
+            dtype=dtype,
+        )
 
-    def forward(self, x, om, interp_mats=None):
+    def forward(
+        self,
+        image: Tensor,
+        omega: Tensor,
+        interp_mats: Optional[Tuple[Tensor, Tensor]] = None,
+    ) -> Tensor:
         """Interpolate from gridded data to scattered data.
 
         Inputs are assumed to be batch/chans x coil x real/imag x image dims.
         Om should be nbatch x ndims x klength.
 
         Args:
-            x (tensor): The DFT of the signal.
-            om (tensor, optional): A new set of omega coordinates to
-                interpolate to in radians/voxel.
-            interp_mats (dict, default=None): A dictionary with keys
-                'real_interp_mats' and 'imag_interp_mats', each key containing
-                a list of interpolation matrices (see
-                mri.sparse_interp_mat.precomp_sparse_mats for construction).
-                If None, then a standard interpolation is run.
+            image: The DFT of the signal.
+            omega: A new set of omega coordinates to interpolate to in
+                radians/voxel.
+            interp_mats: Tuple with two interpolation matrices (real, imag).
 
         Returns:
-            tensor: x computed at off-grid locations in om.
+            image computed at off-grid locations in omega.
         """
-        interpob = self._extract_interpob()
+        if interp_mats is not None:
+            output = KbSpmatInterpForward.apply(image, interp_mats)
+        else:
+            tables = []
+            for i in range(len(self.im_size)):  # type: ignore
+                tables.append(getattr(self, f"table_{i}"))
 
-        y = KbInterpFunction.apply(x, om, interpob, interp_mats)
+            output = KbTableInterpForward.apply(
+                image,
+                omega,
+                tables,
+                self.n_shift,
+                self.numpoints,
+                self.table_oversamp,
+                self.offsets.to(torch.long),
+            )
 
-        return y
+        return output
 
 
-class KbInterpBack(KbInterpModule):
+class KbInterpAdjoint(KbInterpModule):
     """Non-uniform FFT adjoint interpolation PyTorch layer.
 
     This object interpolates off-grid Fourier data to on-grid locations
@@ -206,10 +154,34 @@ class KbInterpBack(KbInterpModule):
         order (double, default=0): Order of Kaiser-Bessel kernel.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(KbInterpBack, self).__init__(*args, **kwargs)
+    def __init__(
+        self,
+        im_size: Sequence[int],
+        grid_size: Optional[Sequence[int]] = None,
+        numpoints: Union[int, Sequence[int]] = 6,
+        n_shift: Optional[Sequence[int]] = None,
+        table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+        kbwidth: float = 2.34,
+        order: Union[float, Sequence[float]] = 0.0,
+        dtype: torch.dtype = None,
+    ):
+        super().__init__(
+            im_size=im_size,
+            grid_size=grid_size,
+            numpoints=numpoints,
+            n_shift=n_shift,
+            table_oversamp=table_oversamp,
+            kbwidth=kbwidth,
+            order=order,
+            dtype=dtype,
+        )
 
-    def forward(self, y, om, interp_mats=None):
+    def forward(
+        self,
+        data: Tensor,
+        omega: Tensor,
+        interp_mats: Optional[Tuple[Tensor, Tensor]] = None,
+    ) -> Tensor:
         """Interpolate from scattered data to gridded data.
 
         Apply table interpolation adjoint. Inputs are assumed to be batch/chans
@@ -217,20 +189,29 @@ class KbInterpBack(KbInterpModule):
         klength.
 
         Args:
-            y (tensor): The off-grid k-space data.
-            om (tensor, optional): A new set of omega coordinates to
-                interpolate from in radians/voxel.
-            interp_mats (dict, default=None): A dictionary with keys
-                'real_interp_mats' and 'imag_interp_mats', each key containing
-                a list of interpolation matrices (see
-                mri.sparse_interp_mat.precomp_sparse_mats for construction).
-                If None, then a standard interpolation is run.
+            data: The off-grid k-space data.
+            omega: The coordinates of the off-grid dtaa.
+            interp_mats: Tuple with two interpolation matrices (real, imag).
 
         Returns:
-            tensor: The DFT of the signal.
+            data computed at on-grid locations.
         """
-        interpob = self._extract_interpob()
+        if interp_mats is not None:
+            output = KbSpmatInterpAdjoint.apply(data=data, interp_mats=interp_mats)
+        else:
+            tables = []
+            for i in range(len(self.im_size)):  # type: ignore
+                tables.append(getattr(self, f"table_{i}"))
 
-        x = AdjKbInterpFunction.apply(y, om, interpob, interp_mats)
+            output = KbTableInterpAdjoint.apply(
+                data=data,
+                omega=omega,
+                table=tables,
+                n_shift=self.n_shift,
+                numpoints=self.numpoints,
+                table_oversamp=self.table_oversamp,
+                offsets=self.offsets,
+                grid_size=self.grid_size,
+            )
 
-        return x
+        return output

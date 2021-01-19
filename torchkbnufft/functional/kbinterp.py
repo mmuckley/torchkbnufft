@@ -1,63 +1,180 @@
 from torch.autograd import Function
 
-from ..nufft.interp_functions import adjkbinterp, kbinterp
+from ..nufft.interp import (
+    spmat_interp,
+    spmat_interp_adjoint,
+    table_interp,
+    table_interp_adjoint,
+)
 
 
-class KbInterpFunction(Function):
+class KbSpmatInterpForward(Function):
     @staticmethod
-    def forward(ctx, x, om, interpob, interp_mats=None):
+    def forward(ctx, image, interp_mats):
+        """Apply sparse matrix interpolation.
+
+        This is a wrapper for for PyTorch autograd.
+        """
+        grid_size = torch.tensor(image.shape, dtype=torch.long, device=image.device)
+        output = spmat_interp(image, interp_mats)
+
+        if isinstance(interp_mats, tuple):
+            ctx.save_for_backward(interp_mats[0], interp_mats[1], grid_size)
+        else:
+            ctx.save_for_backward(interp_mats, grid_size)
+
+        return output
+
+    @staticmethod
+    def backward(ctx, data):
+        """Apply sparse matrix interpolation adjoint for gradient calculation.
+
+        This is a wrapper for for PyTorch autograd.
+        """
+        if len(ctx.saved_tensors) == 3:
+            interp_mats = ctx.saved_tensors[:2]
+            grid_size = ctx.saved_tensors[2]
+        else:
+            (interp_mats, grid_size) = ctx.saved_tensors
+
+        x = spmat_interp_adjoint(data, interp_mats, grid_size)
+
+        return x, None
+
+
+class KbSpmatInterpAdjoint(Function):
+    @staticmethod
+    def forward(ctx, data, interp_mats, grid_size):
+        """Apply sparse matrix interpolation adjoint.
+
+        This is a wrapper for for PyTorch autograd.
+        """
+        image = spmat_interp_adjoint(data, interp_mats, grid_size)
+
+        if isinstance(interp_mats, tuple):
+            ctx.save_for_backward(interp_mats[0], interp_mats[1])
+        else:
+            ctx.save_for_backward(interp_mats)
+
+        return image
+
+    @staticmethod
+    def backward(ctx, image):
+        """Apply sparse matrix interpolation for gradient calculation.
+
+        This is a wrapper for for PyTorch autograd.
+        """
+        if len(ctx.saved_tensors) == 2:
+            interp_mats = ctx.saved_tensors
+        else:
+            (interp_mats,) = ctx.saved_tensors
+
+        y = spmat_interp(image, interp_mats)
+
+        return y, None, None
+
+
+class KbTableInterpForward(Function):
+    @staticmethod
+    def forward(ctx, image, omega, tables, n_shift, numpoints, table_oversamp, offsets):
         """Apply table interpolation.
 
-        This is a wrapper for nufft.interp_functions.kbinterp for PyTorch autograd.
+        This is a wrapper for for PyTorch autograd.
         """
-        y = kbinterp(x, om, interpob, interp_mats)
+        if image.is_complex():
+            grid_size = torch.tensor(image.shape[2:], device=image.device)
+        else:
+            grid_size = torch.tensor(image.shape[2:-1], device=image.device)
 
-        ctx.save_for_backward(om)
-        ctx.interpob = interpob
-        ctx.interp_mats = interp_mats
+        output = table_interp(
+            image=image,
+            omega=omega,
+            tables=tables,
+            n_shift=n_shift,
+            numpoints=numpoints,
+            table_oversamp=table_oversamp,
+            offsets=offsets,
+        )
 
-        return y
+        ctx.save_for_backward(
+            omega, n_shift, numpoints, table_oversamp, offsets, grid_size, *tables
+        )
+
+        return output
 
     @staticmethod
-    def backward(ctx, y):
+    def backward(ctx, data):
         """Apply table interpolation adjoint for gradient calculation.
 
-        This is a wrapper for nufft.interp_functions.adjkbinterp for PyTorch autograd.
+        This is a wrapper for for PyTorch autograd.
         """
-        (om,) = ctx.saved_tensors
-        interpob = ctx.interpob
-        interp_mats = ctx.interp_mats
+        (
+            omega,
+            n_shift,
+            numpoints,
+            table_oversamp,
+            offsets,
+            grid_size,
+        ) = ctx.saved_tensors[:6]
+        tables = [table for table in ctx.saved_tensors[6:]]
 
-        x = adjkbinterp(y, om, interpob, interp_mats)
+        image = table_interp_adjoint(
+            data=data,
+            omega=omega,
+            tables=tables,
+            n_shift=n_shift,
+            numpoints=numpoints,
+            table_oversamp=table_oversamp,
+            offsets=offsets,
+            grid_size=grid_size,
+        )
 
-        return x, None, None, None
+        return image, None, None, None, None, None, None
 
 
-class AdjKbInterpFunction(Function):
+class KbTableInterpAdjoint(Function):
     @staticmethod
-    def forward(ctx, y, om, interpob, interp_mats=None):
+    def forward(
+        ctx, data, omega, tables, n_shift, numpoints, table_oversamp, offsets, grid_size
+    ):
         """Apply table interpolation adjoint.
 
-        This is a wrapper for nufft.interp_functions.adjkbinterp for PyTorch autograd.
+        This is a wrapper for for PyTorch autograd.
         """
-        x = adjkbinterp(y, om, interpob, interp_mats)
+        image = table_interp_adjoint(
+            data=data,
+            omega=omega,
+            tables=tables,
+            n_shift=n_shift,
+            numpoints=numpoints,
+            table_oversamp=table_oversamp,
+            offsets=offsets,
+            grid_size=grid_size,
+        )
 
-        ctx.save_for_backward(om)
-        ctx.interpob = interpob
-        ctx.interp_mats = interp_mats
+        ctx.save_for_backward(
+            omega, n_shift, numpoints, table_oversamp, offsets, *tables
+        )
 
-        return x
+        return image
 
     @staticmethod
-    def backward(ctx, x):
+    def backward(ctx, image):
         """Apply table interpolation for gradient calculation.
 
-        This is a wrapper for nufft.interp_functions.kbinterp for PyTorch autograd.
+        This is a wrapper for for PyTorch autograd.
         """
-        (om,) = ctx.saved_tensors
-        interpob = ctx.interpob
-        interp_mats = ctx.interp_mats
+        (omega, n_shift, numpoints, table_oversamp, offsets) = ctx.saved_tensors[:5]
+        tables = [table for table in ctx.saved_tensors[5:]]
 
-        y = kbinterp(x, om, interpob, interp_mats)
+        data = table_interp(
+            image=image,
+            omega=omega,
+            tables=tables,
+            n_shift=n_shift,
+            numpoints=numpoints,
+            table_oversamp=table_oversamp,
+            offsets=offsets,
+        )
 
-        return y, None, None, None
+        return data, None, None, None, None, None, None, None

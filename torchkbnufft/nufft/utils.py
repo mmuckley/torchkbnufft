@@ -1,24 +1,35 @@
+from typing import Sequence, List
+
 import numpy as np
 import torch
 from scipy import special
 from scipy.sparse import coo_matrix
+from torch import Tensor
 
 from .fft_functions import ifft_and_scale_on_gridded_data, scale_and_fft_on_image_volume
 
 
-def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
+def build_spmatrix(
+    om: np.ndarray,
+    numpoints: Sequence[int],
+    im_size: Sequence[int],
+    grid_size: Sequence[int],
+    n_shift: Sequence[int],
+    order: Sequence[float],
+    alpha: Sequence[float],
+) -> coo_matrix:
     """Builds a sparse matrix with the interpolation coefficients.
 
     Args:
-        om (ndarray): An array of coordinates to interpolate to.
-        im_size (tuple): Size of base image.
-        grid_size (tuple): Size of the grid to interpolate from.
-        n_shift (tuple): Number of points to shift for fftshifts.
-        order (tuple): Order of Kaiser-Bessel kernel.
-        alpha (tuple): KB parameter.
+        om: An array of coordinates to interpolate to.
+        im_size: Size of base image.
+        grid_size: Size of the grid to interpolate from.
+        n_shift: Number of points to shift for fftshifts.
+        order: Order of Kaiser-Bessel kernel.
+        alpha: KB parameter.
 
     Returns:
-        coo_matrix: A scipy sparse interpolation matrix.
+        A scipy sparse interpolation matrix.
     """
     spmat = -1
 
@@ -43,24 +54,30 @@ def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
 
     full_coef = []
     kd = []
-    for i in range(ndims):
-        N = im_size[i]
-        J = numpoints[i]
-        K = grid_size[i]
-
+    for (
+        it_om,
+        it_im_size,
+        it_grid_size,
+        it_numpoints,
+        it_om,
+        it_alpha,
+        it_order,
+    ) in zip(om, im_size, grid_size, numpoints, om, alpha, order):
         # get the interpolation coefficients
-        coef, kern_in = interp_coeff(om[i, :], J, K, alpha[i], order[i])
+        coef, kern_in = interp_coeff(
+            it_om, it_numpoints, it_grid_size, it_alpha, it_order
+        )
 
-        gam = 2 * np.pi / K
-        phase_scale = 1j * gam * (N - 1) / 2
+        gam = 2 * np.pi / it_grid_size
+        phase_scale = 1j * gam * (it_im_size - 1) / 2
 
         phase = np.exp(phase_scale * kern_in)
         full_coef.append(phase * coef)
 
         # nufft_offset
-        koff = np.expand_dims(np.floor(om[i, :] / gam - J / 2), 1)
-        Jvec = np.reshape(np.array(range(1, J + 1)), (1, J))
-        kd.append(np.mod(Jvec + koff, K) + 1)
+        koff = np.expand_dims(np.floor(it_om / gam - it_numpoints / 2), 1)
+        Jvec = np.reshape(np.array(range(1, it_numpoints + 1)), (1, it_numpoints))
+        kd.append(np.mod(Jvec + koff, it_grid_size) + 1)
 
     for i in range(len(kd)):
         kd[i] = (kd[i] - 1) * np.prod(grid_size[i + 1 :])
@@ -97,50 +114,62 @@ def build_spmatrix(om, numpoints, im_size, grid_size, n_shift, order, alpha):
     return spmat
 
 
-def build_table(numpoints, table_oversamp, grid_size, im_size, ndims, order, alpha):
+def build_table(
+    im_size: Sequence[int],
+    grid_size: Sequence[int],
+    numpoints: Sequence[int],
+    table_oversamp: Sequence[int],
+    order: Sequence[float],
+    alpha: Sequence[float],
+) -> List[Tensor]:
     """Builds an interpolation table.
 
     Args:
-        numpoints (tuple): Number of points to use for interpolation in each
-            dimension. Default is six points in each direction.
-        table_oversamp (tuple): Table oversampling factor.
-        grid_size (tuple): Size of the grid to interpolate from.
-        im_size (tuple): Size of base image.
-        ndims (int): Number of image dimensions.
-        order (tuple): Order of Kaiser-Bessel kernel.
-        alpha (tuple): KB parameter.
+        numpoints: Number of points to use for interpolation in each dimension.
+        table_oversamp: Table oversampling factor.
+        grid_size: Size of the grid to interpolate from.
+        im_size: Size of base image.
+        ndims: Number of image dimensions.
+        order: Order of Kaiser-Bessel kernel.
+        alpha: KB parameter.
 
     Returns:
-        list: A list of tables for each dimension.
+        A list of tables for each dimension.
     """
     table = []
 
     # build one table for each dimension
-    for i in range(ndims):
-        J = numpoints[i]
-        L = table_oversamp[i]
-        K = grid_size[i]
-        N = im_size[i]
-
+    for (
+        it_im_size,
+        it_grid_size,
+        it_numpoints,
+        it_table_oversamp,
+        it_order,
+        it_alpha,
+    ) in zip(im_size, grid_size, numpoints, table_oversamp, order, alpha):
         # The following is a trick of Fessler.
         # It uses broadcasting semantics to quickly build the table.
-        t1 = J / 2 - 1 + np.array(range(L)) / L  # [L]
-        om1 = t1 * 2 * np.pi / K  # gam
+        t1 = (
+            it_numpoints / 2
+            - 1
+            + np.array(range(it_table_oversamp)) / it_table_oversamp
+        )  # [L]
+        om1 = t1 * 2 * np.pi / it_grid_size  # gam
         s1 = build_spmatrix(
             np.expand_dims(om1, 0),
-            numpoints=(J,),
-            im_size=(N,),
-            grid_size=(K,),
+            numpoints=(it_numpoints,),
+            im_size=(it_im_size,),
+            grid_size=(it_grid_size,),
             n_shift=(0,),
-            order=(order[i],),
-            alpha=(alpha[i],),
+            order=(it_order,),
+            alpha=(it_alpha,),
         )
-        h = np.array(s1.getcol(J - 1).todense())
-        for col in range(J - 2, -1, -1):
+        h = np.array(s1.getcol(it_numpoints - 1).todense())
+        for col in range(it_numpoints - 2, -1, -1):
             h = np.concatenate((h, np.array(s1.getcol(col).todense())), axis=0)
         h = np.concatenate((h.flatten(), np.array([0])))
 
-        table.append(h)
+        table.append(torch.tensor(h))
 
     return table
 
