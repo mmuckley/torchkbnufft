@@ -1,5 +1,6 @@
-import torch
 import numpy as np
+import torch
+import torchkbnufft as tkbn
 
 
 def test_params():
@@ -34,6 +35,56 @@ def create_input_plus_noise(shape, is_complex):
         x = x + torch.randn(size=x.shape)
 
     return x
+
+
+def nufft_adjoint_test(image, kdata, ktraj, forw_ob, adj_ob, spmat):
+    image_forw = forw_ob(image, ktraj)
+    kdata_adj = adj_ob(kdata, ktraj)
+
+    assert torch.allclose(
+        tkbn.inner_product(image_forw, kdata), tkbn.inner_product(image, kdata_adj)
+    )
+
+    image_forw = forw_ob(image, ktraj, spmat)
+    kdata_adj = adj_ob(kdata, ktraj, spmat)
+
+    assert torch.allclose(
+        tkbn.inner_product(image_forw, kdata), tkbn.inner_product(image, kdata_adj)
+    )
+
+
+def nufft_autograd_test(image, kdata, ktraj, forw_ob, adj_ob, spmat):
+    image.requires_grad = True
+    kdata.requires_grad = True
+    image_forw = forw_ob(image, ktraj)
+    kdata_adj = adj_ob(kdata, ktraj)
+
+    (torch.abs(image_forw) ** 2 / 2).sum().backward()
+    (torch.abs(kdata_adj) ** 2 / 2).sum().backward()
+    autograd_forw = image.grad.clone()
+    autograd_adj = kdata.grad.clone()
+    grad_forw_est = adj_ob(image_forw.detach(), ktraj)
+    grad_adj_est = forw_ob(kdata_adj.detach(), ktraj)
+
+    assert torch.allclose(autograd_forw, grad_forw_est)
+    assert torch.allclose(autograd_adj, grad_adj_est)
+
+    image.grad = torch.zeros_like(image.grad)
+    kdata.grad = torch.zeros_like(kdata.grad)
+    image.requires_grad = True
+    kdata.requires_grad = True
+    image_forw = forw_ob(image, ktraj, spmat)
+    kdata_adj = adj_ob(kdata, ktraj, spmat)
+
+    (torch.abs(image_forw) ** 2 / 2).sum().backward()
+    (torch.abs(kdata_adj) ** 2 / 2).sum().backward()
+    autograd_forw = image.grad.clone()
+    autograd_adj = kdata.grad.clone()
+    grad_forw_est = adj_ob(image_forw.detach(), ktraj, spmat)
+    grad_adj_est = forw_ob(kdata_adj.detach(), ktraj, spmat)
+
+    assert torch.allclose(autograd_forw, grad_forw_est)
+    assert torch.allclose(autograd_adj, grad_adj_est)
 
 
 def create_ktraj(ndims, klength):

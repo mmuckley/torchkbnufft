@@ -44,21 +44,9 @@ def test_interp():
         im_size=im_size, grid_size=im_size, dtype=torch.complex128
     )
 
-    spmat = tkbn.build_tensor_spmatrix(
-        ktraj,
-        kb_op.numpoints.numpy(),
-        im_size,
-        im_size,
-        kb_op.n_shift.numpy(),
-        kb_op.order.numpy(),
-        kb_op.alpha.numpy()
-    )
-
     kdat = kb_op(image, ktraj)
-    kdat2 = kb_op(image, ktraj, spmat)
 
     im_2 = kb_op_adj(kdat, ktraj)
-    im_3 = kb_op_adj(kdat, ktraj, spmat)
 
     with open("result.pkl", "wb") as f:
         pickle.dump((kdat, im_2), f)
