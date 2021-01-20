@@ -108,7 +108,9 @@ def inner_product(val1: Tensor, val2: Tensor, dim: int = -1) -> Tensor:
     inprod = conj_complex_mult(val2, val1, dim=dim)
 
     if not torch.is_complex(val1):
-        inprod = torch.cat((inprod.select(dim, 0).sum(), inprod.select(dim, 1).sum()))
+        inprod = torch.cat(
+            (inprod.select(dim, 0).sum().view(1), inprod.select(dim, 1).sum().view(1))
+        )
     else:
         inprod = torch.sum(inprod)
 

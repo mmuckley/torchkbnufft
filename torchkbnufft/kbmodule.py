@@ -106,6 +106,8 @@ class KbModule(nn.Module):
         self.register_buffer(
             "table_oversamp", torch.tensor(table_oversamp, dtype=torch.long)
         )
+        self.register_buffer("order", torch.tensor(order, dtype=real_dtype))
+        self.register_buffer("alpha", torch.tensor(alpha, dtype=real_dtype))
 
     def to(self, *args, **kwargs):
         """Rewrite nn.Module.to to support complex floats."""

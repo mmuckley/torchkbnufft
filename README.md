@@ -193,7 +193,7 @@ For users interested in NUFFT implementations for other computing platforms, the
 
 ## Citation
 
-If you want to cite the package, you can use any of the following:
+If you use the package, please cite:
 
 ```bibtex
 @conference{muckley:20:tah,
@@ -201,14 +201,5 @@ If you want to cite the package, you can use any of the following:
   title = {{TorchKbNufft}: A High-Level, Hardware-Agnostic Non-Uniform Fast Fourier Transform},
   booktitle = {ISMRM Workshop on Data Sampling \& Image Reconstruction},
   year = 2020
-}
-
-@misc{Muckley2019,
-  author = {Muckley, M.J. et al.},
-  title = {Torch KB-NUFFT},
-  year = {2019},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/mmuckley/torchkbnufft}}
 }
 ```

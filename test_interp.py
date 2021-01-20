@@ -4,7 +4,8 @@ import numpy as np
 import torch
 from skimage.data import camera
 
-from torchkbnufft.kbinterp import KbInterpForward
+import torchkbnufft as tkbn
+from torchkbnufft.kbinterp import KbInterpAdjoint, KbInterpForward
 
 
 def test_interp():
@@ -34,21 +35,33 @@ def test_interp():
 
     ktraj = np.stack((ky.flatten(), kx.flatten()), axis=0)
 
-    image = (
-        torch.view_as_real(torch.tensor(image))
-        .to(dtype=dtype)
-        .unsqueeze(0)
-        .unsqueeze(0)
-    )
+    image = torch.tensor(image).to(dtype=torch.complex128).unsqueeze(0).unsqueeze(0)
     ktraj = torch.tensor(ktraj, dtype=dtype)
 
-    kb_op = KbInterpForward(im_size=im_size, grid_size=im_size, dtype=dtype)
-    kb_op = kb_op.to(image)
+    kb_op = KbInterpForward(im_size=im_size, grid_size=im_size, dtype=torch.complex128)
+
+    kb_op_adj = KbInterpAdjoint(
+        im_size=im_size, grid_size=im_size, dtype=torch.complex128
+    )
+
+    spmat = tkbn.build_tensor_spmatrix(
+        ktraj,
+        kb_op.numpoints.numpy(),
+        im_size,
+        im_size,
+        kb_op.n_shift.numpy(),
+        kb_op.order.numpy(),
+        kb_op.alpha.numpy()
+    )
 
     kdat = kb_op(image, ktraj)
+    kdat2 = kb_op(image, ktraj, spmat)
+
+    im_2 = kb_op_adj(kdat, ktraj)
+    im_3 = kb_op_adj(kdat, ktraj, spmat)
 
     with open("result.pkl", "wb") as f:
-        pickle.dump(kdat, f)
+        pickle.dump((kdat, im_2), f)
 
 
 if __name__ == "__main__":

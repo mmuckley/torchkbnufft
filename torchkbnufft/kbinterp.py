@@ -181,6 +181,7 @@ class KbInterpAdjoint(KbInterpModule):
         data: Tensor,
         omega: Tensor,
         interp_mats: Optional[Tuple[Tensor, Tensor]] = None,
+        grid_size: Optional[Tensor] = None,
     ) -> Tensor:
         """Interpolate from scattered data to gridded data.
 
@@ -196,22 +197,25 @@ class KbInterpAdjoint(KbInterpModule):
         Returns:
             data computed at on-grid locations.
         """
+        if grid_size is None:
+            assert isinstance(self.grid_size, Tensor)
+            grid_size = self.grid_size
         if interp_mats is not None:
-            output = KbSpmatInterpAdjoint.apply(data=data, interp_mats=interp_mats)
+            output = KbSpmatInterpAdjoint.apply(data, interp_mats, grid_size)
         else:
             tables = []
             for i in range(len(self.im_size)):  # type: ignore
                 tables.append(getattr(self, f"table_{i}"))
 
             output = KbTableInterpAdjoint.apply(
-                data=data,
-                omega=omega,
-                table=tables,
-                n_shift=self.n_shift,
-                numpoints=self.numpoints,
-                table_oversamp=self.table_oversamp,
-                offsets=self.offsets,
-                grid_size=self.grid_size,
+                data,
+                omega,
+                tables,
+                self.n_shift,
+                self.numpoints,
+                self.table_oversamp,
+                self.offsets,
+                grid_size,
             )
 
         return output

@@ -1,4 +1,4 @@
-from typing import Sequence, List
+from typing import List, Sequence, Tuple
 
 import numpy as np
 import torch
@@ -6,11 +6,44 @@ from scipy import special
 from scipy.sparse import coo_matrix
 from torch import Tensor
 
-from .fft_functions import ifft_and_scale_on_gridded_data, scale_and_fft_on_image_volume
+
+def build_tensor_spmatrix(
+    omega: np.ndarray,
+    numpoints: Sequence[int],
+    im_size: Sequence[int],
+    grid_size: Sequence[int],
+    n_shift: Sequence[int],
+    order: Sequence[float],
+    alpha: Sequence[float],
+) -> Tuple[Tensor, Tensor]:
+    coo = build_numpy_spmatrix(
+        omega=omega,
+        numpoints=numpoints,
+        im_size=im_size,
+        grid_size=grid_size,
+        n_shift=n_shift,
+        order=order,
+        alpha=alpha,
+    )
+
+    values = coo.data
+    indices = np.stack((coo.row, coo.col))
+
+    inds = torch.tensor(indices, dtype=torch.long)
+    real_vals = torch.tensor(np.real(values))
+    imag_vals = torch.tensor(np.imag(values))
+    shape = coo.shape
+
+    interp_mats = (
+        torch.sparse.FloatTensor(inds, real_vals, torch.Size(shape)),
+        torch.sparse.FloatTensor(inds, imag_vals, torch.Size(shape)),
+    )
+
+    return interp_mats
 
 
-def build_spmatrix(
-    om: np.ndarray,
+def build_numpy_spmatrix(
+    omega: np.ndarray,
     numpoints: Sequence[int],
     im_size: Sequence[int],
     grid_size: Sequence[int],
@@ -21,7 +54,7 @@ def build_spmatrix(
     """Builds a sparse matrix with the interpolation coefficients.
 
     Args:
-        om: An array of coordinates to interpolate to.
+        omega: An array of coordinates to interpolate to (radians/voxel).
         im_size: Size of base image.
         grid_size: Size of the grid to interpolate from.
         n_shift: Number of points to shift for fftshifts.
@@ -33,8 +66,8 @@ def build_spmatrix(
     """
     spmat = -1
 
-    ndims = om.shape[0]
-    klength = om.shape[1]
+    ndims = omega.shape[0]
+    klength = omega.shape[1]
 
     # calculate interpolation coefficients using kb kernel
     def interp_coeff(om, npts, grdsz, alpha, order):
@@ -44,7 +77,7 @@ def build_spmatrix(
         kern_in = -1 * Jvec + np.expand_dims(interp_dist, 1)
 
         cur_coeff = np.zeros(shape=kern_in.shape, dtype=np.complex)
-        indices = abs(kern_in) < npts / 2
+        indices = np.absolute(kern_in) < npts / 2
         bess_arg = np.sqrt(1 - (kern_in[indices] / (npts / 2)) ** 2)
         denom = special.iv(order, alpha)
         cur_coeff[indices] = special.iv(order, alpha * bess_arg) / denom
@@ -62,7 +95,7 @@ def build_spmatrix(
         it_om,
         it_alpha,
         it_order,
-    ) in zip(om, im_size, grid_size, numpoints, om, alpha, order):
+    ) in zip(omega, im_size, grid_size, numpoints, omega, alpha, order):
         # get the interpolation coefficients
         coef, kern_in = interp_coeff(
             it_om, it_numpoints, it_grid_size, it_alpha, it_order
@@ -76,7 +109,7 @@ def build_spmatrix(
 
         # nufft_offset
         koff = np.expand_dims(np.floor(it_om / gam - it_numpoints / 2), 1)
-        Jvec = np.reshape(np.array(range(1, it_numpoints + 1)), (1, it_numpoints))
+        Jvec = np.reshape(np.arange(1, it_numpoints + 1), (1, it_numpoints))
         kd.append(np.mod(Jvec + koff, it_grid_size) + 1)
 
     for i in range(len(kd)):
@@ -98,11 +131,11 @@ def build_spmatrix(
         )
 
     # build in fftshift
-    phase = np.exp(1j * np.dot(np.transpose(om), np.expand_dims(n_shift, 1)))
+    phase = np.exp(1j * np.dot(np.transpose(omega), np.expand_dims(n_shift, 1)))
     spmat_coef = np.conj(spmat_coef) * phase
 
     # get coordinates in sparse matrix
-    trajind = np.expand_dims(np.array(range(klength)), 1)
+    trajind = np.expand_dims(np.arange(klength), 1)
     trajind = np.repeat(trajind, np.prod(numpoints), axis=1)
 
     # build the sparse matrix
@@ -155,7 +188,7 @@ def build_table(
             + np.array(range(it_table_oversamp)) / it_table_oversamp
         )  # [L]
         om1 = t1 * 2 * np.pi / it_grid_size  # gam
-        s1 = build_spmatrix(
+        s1 = build_numpy_spmatrix(
             np.expand_dims(om1, 0),
             numpoints=(it_numpoints,),
             im_size=(it_im_size,),

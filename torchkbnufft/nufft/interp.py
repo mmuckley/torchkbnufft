@@ -8,7 +8,7 @@ from ..math import complex_mult, conj_complex_mult, imag_exp
 
 
 def spmat_interp(
-    griddat: Tensor, interp_mats: Union[Tensor, Tuple[Tensor, Tensor]]
+    image: Tensor, interp_mats: Union[Tensor, Tuple[Tensor, Tensor]]
 ) -> Tensor:
     """Interpolates griddat to off-grid coordinates with input sparse matrices.
 
@@ -23,54 +23,48 @@ def spmat_interp(
     Returns:
         tensor: griddat interpolated to off-grid locations.
     """
-    if isinstance(interp_mats, tuple):
-        is_complex = False
-        coef_mat_real, coef_mat_imag = interp_mats
-        if not (griddat.dtype == coef_mat_real.dtype == coef_mat_imag.dtype):
-            raise ValueError("Non-matching dtypes.")
-    elif torch.is_complex(interp_mats):
-        if not griddat.dtype == interp_mats.dtype:
-            raise ValueError("Non-matching dtypes.")
+    if not isinstance(interp_mats, tuple):
+        raise TypeError("interp_mats must be 2-tuple of (real_mat, imag_mat.")
+
+    coef_mat_real, coef_mat_imag = interp_mats
+    batch_size, num_coils = image.shape[:2]
+
+    if image.is_complex():
+        image = torch.view_as_real(image)
+        output_size = [batch_size, num_coils, -1]
         is_complex = True
     else:
-        raise ValueError("Variable interp_mats must be complex if not tuple.")
+        output_size = [batch_size, num_coils, -1, 2]
+        is_complex = False
 
-    batch_size, num_coils = griddat.shape[:2]
+    # we have to do these transposes because torch.mm requires first to be spmatrix
+    image = image.reshape(batch_size * num_coils, -1, 2)
+    real_griddat = image.select(-1, 0).t()
+    imag_griddat = image.select(-1, 1).t()
+
+    # apply multiplies
+    kdat = torch.stack(
+        [
+            (
+                torch.mm(coef_mat_real, real_griddat)
+                - torch.mm(coef_mat_imag, imag_griddat)
+            ).t(),
+            (
+                torch.mm(coef_mat_real, imag_griddat)
+                + torch.mm(coef_mat_imag, real_griddat)
+            ).t(),
+        ],
+        dim=-1,
+    )
 
     if is_complex:
-        assert isinstance(interp_mats, Tensor)
-        output_size = [batch_size, num_coils, -1]
-
-        griddat = griddat.view(batch_size * num_coils, -1)
-        kdat = torch.mm(interp_mats, griddat.t()).t()
-    else:
-        output_size = [batch_size, num_coils, -1, 2]
-
-        # we have to do these transposes because torch.mm requires first to be spmatrix
-        griddat = griddat.view(batch_size * num_coils, -1, 2)
-        real_griddat = griddat.select(-1, 0).t()
-        imag_griddat = griddat.select(-1, 1).t()
-
-        # apply multiplies
-        kdat = torch.stack(
-            [
-                (
-                    torch.mm(coef_mat_real, real_griddat)
-                    - torch.mm(coef_mat_imag, imag_griddat)
-                ).t(),
-                (
-                    torch.mm(coef_mat_real, imag_griddat)
-                    + torch.mm(coef_mat_imag, real_griddat)
-                ).t(),
-            ],
-            dim=-1,
-        )
+        kdat = torch.view_as_complex(kdat)
 
     return kdat.view(*output_size)
 
 
 def spmat_interp_adjoint(
-    kdat: Tensor,
+    data: Tensor,
     interp_mats: Union[Tensor, Tuple[Tensor, Tensor]],
     grid_size: Tensor,
 ) -> Tensor:
@@ -84,54 +78,43 @@ def spmat_interp_adjoint(
     Returns:
         kdat interpolated to on-grid locations.
     """
-    if isinstance(interp_mats, tuple):
-        is_complex = False
-        coef_mat_real, coef_mat_imag = interp_mats
-        if not (kdat.dtype == coef_mat_real.dtype == coef_mat_imag.dtype):
-            raise ValueError("Non-matching dtypes.")
-    elif torch.is_complex(interp_mats):
-        if not kdat.dtype == interp_mats.dtype:
-            raise ValueError("Non-matching dtypes.")
+    if not isinstance(interp_mats, tuple):
+        raise TypeError("interp_mats must be 2-tuple of (real_mat, imag_mat.")
+
+    coef_mat_real, coef_mat_imag = interp_mats
+    batch_size, num_coils = data.shape[:2]
+
+    if data.is_complex():
+        data = torch.view_as_real(data)
+        output_size = [batch_size, num_coils] + grid_size.tolist()
         is_complex = True
     else:
-        raise ValueError("Variable interp_mats must be complex if not tuple.")
+        output_size = [batch_size, num_coils] + grid_size.tolist() + [2]
+        is_complex = False
 
-    batch_size, num_coils = kdat.shape[:2]
+    # we have to do these transposes because torch.mm requires first to be spmatrix
+    real_kdat = data.select(-1, 0).view(-1, data.shape[-2]).t()
+    imag_kdat = data.select(-1, 1).view(-1, data.shape[-2]).t()
+    coef_mat_real = coef_mat_real.t()
+    coef_mat_imag = coef_mat_imag.t()
+
+    # apply multiplies with complex conjugate
+    image = torch.stack(
+        [
+            (
+                torch.mm(coef_mat_real, real_kdat) + torch.mm(coef_mat_imag, imag_kdat)
+            ).t(),
+            (
+                torch.mm(coef_mat_real, imag_kdat) - torch.mm(coef_mat_imag, real_kdat)
+            ).t(),
+        ],
+        dim=-1,
+    )
 
     if is_complex:
-        assert isinstance(interp_mats, Tensor)
-        output_size = [batch_size, num_coils] + grid_size.tolist()
+        image = torch.view_as_complex(image)
 
-        griddat = torch.mm(interp_mats, kdat.t())
-    else:
-        output_size = [batch_size, num_coils] + grid_size.tolist() + [2]
-
-        # we have to do these transposes because torch.mm requires first to be spmatrix
-        real_kdat = kdat.select(-1, 0).t().view(-1, kdat.shape[0])
-        imag_kdat = kdat.select(-1, 1).t().view(-1, kdat.shape[0])
-        coef_mat_real = coef_mat_real.t_()
-        coef_mat_imag = coef_mat_imag.t_()
-
-        # apply multiplies with complex conjugate
-        griddat = torch.stack(
-            [
-                (
-                    torch.mm(coef_mat_real, real_kdat)
-                    + torch.mm(coef_mat_imag, imag_kdat)
-                ).t(),
-                (
-                    torch.mm(coef_mat_real, imag_kdat)
-                    - torch.mm(coef_mat_imag, real_kdat)
-                ).t(),
-            ],
-            dim=-1,
-        )
-
-        # put the matrices back in the order we were given
-        coef_mat_real = coef_mat_real.t_()
-        coef_mat_imag = coef_mat_imag.t_()
-
-    return griddat.view(*output_size)
+    return image.reshape(*output_size)
 
 
 def calc_coef_and_indices(
@@ -193,12 +176,14 @@ def calc_coef_and_indices(
         else:
             coef = complex_mult(coef, table[it_distind + center])
 
-        arr_ind = arr_ind + torch.remainder(it_gridind, it_grid_size).view(-1)
-        arr_ind = arr_ind * torch.prod(grid_size[d + 1 :])
+        arr_ind = arr_ind + torch.remainder(it_gridind, it_grid_size).view(
+            -1
+        ) * torch.prod(grid_size[d + 1 :])
 
     return coef, arr_ind
 
 
+@torch.jit.script
 def table_interp(
     image: Tensor,
     omega: Tensor,
@@ -308,6 +293,7 @@ def table_interp(
     return torch.stack(output)
 
 
+@torch.jit.script
 def table_interp_adjoint(
     data: Tensor,
     omega: Tensor,
@@ -343,12 +329,16 @@ def table_interp_adjoint(
     device = data.device
     int_type = torch.long
 
+    output_prod = int(torch.prod(grid_size))
+    output_size = [data.shape[0], data.shape[1]]
+    for el in grid_size:
+        output_size.append(int(el))
+
     if torch.is_complex(data):
         is_complex = True
-        output_size = [data.shape[0], data.shape[1]] + grid_size.tolist()
     else:
         is_complex = False
-        output_size = [data.shape[0], data.shape[1]] + grid_size.tolist() + [2]
+        output_size.append(2)
         tables = [torch.view_as_real(table) for table in tables]
 
     # convert to normalized freq locs
@@ -365,13 +355,13 @@ def table_interp_adjoint(
     for mini_data in data:
         if is_complex:
             image = torch.zeros(
-                size=(mini_data.shape[0], torch.prod(grid_size)),
+                size=(mini_data.shape[0], output_prod),
                 dtype=dtype,
                 device=device,
             )
         else:
             image = torch.zeros(
-                size=(mini_data.shape[0], torch.prod(grid_size), 2),
+                size=(mini_data.shape[0], output_prod, 2),
                 dtype=dtype,
                 device=device,
             )
@@ -398,7 +388,7 @@ def table_interp_adjoint(
                 conjcoef=True,
             )
 
-            image.index_add_(2, arr_ind, complex_mult(coef, mini_data))
+            image.index_add_(1, arr_ind, complex_mult(coef, mini_data))
 
         output.append(image)
 
