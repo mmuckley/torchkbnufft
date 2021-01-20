@@ -114,3 +114,46 @@ def test_interp_autograd(shape, kdata_shape, is_complex):
     nufft_autograd_test(image, kdata, ktraj, forw_ob, adj_ob, spmat)
 
     torch.set_default_dtype(default_dtype)
+
+
+@pytest.mark.parametrize(
+    "shape, kdata_shape, is_complex",
+    [
+        ([1, 1, 19], [1, 1, 25], True),
+        ([1, 1, 32, 16], [1, 1, 83], True),
+        ([3, 2, 13, 18, 12], [3, 2, 112], True),
+    ],
+)
+def test_interp_complex_real_match(shape, kdata_shape, is_complex):
+    default_dtype = torch.get_default_dtype()
+    torch.set_default_dtype(torch.double)
+    torch.manual_seed(123)
+    im_size = shape[2:]
+
+    image = create_input_plus_noise(shape, is_complex)
+    ktraj = create_ktraj(len(im_size), kdata_shape[2])
+
+    forw_ob = tkbn.KbInterpForward(im_size=im_size, grid_size=im_size)
+
+    kdata_complex = forw_ob(image, ktraj)
+    kdata_real = torch.view_as_complex(forw_ob(torch.view_as_real(image), ktraj))
+
+    assert torch.allclose(kdata_complex, kdata_real)
+
+    # test with sparse matrices
+    spmat = tkbn.build_tensor_spmatrix(
+        ktraj,
+        forw_ob.numpoints.numpy(),
+        im_size,
+        im_size,
+        forw_ob.n_shift.numpy(),
+        forw_ob.order.numpy(),
+        forw_ob.alpha.numpy(),
+    )
+
+    kdata_complex = forw_ob(image, ktraj, spmat)
+    kdata_real = torch.view_as_complex(forw_ob(torch.view_as_real(image), ktraj, spmat))
+
+    assert torch.allclose(kdata_complex, kdata_real)
+
+    torch.set_default_dtype(default_dtype)

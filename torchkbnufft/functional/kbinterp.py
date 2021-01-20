@@ -1,12 +1,54 @@
+from typing import List, Tuple
+
 import torch
+from torch import Tensor
 from torch.autograd import Function
 
-from ..nufft.interp import (
+from .._nufft.interp import (
     spmat_interp,
     spmat_interp_adjoint,
     table_interp,
     table_interp_adjoint,
 )
+
+
+def kb_spmat_interp(image: Tensor, interp_mats: Tuple[Tensor, Tensor]):
+    return KbSpmatInterpForward.apply(image, interp_mats)
+
+
+def kb_spmat_interp_adjoint(
+    data: Tensor, interp_mats: Tuple[Tensor, Tensor], grid_size: Tensor
+):
+    return KbSpmatInterpAdjoint.apply(data, interp_mats, grid_size)
+
+
+def kb_table_interp(
+    image: Tensor,
+    omega: Tensor,
+    tables: List[Tensor],
+    n_shift: Tensor,
+    numpoints: Tensor,
+    table_oversamp: Tensor,
+    offsets: Tensor,
+):
+    return KbTableInterpForward.apply(
+        image, omega, tables, n_shift, numpoints, table_oversamp, offsets
+    )
+
+
+def kb_table_interp_adjoint(
+    data: Tensor,
+    omega: Tensor,
+    tables: List[Tensor],
+    n_shift: Tensor,
+    numpoints: Tensor,
+    table_oversamp: Tensor,
+    offsets: Tensor,
+    grid_size: Tensor,
+):
+    return KbTableInterpAdjoint.apply(
+        data, omega, tables, n_shift, numpoints, table_oversamp, offsets, grid_size
+    )
 
 
 class KbSpmatInterpForward(Function):

@@ -4,10 +4,10 @@ import torch
 from torch import Tensor
 
 from .functional.kbinterp import (
-    KbSpmatInterpAdjoint,
-    KbSpmatInterpForward,
-    KbTableInterpAdjoint,
-    KbTableInterpForward,
+    kb_spmat_interp,
+    kb_spmat_interp_adjoint,
+    kb_table_interp,
+    kb_table_interp_adjoint,
 )
 from .kbmodule import KbModule
 
@@ -115,20 +115,25 @@ class KbInterpForward(KbInterpModule):
             image computed at off-grid locations in omega.
         """
         if interp_mats is not None:
-            output = KbSpmatInterpForward.apply(image, interp_mats)
+            output = kb_spmat_interp(image=image, interp_mats=interp_mats)
         else:
             tables = []
             for i in range(len(self.im_size)):  # type: ignore
                 tables.append(getattr(self, f"table_{i}"))
 
-            output = KbTableInterpForward.apply(
-                image,
-                omega,
-                tables,
-                self.n_shift,
-                self.numpoints,
-                self.table_oversamp,
-                self.offsets.to(torch.long),
+            assert isinstance(self.n_shift, Tensor)
+            assert isinstance(self.numpoints, Tensor)
+            assert isinstance(self.table_oversamp, Tensor)
+            assert isinstance(self.offsets, Tensor)
+
+            output = kb_table_interp(
+                image=image,
+                omega=omega,
+                tables=tables,
+                n_shift=self.n_shift,
+                numpoints=self.numpoints,
+                table_oversamp=self.table_oversamp,
+                offsets=self.offsets.to(torch.long),
             )
 
         return output
@@ -201,21 +206,28 @@ class KbInterpAdjoint(KbInterpModule):
             assert isinstance(self.grid_size, Tensor)
             grid_size = self.grid_size
         if interp_mats is not None:
-            output = KbSpmatInterpAdjoint.apply(data, interp_mats, grid_size)
+            output = kb_spmat_interp_adjoint(
+                data=data, interp_mats=interp_mats, grid_size=grid_size
+            )
         else:
             tables = []
             for i in range(len(self.im_size)):  # type: ignore
                 tables.append(getattr(self, f"table_{i}"))
 
-            output = KbTableInterpAdjoint.apply(
-                data,
-                omega,
-                tables,
-                self.n_shift,
-                self.numpoints,
-                self.table_oversamp,
-                self.offsets,
-                grid_size,
+            assert isinstance(self.n_shift, Tensor)
+            assert isinstance(self.numpoints, Tensor)
+            assert isinstance(self.table_oversamp, Tensor)
+            assert isinstance(self.offsets, Tensor)
+
+            output = kb_table_interp_adjoint(
+                data=data,
+                omega=omega,
+                tables=tables,
+                n_shift=self.n_shift,
+                numpoints=self.numpoints,
+                table_oversamp=self.table_oversamp,
+                offsets=self.offsets,
+                grid_size=grid_size,
             )
 
         return output

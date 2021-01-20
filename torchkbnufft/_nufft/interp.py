@@ -10,19 +10,7 @@ from ..math import complex_mult, conj_complex_mult, imag_exp
 def spmat_interp(
     image: Tensor, interp_mats: Union[Tensor, Tuple[Tensor, Tensor]]
 ) -> Tensor:
-    """Interpolates griddat to off-grid coordinates with input sparse matrices.
-
-    Args:
-        griddat (tensor): The gridded frequency data.
-        coef_mat_real (sparse tensor): The real interpolation coefficients
-            stored as a sparse tensor.
-        coef_mat_imag (sparse tensor): The imaginary interpolation coefficients
-            stored as a sparse tensor.
-        kdat (tensor): A tensor to store the outputs in.
-
-    Returns:
-        tensor: griddat interpolated to off-grid locations.
-    """
+    """Sparse matrix interpolation backend."""
     if not isinstance(interp_mats, tuple):
         raise TypeError("interp_mats must be 2-tuple of (real_mat, imag_mat.")
 
@@ -68,16 +56,7 @@ def spmat_interp_adjoint(
     interp_mats: Union[Tensor, Tuple[Tensor, Tensor]],
     grid_size: Tensor,
 ) -> Tensor:
-    """Interpolates kdat to on-grid coordinates with input sparse matrices.
-
-    Args:
-        kdat: The off-grid frequency data.
-        interp_mats: Sparse interpolation matrices.
-        grid_size: The size of the output grid.
-
-    Returns:
-        kdat interpolated to on-grid locations.
-    """
+    """Sparse matrix interpolation adjoint backend."""
     if not isinstance(interp_mats, tuple):
         raise TypeError("interp_mats must be 2-tuple of (real_mat, imag_mat.")
 
@@ -134,7 +113,7 @@ def calc_coef_and_indices(
         base_offset: A tensor with offset locations to first elements in list
             of nearest neighbors.
         offset_increments: A tensor for how much to increment offsets.
-        table: A list of tensors tabulating a Kaiser-Bessel interpolation
+        tables: A list of tensors tabulating a Kaiser-Bessel interpolation
             kernel.
         centers: A tensor with the center locations of the table for each
             dimension.
@@ -193,22 +172,7 @@ def table_interp(
     table_oversamp: Tensor,
     offsets: Tensor,
 ) -> Tensor:
-    """Apply table interpolation.
-
-    Inputs are assumed to be batch/chans x coil x image dims x real/imag.
-    Om should be nbatch x ndims x klength.
-
-    Args:
-        x (tensor): The oversampled DFT of the signal.
-        om (tensor, optional): A custom set of k-space points to
-            interpolate to in radians/voxel.
-        interpob (dict): An interpolation object with 'table', 'n_shift',
-            'grid_size', 'numpoints', and 'table_oversamp' keys. See
-            models.kbinterp.py for details.
-
-    Returns:
-        tensor: The signal interpolated to off-grid locations.
-    """
+    """Table interpolation backend."""
     dtype = image.dtype
     device = image.device
     int_type = torch.long
@@ -304,27 +268,7 @@ def table_interp_adjoint(
     offsets: Tensor,
     grid_size: Tensor,
 ) -> Tensor:
-    """Apply table interpolation adjoint.
-
-    Inputs are assumed to be batch/chans x coil x real/imag x kspace length.
-    Om should be nbatch x ndims x klength.
-
-    Args:
-        y (tensor): The off-grid DFT of the signal.
-        om (tensor, optional): A set of k-space points to
-            interpolate from in radians/voxel.
-        interpob (dict): An interpolation object with 'table', 'n_shift',
-            'grid_size', 'numpoints', and 'table_oversamp' keys. See
-            models.kbinterp.py for details.
-        interp_mats (dict, default=None): A dictionary with keys
-            'real_interp_mats' and 'imag_interp_mats', each key containing a
-            list of interpolation matrices (see
-            mri.sparse_interp_mat.precomp_sparse_mats for construction). If
-            None, then a standard interpolation is run.
-
-    Returns:
-        tensor: The signal interpolated to on-grid locations.
-    """
+    """Table interpolation adjoint backend."""
     dtype = data.dtype
     device = data.device
     int_type = torch.long

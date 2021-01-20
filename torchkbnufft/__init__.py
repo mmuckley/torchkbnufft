@@ -19,7 +19,7 @@ if __TORCHKBNUFFT_SETUP__:
 
     sys.stderr.write("Partial import of during the build process.\n")
 else:
-    from .nufft.utils import build_tensor_spmatrix
+    from ._nufft.utils import build_tensor_spmatrix
 
     from .kbinterp import KbInterpAdjoint, KbInterpForward
 
@@ -34,7 +34,7 @@ else:
     )
 
     # from .mrisensenufft import AdjMriSenseNufft, MriSenseNufft, ToepSenseNufft
-    from .nufft import utils as nufft_utils
+    from ._nufft import utils as nufft_utils
 
     __all__ = [
         "KbInterpForward",
