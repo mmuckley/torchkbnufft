@@ -274,7 +274,19 @@ def table_interp_adjoint(
                 conjcoef=True,
             )
 
-            image.index_add_(1, arr_ind, coef * mini_data)
+            # the following code takes ordered data and scatters it on to an image grid
+            # profiling for a 2D problem showed drastic differences in performances
+            # for these two implementations on cpu/gpu, but they do the same thing
+            if device == torch.device("cpu"):
+                tmp = coef * mini_data
+                for coilind in range(image.shape[0]):
+                    image[coilind].index_put_(
+                        (arr_ind,),
+                        tmp[coilind],
+                        accumulate=True,
+                    )
+            else:
+                image.index_add_(1, arr_ind, coef * mini_data)
 
         output.append(image)
 
