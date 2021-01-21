@@ -8,14 +8,14 @@ from torch import Tensor
 
 def fft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
     norm = "ortho" if normalized else None
-    dims: List[int] = torch.arange(-ndim, 0, device=image.device).tolist()
+    dims = [el for el in range(-ndim, 0)]
 
     return torch.fft.fftn(image, dim=dims, norm=norm)
 
 
 def ifft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
     norm = "ortho" if normalized else "forward"
-    dims: List[int] = torch.arange(-ndim, 0, device=image.device).tolist()
+    dims = [el for el in range(-ndim, 0)]
 
     return torch.fft.ifftn(image, dim=dims, norm=norm)
 

@@ -5,12 +5,15 @@ from typing import List, Optional
 import torch
 from torch import Tensor
 
-from ..modules.kbmodule import KbModule
+from ..modules.kbnufft import KbNufftAdjoint
 from .fft import fft_fn
 
 
-def calc_toep_kernel(
-    adj_ob: KbModule, omega: Tensor, weights: Optional[Tensor] = None
+def calculate_toeplitz_kernel(
+    adj_ob: KbNufftAdjoint,
+    omega: Tensor,
+    weights: Optional[Tensor] = None,
+    norm: Optional[str] = None,
 ) -> Tensor:
     """Calculates an FFT kernel for Toeplitz embedding over batches.
 
@@ -29,9 +32,9 @@ def calc_toep_kernel(
         tensor: The FFT kernel for approximating the forward/backward
             operation for all batches.
     """
-    dtype = omega.dtype
+    device = omega.device
     adj_ob = copy.deepcopy(adj_ob)
-    ndims = omega.shape[0]
+    normalized = True if norm == "ortho" else False
 
     # remove this because we won't need it
     assert isinstance(adj_ob.n_shift, Tensor)
@@ -40,102 +43,68 @@ def calc_toep_kernel(
     # if we don't have any weights, just use ones
     assert isinstance(adj_ob.table_0, Tensor)
     if weights is None:
-        weights = torch.ones(omega.shape[-1], dtype=adj_ob.table_0.dtype)
+        weights = torch.ones(omega.shape[-1], dtype=adj_ob.table_0.dtype, device=device)
         weights = weights.unsqueeze(0).unsqueeze(0)
     else:
         weights = weights.to(adj_ob.table_0)
 
-    flip_list = list(itertools.product(*list([range(2)] * (ndims - 1))))
-    base_flip = torch.tensor([1], dtype=dtype)
+    # apply adjoints to n-1 dimensions
+    if omega.shape[0] > 1:
+        kernel = adjoint_flip_and_concat(1, omega, weights, adj_ob, norm)
+    else:
+        kernel = adj_ob(weights, omega, norm=norm)
 
-    return get_kernel(omega, weights, flip_list, base_flip, adj_ob)
-
-
-def get_kernel(
-    omega: Tensor, weights: Tensor, flip_list: List, base_flip: Tensor, adj_ob: KbModule
-):
-    """Calculates a single FFT kernel for Toeplitz embedding.
-
-    This function is called by calc_toep_kernel() in a loop.
-    """
-    dtype = omega.dtype
-    ndims = omega.shape[0]
-    kernel = []
-
-    # flip across each dimension except last to get full kernel
-    for flips in flip_list:
-        flip_coef = torch.cat((base_flip, torch.tensor(flips, dtype=dtype) * -2 + 1))
-        flip_coef = flip_coef.unsqueeze(-1)
-
-        tmp_om = omega * flip_coef
-
-        kernel.append(adj_ob(weights, tmp_om))
-
-        for dim, el in enumerate(flips):
-            if el == 1:
-                kernel[-1] = kernel[-1].flip(dim)
-
-    # concatenate all calculated blocks, walking back from last dim
-    for dim in range(ndims - 1):
-        kernel = cat_blocks(kernel, dim)
-    kernel = kernel[0]
-
-    # now that we have half the kernel we can use Hermitian symmetry
-    kernel = reflect_conj_concat(kernel, ndims - 1)
+    # now that we have half the kernel
+    # we can use Hermitian symmetry
+    kernel = reflect_conj_concat(kernel, 2)
 
     # make sure kernel is Hermitian symmetric
-    kernel = hermitify(kernel, ndims - 1)
-
-    permute_dims = (0, 1) + tuple(range(3, kernel.ndim)) + (2,)
-    inv_permute_dims = (0, 1, kernel.ndim - 1) + tuple(range(2, kernel.ndim - 1))
+    kernel = hermitify(kernel, 2)
 
     # put the kernel in fft space
-    kernel = fft_fn(kernel.permute(permute_dims), kernel.ndim - 3).permute(
-        inv_permute_dims
-    )
+    return fft_fn(kernel, omega.shape[0], normalized=normalized)
 
-    if adj_ob.norm == "ortho":
-        kernel = kernel / torch.sqrt(
-            torch.prod(torch.tensor(kernel.shape[3:], dtype=dtype))
+
+def adjoint_flip_and_concat(
+    dim: int,
+    omega: Tensor,
+    weights: Tensor,
+    adj_ob: KbNufftAdjoint,
+    norm: Optional[str] = None,
+) -> Tensor:
+    im_dim = dim + 2
+
+    if dim < omega.shape[0] - 1:
+        kernel1 = adjoint_flip_and_concat(dim + 1, omega, weights, adj_ob, norm)
+        flip_coef = torch.ones(
+            omega.shape[0], dtype=omega.dtype, device=omega.device
+        ).unsqueeze(-1)
+        flip_coef[dim] = -1
+        kernel2 = adjoint_flip_and_concat(
+            dim + 1, flip_coef * omega, weights, adj_ob, norm
         )
-
-    return kernel
-
-
-def cat_blocks(blocks, dim):
-    """Concatenates pairwise a list of blocks along dim.
-
-    This function concatenates pairwise elements from blocks along dimension
-    dim, removing the first element from the even blocks and replacing it with
-    zeros. The removal is done to comply with Toeplitz embedding conventions.
-
-    Args:
-        blocks (list): A list of tensors to concatenate.
-        dim (int): Dimension along which to concatenate.
-
-    Returns:
-        list: Another list of tensor blocks after pairwise concatenation.
-    """
-    dtype, device = blocks[0].dtype, blocks[0].device
-    kern = []
-    dim = -1 - dim
+    else:
+        kernel1 = adj_ob(weights, omega, norm=norm)
+        flip_coef = torch.ones(
+            omega.shape[0], dtype=omega.dtype, device=omega.device
+        ).unsqueeze(-1)
+        flip_coef[dim] = -1
+        kernel2 = adj_ob(weights, flip_coef * omega, norm=norm)
 
     # calculate the size of the zero block
-    zblockshape = torch.tensor(blocks[0].shape)
-    zblockshape[dim] = 1
-    zblock = torch.zeros(*zblockshape, dtype=dtype, device=device)
+    zero_block_shape = torch.tensor(kernel1.shape)
+    zero_block_shape[im_dim] = 1
+    zero_block = torch.zeros(
+        *zero_block_shape, dtype=kernel1.dtype, device=kernel1.device
+    )
 
-    # loop over pairwise elements, concatenating with the zero block and
-    # removing duplicates
-    for ind in range(0, len(blocks), 2):
-        tmpblock = blocks[ind + 1].narrow(dim, 1, blocks[ind + 1].shape[dim] - 1)
-        tmpblock = torch.cat((zblock, tmpblock.flip(dim)), dim)
-        kern.append(torch.cat((blocks[ind], tmpblock), dim))
+    # remove zero freq and concat
+    kernel2 = kernel2.narrow(im_dim, 1, kernel2.shape[im_dim] - 1)
 
-    return kern
+    return torch.cat((kernel1, zero_block, kernel2.flip(im_dim)), im_dim)
 
 
-def reflect_conj_concat(kern, dim):
+def reflect_conj_concat(kernel: Tensor, dim: int) -> Tensor:
     """Reflects and conjugates kern before concatenating along dim.
 
     Args:
@@ -145,39 +114,34 @@ def reflect_conj_concat(kern, dim):
     Returns:
         tensor: The full FFT kernel after Hermitian-symmetric reflection.
     """
-    dtype, device = kern.dtype, kern.device
-    dim = -1 - dim
-    flipdims = tuple(torch.arange(abs(dim)) + dim)
+    dtype, device = kernel.dtype, kernel.device
+    flipdims = torch.arange(dim, kernel.ndim, device=device)
 
     # calculate size of central z block
-    zblockshape = torch.tensor(kern.shape)
-    zblockshape[dim] = 1
-    zblock = torch.zeros(*zblockshape, dtype=dtype, device=device)
-
-    # conjugation array
-    conj_arr = torch.tensor([1, -1], dtype=dtype, device=device)
-    conj_arr = conj_arr.unsqueeze(0).unsqueeze(0)
-    while conj_arr.ndim < kern.ndim:
-        conj_arr = conj_arr.unsqueeze(-1)
+    zero_block_shape = torch.tensor(kernel.shape, device=device)
+    zero_block_shape[dim] = 1
+    zero_block = torch.zeros(*zero_block_shape, dtype=dtype, device=device)
 
     # reflect the original block and conjugate it
-    tmpblock = conj_arr * kern
+    # the below code looks a bit hacky but we don't want to flip the 0 dim
+    # TODO: make this better
+    tmp_block = kernel.conj()
     for d in flipdims:
-        tmpblock = tmpblock.index_select(
+        tmp_block = tmp_block.index_select(
             d,
             torch.remainder(
-                -1 * torch.arange(tmpblock.shape[d], device=device), tmpblock.shape[d]
+                -1 * torch.arange(tmp_block.shape[d], device=device), tmp_block.shape[d]
             ),
         )
-    tmpblock = torch.cat(
-        (zblock, tmpblock.narrow(dim, 1, tmpblock.shape[dim] - 1)), dim
+    tmp_block = torch.cat(
+        (zero_block, tmp_block.narrow(dim, 1, tmp_block.shape[dim] - 1)), dim
     )
 
     # concatenate and return
-    return torch.cat((kern, tmpblock), dim)
+    return torch.cat((kernel, tmp_block), dim)
 
 
-def hermitify(kern, dim):
+def hermitify(kernel: Tensor, dim: int) -> Tensor:
     """Enforce Hermitian symmetry.
 
     This function takes an approximately Hermitian-symmetric kernel and
@@ -186,34 +150,25 @@ def hermitify(kern, dim):
     the original.
 
     Args:
-        kern (tensor): An approximately Hermitian-symmetric kernel.
-        dim (int): The last imaging dimension.
+        kernel: An approximately Hermitian-symmetric kernel.
+        dim: The last imaging dimension.
 
     Returns:
-        tensor: A Hermitian-symmetric kernel.
+        A Hermitian-symmetric kernel.
     """
-    dtype, device = kern.dtype, kern.device
-    dim = -1 - dim + kern.ndim
+    device = kernel.device
 
-    start = kern.clone()
+    start = kernel.clone()
 
     # reverse coordinates for each dimension
-    for d in range(dim, kern.ndim):
-        kern = kern.index_select(
+    # the below code looks a bit hacky but we don't want to flip the 0 dim
+    # TODO: make this better
+    for d in range(dim, kernel.ndim):
+        kernel = kernel.index_select(
             d,
             torch.remainder(
-                -1 * torch.arange(kern.shape[d], device=device), kern.shape[d]
+                -1 * torch.arange(kernel.shape[d], device=device), kernel.shape[d]
             ),
         )
 
-    # conjugate
-    conj_arr = torch.tensor([1, -1], dtype=dtype, device=device)
-    conj_arr = conj_arr.unsqueeze(0).unsqueeze(0)
-    while conj_arr.ndim < kern.ndim:
-        conj_arr = conj_arr.unsqueeze(-1)
-    kern = conj_arr * kern
-
-    # take the average
-    kern = (start + kern) / 2
-
-    return kern
+    return (start + kernel.conj()) / 2

@@ -88,6 +88,4 @@ def nufft_autograd_test(image, kdata, ktraj, forw_ob, adj_ob, spmat):
 
 
 def create_ktraj(ndims, klength):
-    ktraj = np.random.uniform(size=(ndims, klength)) * 2 * np.pi - np.pi
-
-    return torch.tensor(ktraj, dtype=torch.get_default_dtype())
+    return torch.rand(size=(ndims, klength)) * 2 * np.pi - np.pi

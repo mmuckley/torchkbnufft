@@ -30,6 +30,7 @@ else:
         inner_product,
     )
     from ._nufft import utils as nufft_utils
+    from ._nufft.toep import calculate_toeplitz_kernel
     from ._nufft.utils import build_tensor_spmatrix
     from .modules import KbInterp, KbInterpAdjoint, KbNufft, KbNufftAdjoint, ToepNufft
 

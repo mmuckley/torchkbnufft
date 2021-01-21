@@ -4,10 +4,7 @@ import pytest
 import torch
 import torchkbnufft as tkbn
 
-from .conftest import (
-    create_input_plus_noise,
-    create_ktraj,
-)
+from .conftest import create_input_plus_noise, create_ktraj
 
 
 def test_sense_nufft_accuracy():

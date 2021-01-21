@@ -58,14 +58,7 @@ class KbSpmatInterpForward(Function):
 
         This is a wrapper for for PyTorch autograd.
         """
-        if image.is_complex():
-            grid_size = torch.tensor(
-                image.shape[2:], dtype=torch.long, device=image.device
-            )
-        else:
-            grid_size = torch.tensor(
-                image.shape[2:-1], dtype=torch.long, device=image.device
-            )
+        grid_size = torch.tensor(image.shape[2:], device=image.device)
         output = spmat_interp(image, interp_mats)
 
         if isinstance(interp_mats, tuple):
@@ -131,10 +124,7 @@ class KbTableInterpForward(Function):
 
         This is a wrapper for for PyTorch autograd.
         """
-        if image.is_complex():
-            grid_size = torch.tensor(image.shape[2:], device=image.device)
-        else:
-            grid_size = torch.tensor(image.shape[2:-1], device=image.device)
+        grid_size = torch.tensor(image.shape[2:], device=image.device)
 
         output = table_interp(
             image=image,
