@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 import torch
 import torch.fft
@@ -8,14 +8,14 @@ from torch import Tensor
 
 def fft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
     norm = "ortho" if normalized else None
-    dims = tuple(range(-ndim, 0))
+    dims: List[int] = torch.arange(-ndim, 0, device=image.device).tolist()
 
     return torch.fft.fftn(image, dim=dims, norm=norm)
 
 
 def ifft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
     norm = "ortho" if normalized else "forward"
-    dims = tuple(range(-ndim, 0))
+    dims: List[int] = torch.arange(-ndim, 0, device=image.device).tolist()
 
     return torch.fft.ifftn(image, dim=dims, norm=norm)
 
@@ -36,6 +36,7 @@ def crop_dims(image: Tensor, dim_list: Tensor, end_list: Tensor):
     return image
 
 
+@torch.jit.script
 def fft_and_scale(
     image: Tensor,
     scaling_coef: Tensor,
@@ -57,34 +58,30 @@ def fft_and_scale(
     Returns:
         The oversampled FFT of image.
     """
-    if norm is not None and norm != "ortho":
-        raise ValueError("Only option for norm is 'ortho'.")
-
-    normalized = True if norm == "ortho" else False
+    normalized = False
+    if norm is not None:
+        if norm == "ortho":
+            normalized = True
+        else:
+            raise ValueError("Only option for norm is 'ortho'.")
 
     # zero pad for oversampled nufft
-    if image.is_complex():
-        pad_sizes = []
-    else:
-        pad_sizes = [0, 0]
+    pad_sizes: List[int] = []
     for (gd, im) in zip(grid_size.flip((0,)), im_size.flip((0,))):
         pad_sizes.append(0)
         pad_sizes.append(int(gd - im))
-
-    # scaling coef unsqueeze
-    if not image.is_complex():
-        scaling_coef = torch.view_as_real(scaling_coef)
 
     scaling_coef = scaling_coef.unsqueeze(0).unsqueeze(0)
 
     # multiply by scaling_coef, pad, then fft
     return fft_fn(
-        F.pad(image * scaling_coef, tuple(pad_sizes)),
+        F.pad(image * scaling_coef, pad_sizes),
         grid_size.numel(),
         normalized=normalized,
     )
 
 
+@torch.jit.script
 def ifft_and_scale(
     image: Tensor,
     scaling_coef: Tensor,
@@ -106,17 +103,15 @@ def ifft_and_scale(
     Returns:
         The iFFT of image.
     """
-    if norm is not None and norm != "ortho":
-        raise ValueError("Only option for norm is 'ortho'.")
-
-    normalized = True if norm == "ortho" else False
+    normalized = False
+    if norm is not None:
+        if norm == "ortho":
+            normalized = True
+        else:
+            raise ValueError("Only option for norm is 'ortho'.")
 
     # calculate crops
     dims = torch.arange(len(im_size)) + 2
-
-    # scaling coef unsqueeze
-    if not image.is_complex():
-        scaling_coef = torch.view_as_real(scaling_coef)
 
     scaling_coef = scaling_coef.unsqueeze(0).unsqueeze(0)
 
@@ -129,25 +124,23 @@ def ifft_and_scale(
     )
 
 
+@torch.jit.script
 def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = None):
     """FFT-based filtering on a 2-size oversampled grid."""
-    if norm is not None and norm != "ortho":
-        raise ValueError("Only option for norm is 'ortho'.")
+    normalized = False
+    if norm is not None:
+        if norm == "ortho":
+            normalized = True
+        else:
+            raise ValueError("Only option for norm is 'ortho'.")
 
-    normalized = True if norm == "ortho" else False
-
-    if image.is_complex:
-        im_size = torch.tensor(image.shape[2:], dtype=torch.long, device=image.device)
-    else:
-        im_size = torch.tensor(image.shape[2:-1], dtype=torch.long, device=image.device)
+    im_size = torch.tensor(image.shape[2:], dtype=torch.long, device=image.device)
 
     grid_size = im_size * 2
 
     # set up n-dimensional zero pad
-    if image.is_complex():
-        pad_sizes = []
-    else:
-        pad_sizes = [0, 0]
+    # zero pad for oversampled nufft
+    pad_sizes: List[int] = []
     for (gd, im) in zip(grid_size.flip((0,)), im_size.flip((0,))):
         pad_sizes.append(0)
         pad_sizes.append(int(gd - im))

@@ -3,15 +3,10 @@ import itertools
 from typing import List, Optional
 
 import torch
-from packaging import version
 from torch import Tensor
 
 from ..modules.kbmodule import KbModule
-
-if version.parse(torch.__version__) >= version.parse("1.7.0"):
-    from .fft_compatibility import fft_new as fft_fn
-else:
-    from .fft_compatibility import fft_old as fft_fn
+from .fft import fft_fn
 
 
 def calc_toep_kernel(
