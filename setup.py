@@ -36,7 +36,7 @@ setup(
     long_description_content_type="text/markdown",
     include_package_data=True,
     zip_safe=False,
-    keywords=["MRI", "pytorch"],
+    keywords=["MRI", "pytorch", "nufft", "deep-learning"],
     python_requires=">=3.5",
     setup_requires=[],
     install_requires=install_requires,
