@@ -19,8 +19,7 @@ if __TORCHKBNUFFT_SETUP__:
 
     sys.stderr.write("Partial import of during the build process.\n")
 else:
-    from ._nufft import utils as nufft_utils
-    from ._nufft.utils import build_tensor_spmatrix
+    import torchkbnufft.functional
 
     from ._math import (
         absolute,
@@ -30,6 +29,8 @@ else:
         imag_exp,
         inner_product,
     )
+    from ._nufft import utils as nufft_utils
+    from ._nufft.utils import build_tensor_spmatrix
     from .modules import KbInterp, KbInterpAdjoint, KbNufft, KbNufftAdjoint, ToepNufft
 
     __all__ = [
@@ -42,6 +43,7 @@ else:
         "complex_mult",
         "complex_sign",
         "conj_complex_mult",
+        "functional",
         "imag_exp",
         "inner_product",
     ]

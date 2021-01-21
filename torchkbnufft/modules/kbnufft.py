@@ -90,7 +90,24 @@ class KbNufft(KbNufftModule):
         Om should be nbatch x ndims x klength.
         """
         if smaps is not None:
-            image = tkbn.complex_mult(image, smaps)
+            if not smaps.dtype == image.dtype:
+                raise TypeError("image dtype does not match smaps dtype.")
+
+        is_complex = True
+        if not image.is_complex():
+            if not image.shape[-1] == 2:
+                raise ValueError("For real inputs, last dimension must be size 2.")
+            if smaps is not None:
+                if not smaps.shape[-1] == 2:
+                    raise ValueError("For real inputs, last dimension must be size 2.")
+
+                smaps = torch.view_as_complex(smaps)
+
+            is_complex = False
+            image = torch.view_as_complex(image)
+
+        if smaps is not None:
+            image = image * smaps
 
         if interp_mats is not None:
             assert isinstance(self.scaling_coef, Tensor)
@@ -131,6 +148,9 @@ class KbNufft(KbNufftModule):
                 offsets=self.offsets.to(torch.long),
                 norm=norm,
             )
+
+        if not is_complex:
+            output = torch.view_as_real(output)
 
         return output
 
@@ -184,6 +204,23 @@ class KbNufftAdjoint(KbNufftModule):
         Returns:
             tensor: The image after adjoint NUFFT.
         """
+        if smaps is not None:
+            if not smaps.dtype == data.dtype:
+                raise TypeError("data dtype does not match smaps dtype.")
+
+        is_complex = True
+        if not data.is_complex():
+            if not data.shape[-1] == 2:
+                raise ValueError("For real inputs, last dimension must be size 2.")
+            if smaps is not None:
+                if not smaps.shape[-1] == 2:
+                    raise ValueError("For real inputs, last dimension must be size 2.")
+
+                smaps = torch.view_as_complex(smaps)
+
+            is_complex = False
+            data = torch.view_as_complex(data)
+
         if interp_mats is not None:
             assert isinstance(self.scaling_coef, Tensor)
             assert isinstance(self.im_size, Tensor)
@@ -225,9 +262,10 @@ class KbNufftAdjoint(KbNufftModule):
             )
 
         if smaps is not None:
-            output = torch.sum(
-                tkbn.conj_complex_mult(output, smaps), dim=1, keepdim=True
-            )
+            output = torch.sum(output * smaps.conj(), dim=1, keepdim=True)
+
+        if not is_complex:
+            output = torch.view_as_real(output)
 
         return output
 
@@ -273,6 +311,23 @@ class ToepNufft(torch.nn.Module):
         Returns:
             tensor: x after applying the Toeplitz NUFFT.
         """
+        if smaps is not None:
+            if not smaps.dtype == image.dtype:
+                raise TypeError("image dtype does not match smaps dtype.")
+
+        is_complex = True
+        if not image.is_complex():
+            if not image.shape[-1] == 2:
+                raise ValueError("For real inputs, last dimension must be size 2.")
+            if smaps is not None:
+                if not smaps.shape[-1] == 2:
+                    raise ValueError("For real inputs, last dimension must be size 2.")
+
+                smaps = torch.view_as_complex(smaps)
+
+            is_complex = False
+            image = torch.view_as_complex(image)
+
         if smaps is None:
             output = tkbnF.fft_filter(image=image, kernel=kernel, norm=norm)
         else:
@@ -280,19 +335,20 @@ class ToepNufft(torch.nn.Module):
 
             # do a batch loop to conserve memory
             for (mini_image, smap) in zip(image, smaps):
-                mini_image = tkbn.complex_mult(
-                    mini_image.unsqueeze(0), smap.unsqueeze(0)
-                )
+                mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
                 mini_image = tkbnF.fft_filter(
                     image=mini_image, kernel=kernel, norm=norm
                 )
                 mini_image = torch.sum(
-                    tkbn.conj_complex_mult(mini_image, smap.unsqueeze(0)),
+                    mini_image * smap.unsqueeze(0).conj(),
                     dim=1,
                     keepdim=True,
                 )
                 output.append(mini_image.squeeze(0))
 
             output = torch.stack(output)
+
+        if not is_complex:
+            output = torch.view_as_real(output)
 
         return output

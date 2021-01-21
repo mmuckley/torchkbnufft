@@ -88,6 +88,14 @@ class KbInterp(KbInterpModule):
         Returns:
             image computed at off-grid locations in omega.
         """
+        is_complex = True
+        if not image.is_complex():
+            if not image.shape[-1] == 2:
+                raise ValueError("For real inputs, last dimension must be size 2.")
+
+            is_complex = False
+            image = torch.view_as_complex(image)
+
         if interp_mats is not None:
             output = tkbnF.kb_spmat_interp(image=image, interp_mats=interp_mats)
         else:
@@ -109,6 +117,9 @@ class KbInterp(KbInterpModule):
                 table_oversamp=self.table_oversamp,
                 offsets=self.offsets.to(torch.long),
             )
+
+        if not is_complex:
+            output = torch.view_as_real(output)
 
         return output
 
@@ -154,6 +165,14 @@ class KbInterpAdjoint(KbInterpModule):
         Returns:
             data computed at on-grid locations.
         """
+        is_complex = True
+        if not data.is_complex():
+            if not data.shape[-1] == 2:
+                raise ValueError("For real inputs, last dimension must be size 2.")
+
+            is_complex = False
+            data = torch.view_as_complex(data)
+
         if grid_size is None:
             assert isinstance(self.grid_size, Tensor)
             grid_size = self.grid_size
@@ -181,5 +200,8 @@ class KbInterpAdjoint(KbInterpModule):
                 offsets=self.offsets,
                 grid_size=grid_size,
             )
+
+        if not is_complex:
+            output = torch.view_as_real(output)
 
         return output

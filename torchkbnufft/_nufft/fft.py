@@ -1,18 +1,23 @@
 from typing import Optional
 
 import torch
+import torch.fft
 import torch.nn.functional as F
-from packaging import version
 from torch import Tensor
 
-from .._math import complex_mult, conj_complex_mult
 
-if version.parse(torch.__version__) >= version.parse("1.7.0"):
-    from .fft_compatibility import fft_new as fft_fn
-    from .fft_compatibility import ifft_new as ifft_fn
-else:
-    from .fft_compatibility import fft_old as fft_fn
-    from .fft_compatibility import ifft_old as ifft_fn
+def fft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
+    norm = "ortho" if normalized else None
+    dims = tuple(range(-ndim, 0))
+
+    return torch.fft.fftn(image, dim=dims, norm=norm)
+
+
+def ifft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
+    norm = "ortho" if normalized else "forward"
+    dims = tuple(range(-ndim, 0))
+
+    return torch.fft.ifftn(image, dim=dims, norm=norm)
 
 
 def crop_dims(image: Tensor, dim_list: Tensor, end_list: Tensor):
@@ -74,7 +79,7 @@ def fft_and_scale(
 
     # multiply by scaling_coef, pad, then fft
     return fft_fn(
-        F.pad(complex_mult(image, scaling_coef), tuple(pad_sizes)),
+        F.pad(image * scaling_coef, tuple(pad_sizes)),
         grid_size.numel(),
         normalized=normalized,
     )
@@ -116,11 +121,11 @@ def ifft_and_scale(
     scaling_coef = scaling_coef.unsqueeze(0).unsqueeze(0)
 
     # ifft, crop, then multiply by scaling_coef conjugate
-    return conj_complex_mult(
+    return (
         crop_dims(
             ifft_fn(image, grid_size.numel(), normalized=normalized), dims, im_size
-        ),
-        scaling_coef,
+        )
+        * scaling_coef.conj()
     )
 
 
@@ -153,12 +158,8 @@ def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = None):
     # pad, forward fft, multiply filter kernel, inverse fft, then crop pad
     return crop_dims(
         ifft_fn(
-            complex_mult(
-                fft_fn(
-                    F.pad(image, pad_sizes), grid_size.numel(), normalized=normalized
-                ),
-                kernel,
-            ),
+            fft_fn(F.pad(image, pad_sizes), grid_size.numel(), normalized=normalized)
+            * kernel,
             grid_size.numel(),
             normalized=normalized,
         ),

@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from .._math import complex_mult, conj_complex_mult, imag_exp
+from .._math import imag_exp
 
 
 def spmat_interp(
@@ -151,9 +151,9 @@ def calc_coef_and_indices(
         zip(tables, distind, centers, gridind, grid_size)
     ):  # spatial dimension
         if conjcoef:
-            coef = conj_complex_mult(coef, table[it_distind + center])
+            coef = coef * table[it_distind + center].conj()
         else:
-            coef = complex_mult(coef, table[it_distind + center])
+            coef = coef * table[it_distind + center]
 
         arr_ind = arr_ind + torch.remainder(it_gridind, it_grid_size).view(
             -1
@@ -228,28 +228,23 @@ def table_interp(
 
             # gather and multiply coefficients
             if is_complex:
-                kdat += complex_mult(
-                    coef.unsqueeze(0), torch.gather(mini_image, 1, arr_ind)
-                )
+                kdat += coef.unsqueeze(0) * torch.gather(mini_image, 1, arr_ind)
             else:
-                kdat += complex_mult(
-                    coef.unsqueeze(0),
-                    torch.stack(
-                        (
-                            torch.gather(mini_image.select(-1, 0), 1, arr_ind),
-                            torch.gather(mini_image.select(-1, 1), 1, arr_ind),
-                        ),
-                        dim=-1,
+                kdat += coef.unsqueeze(0) * torch.stack(
+                    (
+                        torch.gather(mini_image.select(-1, 0), 1, arr_ind),
+                        torch.gather(mini_image.select(-1, 1), 1, arr_ind),
                     ),
+                    dim=-1,
                 )
 
         # phase for fftshift
-        kdat = complex_mult(
-            kdat,
-            imag_exp(
+        kdat = (
+            kdat
+            * imag_exp(
                 torch.mv(torch.transpose(omega, 1, 0), n_shift),
                 return_complex=is_complex,
-            ).unsqueeze(0),
+            ).unsqueeze(0)
         )
 
         output.append(kdat)
@@ -311,12 +306,12 @@ def table_interp_adjoint(
             )
 
         # phase for fftshift
-        mini_data = conj_complex_mult(
-            mini_data,
-            imag_exp(
+        mini_data = (
+            mini_data
+            * imag_exp(
                 torch.mv(torch.transpose(omega, 1, 0), n_shift),
                 return_complex=is_complex,
-            ),
+            ).conj()
         )
 
         # loop over offsets and take advantage of numpy broadcasting
@@ -332,7 +327,7 @@ def table_interp_adjoint(
                 conjcoef=True,
             )
 
-            image.index_add_(1, arr_ind, complex_mult(coef, mini_data))
+            image.index_add_(1, arr_ind, coef * mini_data)
 
         output.append(image)
 

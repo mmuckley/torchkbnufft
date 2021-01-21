@@ -10,6 +10,24 @@ from .conftest import (
 )
 
 
+def test_sense_nufft_accuracy():
+    default_dtype = torch.get_default_dtype()
+    torch.set_default_dtype(torch.double)
+    with open("tests/data/sense_nufft_data.pkl", "rb") as f:
+        old_data = pickle.load(f)
+
+    for (image, ktraj, smaps, old_kdata) in old_data:
+        im_size = image.shape[2:-1]
+
+        forw_ob = tkbn.KbNufft(im_size=im_size)
+
+        kdata = forw_ob(image, ktraj, smaps=smaps)
+
+        assert torch.allclose(kdata, old_kdata)
+
+    torch.set_default_dtype(default_dtype)
+
+
 def sense_nufft_adjoint_test(image, kdata, ktraj, smaps, forw_ob, adj_ob, spmat):
     image_forw = forw_ob(image, ktraj, smaps=smaps)
     kdata_adj = adj_ob(kdata, ktraj, smaps=smaps)
@@ -58,24 +76,6 @@ def sense_nufft_autograd_test(image, kdata, ktraj, smaps, forw_ob, adj_ob, spmat
 
     assert torch.allclose(autograd_forw, grad_forw_est)
     assert torch.allclose(autograd_adj, grad_adj_est)
-
-
-def test_sense_nufft_accuracy():
-    default_dtype = torch.get_default_dtype()
-    torch.set_default_dtype(torch.double)
-    with open("tests/data/sense_nufft_data.pkl", "rb") as f:
-        old_data = pickle.load(f)
-
-    for (image, ktraj, smaps, old_kdata) in old_data:
-        im_size = image.shape[2:-1]
-
-        forw_ob = tkbn.KbNufft(im_size=im_size)
-
-        kdata = forw_ob(image, ktraj, smaps=smaps)
-
-        assert torch.allclose(kdata, old_kdata)
-
-    torch.set_default_dtype(default_dtype)
 
 
 @pytest.mark.parametrize(

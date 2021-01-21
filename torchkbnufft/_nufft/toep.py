@@ -1,9 +1,12 @@
 import copy
 import itertools
+from typing import List, Optional
 
-import numpy as np
 import torch
 from packaging import version
+from torch import Tensor
+
+from ..modules.kbmodule import KbModule
 
 if version.parse(torch.__version__) >= version.parse("1.7.0"):
     from .fft_compatibility import fft_new as fft_fn
@@ -11,7 +14,9 @@ else:
     from .fft_compatibility import fft_old as fft_fn
 
 
-def calc_toep_kernel(adj_ob, om, weights=None):
+def calc_toep_kernel(
+    adj_ob: KbModule, omega: Tensor, weights: Optional[Tensor] = None
+) -> Tensor:
     """Calculates an FFT kernel for Toeplitz embedding over batches.
 
     The kernel is calculated using a adjoint NUFFT object. If the adjoint
@@ -29,96 +34,77 @@ def calc_toep_kernel(adj_ob, om, weights=None):
         tensor: The FFT kernel for approximating the forward/backward
             operation for all batches.
     """
-    dtype, device = om.dtype, om.device
-    adj_ob = copy.deepcopy(adj_ob).to(dtype=dtype, device=device)
-    ndims = om.shape[1]
+    dtype = omega.dtype
+    adj_ob = copy.deepcopy(adj_ob)
+    ndims = omega.shape[0]
 
     # remove this because we won't need it
-    adj_ob.n_shift = tuple(np.array(adj_ob.n_shift) * 0)
-    adj_ob.n_shift_tensor = adj_ob.n_shift_tensor * 0
+    assert isinstance(adj_ob.n_shift, Tensor)
+    adj_ob.n_shift = adj_ob.n_shift * 0
 
     # if we don't have any weights, just use ones
+    assert isinstance(adj_ob.table_0, Tensor)
     if weights is None:
-        weights = torch.stack((torch.ones(om.shape[-1]), torch.zeros(om.shape[-1]))).to(
-            dtype=dtype, device=device
-        )
+        weights = torch.ones(omega.shape[-1], dtype=adj_ob.table_0.dtype)
         weights = weights.unsqueeze(0).unsqueeze(0)
-    elif weights.shape[2] == 1:
-        weights = torch.cat(
-            (weights, torch.zeros(weights.shape, dtype=dtype, device=device)), 2
-        )
+    else:
+        weights = weights.to(adj_ob.table_0)
 
     flip_list = list(itertools.product(*list([range(2)] * (ndims - 1))))
-    base_flip = torch.tensor([1], dtype=dtype, device=device)
+    base_flip = torch.tensor([1], dtype=dtype)
 
-    kern = []
-    for ind in range(om.shape[0]):
-        kern.append(
-            _get_kern(om[ind].unsqueeze(0), weights, flip_list, base_flip, adj_ob)
-        )
-
-    kern = torch.cat(kern, dim=0)
-
-    return kern
+    return get_kernel(omega, weights, flip_list, base_flip, adj_ob)
 
 
-def _get_kern(om, weights, flip_list, base_flip, adj_ob):
+def get_kernel(
+    omega: Tensor, weights: Tensor, flip_list: List, base_flip: Tensor, adj_ob: KbModule
+):
     """Calculates a single FFT kernel for Toeplitz embedding.
 
     This function is called by calc_toep_kernel() in a loop.
-
-    Args:
-        om (tensor): The k-space trajectory in radians/voxel.
-        weights (tensor, default=None): Non-Cartesian k-space weights (e.g.,
-            density compensation).
-        flip_list (list): A list of flipping directions.
-        base_flip (tensor): A base flip list.
-        adj_ob (object): The adjoint NUFFT object.
-
-    Returns:
-        tensor: The FFT kernel for approximating the forward/backward
-            operation.
     """
-    dtype, device = om.dtype, om.device
-    ndims = om.shape[1]
-    kern = []
+    dtype = omega.dtype
+    ndims = omega.shape[0]
+    kernel = []
 
     # flip across each dimension except last to get full kernel
     for flips in flip_list:
-        flip_coef = torch.cat(
-            (base_flip, torch.tensor(flips, dtype=dtype, device=device) * -2 + 1)
-        )
-        flip_coef = flip_coef.unsqueeze(0).unsqueeze(-1)
+        flip_coef = torch.cat((base_flip, torch.tensor(flips, dtype=dtype) * -2 + 1))
+        flip_coef = flip_coef.unsqueeze(-1)
 
-        tmp_om = om * flip_coef
+        tmp_om = omega * flip_coef
 
-        kern.append(adj_ob(weights, tmp_om))
+        kernel.append(adj_ob(weights, tmp_om))
 
         for dim, el in enumerate(flips):
             if el == 1:
-                kern[-1] = kern[-1].flip(dim)
+                kernel[-1] = kernel[-1].flip(dim)
 
     # concatenate all calculated blocks, walking back from last dim
     for dim in range(ndims - 1):
-        kern = cat_blocks(kern, dim)
-    kern = kern[0]
+        kernel = cat_blocks(kernel, dim)
+    kernel = kernel[0]
 
     # now that we have half the kernel we can use Hermitian symmetry
-    kern = reflect_conj_concat(kern, ndims - 1)
+    kernel = reflect_conj_concat(kernel, ndims - 1)
 
     # make sure kernel is Hermitian symmetric
-    kern = hermitify(kern, ndims - 1)
+    kernel = hermitify(kernel, ndims - 1)
 
-    permute_dims = (0, 1) + tuple(range(3, kern.ndim)) + (2,)
-    inv_permute_dims = (0, 1, kern.ndim - 1) + tuple(range(2, kern.ndim - 1))
+    permute_dims = (0, 1) + tuple(range(3, kernel.ndim)) + (2,)
+    inv_permute_dims = (0, 1, kernel.ndim - 1) + tuple(range(2, kernel.ndim - 1))
 
     # put the kernel in fft space
-    kern = fft_fn(kern.permute(permute_dims), kern.ndim - 3).permute(inv_permute_dims)
+    kernel = fft_fn(kernel.permute(permute_dims), kernel.ndim - 3).permute(
+        inv_permute_dims
+    )
 
     if adj_ob.norm == "ortho":
-        kern = kern / torch.sqrt(torch.prod(torch.tensor(kern.shape[3:], dtype=dtype)))
+        kernel = kernel / torch.sqrt(
+            torch.prod(torch.tensor(kernel.shape[3:], dtype=dtype))
+        )
 
-    return kern
+    return kernel
 
 
 def cat_blocks(blocks, dim):

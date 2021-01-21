@@ -1,4 +1,4 @@
-from .._nufft.fft_functions import fft_filter
+from .._nufft.fft import fft_filter
 from .interp import (
     kb_spmat_interp,
     kb_spmat_interp_adjoint,

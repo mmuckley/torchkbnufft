@@ -2,7 +2,7 @@ from typing import List, Optional, Tuple
 
 from torch import Tensor
 
-from .._nufft.fft_functions import fft_and_scale, ifft_and_scale
+from .._nufft.fft import fft_and_scale, ifft_and_scale
 from .interp import (
     kb_spmat_interp,
     kb_spmat_interp_adjoint,
