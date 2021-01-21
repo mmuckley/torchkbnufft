@@ -130,7 +130,7 @@ def create_sense_nufft_data():
         torch.manual_seed(123)
         im_size = shape[2:-1]
 
-        smap = torch.randn([shape[1], 2] + im_size)
+        smap = torch.randn([shape[0], shape[1], 2] + im_size)
         image = create_input_plus_noise(shape, is_complex)
         if image.ndim == 4:
             dim = (2,)
@@ -160,13 +160,16 @@ def create_sense_nufft_data():
 
         if image.ndim == 4:
             image = image.permute(0, 1, 3, 2).contiguous()
+            smap = smap.permute(0, 1, 3, 2).contiguous()
         elif image.ndim == 5:
             image = image.permute(0, 1, 3, 4, 2).contiguous()
+            smap = smap.permute(0, 1, 3, 4, 2).contiguous()
         elif image.ndim == 6:
             image = image.permute(0, 1, 3, 4, 5, 2).contiguous()
+            smap = smap.permute(0, 1, 3, 4, 5, 2).contiguous()
         kdata = kdata.permute(0, 1, 3, 2).contiguous()
 
-        outputs.append((image, ktraj[0], kdata))
+        outputs.append((image, ktraj[0], smap, kdata))
 
     with open("sense_nufft_data.pkl", "wb") as f:
         pickle.dump(outputs, f)
@@ -175,3 +178,4 @@ def create_sense_nufft_data():
 if __name__ == "__main__":
     create_interp_data()
     create_nufft_data()
+    create_sense_nufft_data()
