@@ -1,6 +1,5 @@
 import copy
-import itertools
-from typing import List, Optional
+from typing import Optional
 
 import torch
 from torch import Tensor

@@ -1,10 +1,8 @@
 from typing import Optional, Sequence, Tuple, Union
 
 import torch
-from torch import Tensor
-
-import torchkbnufft as tkbn
 import torchkbnufft.functional as tkbnF
+from torch import Tensor
 
 from .._nufft.utils import compute_scaling_coefs
 from .kbmodule import KbModule

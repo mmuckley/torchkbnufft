@@ -53,8 +53,8 @@ def build_tensor_spmatrix(
     shape = coo.shape
 
     interp_mats = (
-        torch.sparse.FloatTensor(inds, real_vals, torch.Size(shape)),
-        torch.sparse.FloatTensor(inds, imag_vals, torch.Size(shape)),
+        torch.sparse.FloatTensor(inds, real_vals, torch.Size(shape)),  # type: ignore
+        torch.sparse.FloatTensor(inds, imag_vals, torch.Size(shape)),  # type: ignore
     )
 
     return interp_mats

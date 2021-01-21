@@ -1,9 +1,8 @@
 from typing import Optional, Sequence, Tuple, Union
 
 import torch
-from torch import Tensor
-
 import torchkbnufft.functional as tkbnF
+from torch import Tensor
 
 from .kbmodule import KbModule
 

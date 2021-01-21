@@ -10,14 +10,14 @@ def fft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
     norm = "ortho" if normalized else None
     dims = [el for el in range(-ndim, 0)]
 
-    return torch.fft.fftn(image, dim=dims, norm=norm)
+    return torch.fft.fftn(image, dim=dims, norm=norm)  # type: ignore
 
 
 def ifft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
     norm = "ortho" if normalized else "forward"
     dims = [el for el in range(-ndim, 0)]
 
-    return torch.fft.ifftn(image, dim=dims, norm=norm)
+    return torch.fft.ifftn(image, dim=dims, norm=norm)  # typte: ignore
 
 
 def crop_dims(image: Tensor, dim_list: Tensor, end_list: Tensor):
