@@ -1,3 +1,5 @@
+"""Run this with torchkbnufft version 0.3.4 to generate test data."""
+
 import pickle
 
 import torch
