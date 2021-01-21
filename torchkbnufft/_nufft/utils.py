@@ -16,6 +16,24 @@ def build_tensor_spmatrix(
     order: Sequence[float],
     alpha: Sequence[float],
 ) -> Tuple[Tensor, Tensor]:
+    """Builds a sparse matrix with the interpolation coefficients.
+
+    This builds the interpolation matrices directly from scipy Kaiser-Bessel
+    functions, so using them for a NUFFT should be a little more accurate than
+    table interpolation.
+
+    Args:
+        omega: An array of coordinates to interpolate to (radians/voxel).
+        numpoints: Number of points to use for interpolation in each dimension.
+        im_size: Size of base image.
+        grid_size: Size of the grid to interpolate from.
+        n_shift: Number of points to shift for fftshifts.
+        order: Order of Kaiser-Bessel kernel.
+        alpha: KB parameter.
+
+    Returns:
+        2-Tuple of (real, imaginary) tensors for NUFFT interpolation.
+    """
     coo = build_numpy_spmatrix(
         omega=omega,
         numpoints=numpoints,
@@ -55,6 +73,7 @@ def build_numpy_spmatrix(
 
     Args:
         omega: An array of coordinates to interpolate to (radians/voxel).
+        numpoints: Number of points to use for interpolation in each dimension.
         im_size: Size of base image.
         grid_size: Size of the grid to interpolate from.
         n_shift: Number of points to shift for fftshifts.
@@ -207,7 +226,9 @@ def build_table(
     return table
 
 
-def kaiser_bessel_ft(om, npts, alpha, order, d):
+def kaiser_bessel_ft(
+    omega: np.ndarray, numpoints: int, alpha: float, order: float, d: int
+) -> np.ndarray:
     """Computes FT of KB function for scaling in image domain.
 
     Args:
@@ -219,13 +240,13 @@ def kaiser_bessel_ft(om, npts, alpha, order, d):
         d (int):  # TODO: find what d is
 
     Returns:
-        ndarray: The scaling coefficients.
+        The scaling coefficients.
     """
-    z = np.sqrt((2 * np.pi * (npts / 2) * om) ** 2 - alpha ** 2 + 0j)
+    z = np.sqrt((2 * np.pi * (numpoints / 2) * omega) ** 2 - alpha ** 2 + 0j)
     nu = d / 2 + order
     scaling_coef = (
         (2 * np.pi) ** (d / 2)
-        * ((npts / 2) ** d)
+        * ((numpoints / 2) ** d)
         * (alpha ** order)
         / special.iv(order, alpha)
         * special.jv(nu, z)
@@ -249,7 +270,6 @@ def compute_scaling_coefs(
         im_size: Size of base image.
         grid_size: Size of the grid to interpolate from.
         numpoints: Number of points to use for interpolation in each dimension.
-            Default is six points in each direction.
         alpha: KB parameter.
         order: Order of Kaiser-Bessel kernel.
 
@@ -260,8 +280,10 @@ def compute_scaling_coefs(
     scaling_coef = 1 / kaiser_bessel_ft(
         num_coefs / grid_size[0], numpoints[0], alpha[0], order[0], 1
     )
+
     if numpoints[0] == 1:
         scaling_coef = np.ones(scaling_coef.shape)
+
     for i in range(1, len(im_size)):
         indlist = np.array(range(im_size[i])) - (im_size[i] - 1) / 2
         scaling_coef = np.expand_dims(scaling_coef, axis=-1)

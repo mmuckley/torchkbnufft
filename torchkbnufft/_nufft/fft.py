@@ -21,19 +21,12 @@ def ifft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
 
 
 def crop_dims(image: Tensor, dim_list: Tensor, end_list: Tensor):
-    if image.is_complex():
-        is_complex = True
-        image = torch.view_as_real(image)  # index select only works for real
-    else:
-        is_complex = False
+    image = torch.view_as_real(image)  # index select only works for real
 
     for (dim, end) in zip(dim_list, end_list):
         image = torch.index_select(image, dim, torch.arange(end))
 
-    if is_complex:
-        image = torch.view_as_complex(image)
-
-    return image
+    return torch.view_as_complex(image)
 
 
 @torch.jit.script
