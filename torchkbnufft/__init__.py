@@ -20,6 +20,7 @@ if __TORCHKBNUFFT_SETUP__:
     sys.stderr.write("Partial import of during the build process.\n")
 else:
     import torchkbnufft.functional
+    import torchkbnufft.modules
 
     from ._math import (
         absolute,

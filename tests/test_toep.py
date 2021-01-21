@@ -17,7 +17,7 @@ from .conftest import create_input_plus_noise, create_ktraj
     ],
 )
 def test_toeplitz_nufft_accuracy(shape, kdata_shape, is_complex):
-    norm_diff_tol = 1e-4
+    norm_diff_tol = 1e-4  # toeplitz is only approximate
     default_dtype = torch.get_default_dtype()
     torch.set_default_dtype(torch.double)
     torch.manual_seed(123)
