@@ -17,13 +17,9 @@ def spmat_interp(
     coef_mat_real, coef_mat_imag = interp_mats
     batch_size, num_coils = image.shape[:2]
 
-    if image.is_complex():
-        image = torch.view_as_real(image)
-        output_size = [batch_size, num_coils, -1]
-        is_complex = True
-    else:
-        output_size = [batch_size, num_coils, -1, 2]
-        is_complex = False
+    # sparse matrix multiply requires real
+    image = torch.view_as_real(image)
+    output_size = [batch_size, num_coils, -1]
 
     # we have to do these transposes because torch.mm requires first to be spmatrix
     image = image.reshape(batch_size * num_coils, -1, 2)
@@ -45,10 +41,7 @@ def spmat_interp(
         dim=-1,
     )
 
-    if is_complex:
-        kdat = torch.view_as_complex(kdat)
-
-    return kdat.view(*output_size)
+    return torch.view_as_complex(kdat).view(*output_size)
 
 
 def spmat_interp_adjoint(
@@ -63,13 +56,9 @@ def spmat_interp_adjoint(
     coef_mat_real, coef_mat_imag = interp_mats
     batch_size, num_coils = data.shape[:2]
 
-    if data.is_complex():
-        data = torch.view_as_real(data)
-        output_size = [batch_size, num_coils] + grid_size.tolist()
-        is_complex = True
-    else:
-        output_size = [batch_size, num_coils] + grid_size.tolist() + [2]
-        is_complex = False
+    # sparse matrix multiply requires real
+    data = torch.view_as_real(data)
+    output_size = [batch_size, num_coils] + grid_size.tolist()
 
     # we have to do these transposes because torch.mm requires first to be spmatrix
     real_kdat = data.select(-1, 0).view(-1, data.shape[-2]).t()
@@ -90,10 +79,7 @@ def spmat_interp_adjoint(
         dim=-1,
     )
 
-    if is_complex:
-        image = torch.view_as_complex(image)
-
-    return image.reshape(*output_size)
+    return torch.view_as_complex(image).reshape(*output_size)
 
 
 def calc_coef_and_indices(
@@ -144,8 +130,6 @@ def calc_coef_and_indices(
 
     # give complex numbers if requested
     coef = torch.ones(ktraj_len, dtype=dtype, device=device)
-    if not torch.is_complex(coef):
-        coef = torch.stack((coef, torch.zeros_like(coef)), dim=-1)
 
     for d, (table, it_distind, center, it_gridind, it_grid_size) in enumerate(
         zip(tables, distind, centers, gridind, grid_size)
@@ -177,13 +161,7 @@ def table_interp(
     device = image.device
     int_type = torch.long
 
-    if torch.is_complex(image):
-        is_complex = True
-        grid_size = torch.tensor(image.shape[2:], dtype=int_type, device=device)
-    else:
-        is_complex = False
-        grid_size = torch.tensor(image.shape[2:-1], dtype=int_type, device=device)
-        tables = [torch.view_as_real(table) for table in tables]
+    grid_size = torch.tensor(image.shape[2:], dtype=int_type, device=device)
 
     # convert to normalized freq locs
     tm = omega / (2 * np.pi / grid_size.to(omega).unsqueeze(-1))
@@ -198,18 +176,10 @@ def table_interp(
     output = []
     for mini_image in image:
         # flatten image dimensions, initialize output
-        if is_complex:
-            mini_image = mini_image.reshape(mini_image.shape[0], -1)
-            kdat = torch.zeros(
-                size=(mini_image.shape[0], tm.shape[-1]), dtype=dtype, device=device
-            )
-        else:
-            mini_image = mini_image.reshape(mini_image.shape[0], -1, 2)
-            kdat = torch.zeros(
-                size=((mini_image.shape[0], tm.shape[-1], 2)),
-                dtype=dtype,
-                device=device,
-            )
+        mini_image = mini_image.reshape(mini_image.shape[0], -1)
+        kdat = torch.zeros(
+            size=(mini_image.shape[0], tm.shape[-1]), dtype=dtype, device=device
+        )
 
         # loop over offsets and take advantage of broadcasting
         for offset in offsets:
@@ -227,23 +197,14 @@ def table_interp(
             arr_ind = arr_ind.unsqueeze(0).expand(kdat.shape[0], -1)
 
             # gather and multiply coefficients
-            if is_complex:
-                kdat += coef.unsqueeze(0) * torch.gather(mini_image, 1, arr_ind)
-            else:
-                kdat += coef.unsqueeze(0) * torch.stack(
-                    (
-                        torch.gather(mini_image.select(-1, 0), 1, arr_ind),
-                        torch.gather(mini_image.select(-1, 1), 1, arr_ind),
-                    ),
-                    dim=-1,
-                )
+            kdat += coef.unsqueeze(0) * torch.gather(mini_image, 1, arr_ind)
 
         # phase for fftshift
         kdat = (
             kdat
             * imag_exp(
                 torch.mv(torch.transpose(omega, 1, 0), n_shift),
-                return_complex=is_complex,
+                return_complex=True,
             ).unsqueeze(0)
         )
 
@@ -273,13 +234,6 @@ def table_interp_adjoint(
     for el in grid_size:
         output_size.append(int(el))
 
-    if torch.is_complex(data):
-        is_complex = True
-    else:
-        is_complex = False
-        output_size.append(2)
-        tables = [torch.view_as_real(table) for table in tables]
-
     # convert to normalized freq locs
     tm = omega / (2 * np.pi / grid_size.to(omega).unsqueeze(-1))
 
@@ -292,25 +246,18 @@ def table_interp_adjoint(
     # run the table interpolator for each batch element
     output = []
     for mini_data in data:
-        if is_complex:
-            image = torch.zeros(
-                size=(mini_data.shape[0], output_prod),
-                dtype=dtype,
-                device=device,
-            )
-        else:
-            image = torch.zeros(
-                size=(mini_data.shape[0], output_prod, 2),
-                dtype=dtype,
-                device=device,
-            )
+        image = torch.zeros(
+            size=(mini_data.shape[0], output_prod),
+            dtype=dtype,
+            device=device,
+        )
 
         # phase for fftshift
         mini_data = (
             mini_data
             * imag_exp(
                 torch.mv(torch.transpose(omega, 1, 0), n_shift),
-                return_complex=is_complex,
+                return_complex=True,
             ).conj()
         )
 
