@@ -236,7 +236,13 @@ def kaiser_bessel_ft(om, npts, alpha, order, d):
     return scaling_coef
 
 
-def compute_scaling_coefs(im_size, grid_size, numpoints, alpha, order):
+def compute_scaling_coefs(
+    im_size: Sequence[int],
+    grid_size: Sequence[int],
+    numpoints: Sequence[int],
+    alpha: Sequence[float],
+    order: Sequence[float],
+) -> Tensor:
     """Computes scaling coefficients for NUFFT operation.
 
     Args:
@@ -271,4 +277,4 @@ def compute_scaling_coefs(im_size, grid_size, numpoints, alpha, order):
 
         scaling_coef = scaling_coef * tmp
 
-    return scaling_coef
+    return torch.tensor(scaling_coef)

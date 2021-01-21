@@ -12,13 +12,13 @@ from .._nufft.interp import (
 )
 
 
-def kb_spmat_interp(image: Tensor, interp_mats: Tuple[Tensor, Tensor]):
+def kb_spmat_interp(image: Tensor, interp_mats: Tuple[Tensor, Tensor]) -> Tensor:
     return KbSpmatInterpForward.apply(image, interp_mats)
 
 
 def kb_spmat_interp_adjoint(
     data: Tensor, interp_mats: Tuple[Tensor, Tensor], grid_size: Tensor
-):
+) -> Tensor:
     return KbSpmatInterpAdjoint.apply(data, interp_mats, grid_size)
 
 
@@ -30,7 +30,7 @@ def kb_table_interp(
     numpoints: Tensor,
     table_oversamp: Tensor,
     offsets: Tensor,
-):
+) -> Tensor:
     return KbTableInterpForward.apply(
         image, omega, tables, n_shift, numpoints, table_oversamp, offsets
     )
@@ -45,7 +45,7 @@ def kb_table_interp_adjoint(
     table_oversamp: Tensor,
     offsets: Tensor,
     grid_size: Tensor,
-):
+) -> Tensor:
     return KbTableInterpAdjoint.apply(
         data, omega, tables, n_shift, numpoints, table_oversamp, offsets, grid_size
     )

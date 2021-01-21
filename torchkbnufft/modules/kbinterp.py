@@ -3,12 +3,8 @@ from typing import Optional, Sequence, Tuple, Union
 import torch
 from torch import Tensor
 
-from .functional.kbinterp import (
-    kb_spmat_interp,
-    kb_spmat_interp_adjoint,
-    kb_table_interp,
-    kb_table_interp_adjoint,
-)
+import torchkbnufft.functional as tkbnF
+
 from .kbmodule import KbModule
 
 
@@ -52,7 +48,7 @@ class KbInterpModule(KbModule):
         )
 
 
-class KbInterpForward(KbInterpModule):
+class KbInterp(KbInterpModule):
     """Non-uniform FFT forward interpolation PyTorch layer.
 
     This object interpolates a grid of Fourier data to off-grid locations
@@ -71,28 +67,6 @@ class KbInterpForward(KbInterpModule):
         kbwidth (double, default=2.34): Kaiser-Bessel width parameter.
         order (double, default=0): Order of Kaiser-Bessel kernel.
     """
-
-    def __init__(
-        self,
-        im_size: Sequence[int],
-        grid_size: Optional[Sequence[int]] = None,
-        numpoints: Union[int, Sequence[int]] = 6,
-        n_shift: Optional[Sequence[int]] = None,
-        table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
-        kbwidth: float = 2.34,
-        order: Union[float, Sequence[float]] = 0.0,
-        dtype: torch.dtype = None,
-    ):
-        super().__init__(
-            im_size=im_size,
-            grid_size=grid_size,
-            numpoints=numpoints,
-            n_shift=n_shift,
-            table_oversamp=table_oversamp,
-            kbwidth=kbwidth,
-            order=order,
-            dtype=dtype,
-        )
 
     def forward(
         self,
@@ -115,7 +89,7 @@ class KbInterpForward(KbInterpModule):
             image computed at off-grid locations in omega.
         """
         if interp_mats is not None:
-            output = kb_spmat_interp(image=image, interp_mats=interp_mats)
+            output = tkbnF.kb_spmat_interp(image=image, interp_mats=interp_mats)
         else:
             tables = []
             for i in range(len(self.im_size)):  # type: ignore
@@ -126,7 +100,7 @@ class KbInterpForward(KbInterpModule):
             assert isinstance(self.table_oversamp, Tensor)
             assert isinstance(self.offsets, Tensor)
 
-            output = kb_table_interp(
+            output = tkbnF.kb_table_interp(
                 image=image,
                 omega=omega,
                 tables=tables,
@@ -159,28 +133,6 @@ class KbInterpAdjoint(KbInterpModule):
         order (double, default=0): Order of Kaiser-Bessel kernel.
     """
 
-    def __init__(
-        self,
-        im_size: Sequence[int],
-        grid_size: Optional[Sequence[int]] = None,
-        numpoints: Union[int, Sequence[int]] = 6,
-        n_shift: Optional[Sequence[int]] = None,
-        table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
-        kbwidth: float = 2.34,
-        order: Union[float, Sequence[float]] = 0.0,
-        dtype: torch.dtype = None,
-    ):
-        super().__init__(
-            im_size=im_size,
-            grid_size=grid_size,
-            numpoints=numpoints,
-            n_shift=n_shift,
-            table_oversamp=table_oversamp,
-            kbwidth=kbwidth,
-            order=order,
-            dtype=dtype,
-        )
-
     def forward(
         self,
         data: Tensor,
@@ -206,7 +158,7 @@ class KbInterpAdjoint(KbInterpModule):
             assert isinstance(self.grid_size, Tensor)
             grid_size = self.grid_size
         if interp_mats is not None:
-            output = kb_spmat_interp_adjoint(
+            output = tkbnF.kb_spmat_interp_adjoint(
                 data=data, interp_mats=interp_mats, grid_size=grid_size
             )
         else:
@@ -219,7 +171,7 @@ class KbInterpAdjoint(KbInterpModule):
             assert isinstance(self.table_oversamp, Tensor)
             assert isinstance(self.offsets, Tensor)
 
-            output = kb_table_interp_adjoint(
+            output = tkbnF.kb_table_interp_adjoint(
                 data=data,
                 omega=omega,
                 tables=tables,

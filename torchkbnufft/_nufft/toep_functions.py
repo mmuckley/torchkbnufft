@@ -33,14 +33,6 @@ def calc_toep_kernel(adj_ob, om, weights=None):
     adj_ob = copy.deepcopy(adj_ob).to(dtype=dtype, device=device)
     ndims = om.shape[1]
 
-    # remove sensitivities if dealing with MriSenseNufft
-    if "Sense" in adj_ob.__class__.__name__:
-        adj_ob.smap_tensor = torch.ones(
-            adj_ob.smap_tensor.shape, dtype=dtype, device=device
-        )
-        adj_ob.smap_tensor = adj_ob.smap_tensor[:, 0:1]
-        adj_ob.smap_tensor[:, :, 1] = 0
-
     # remove this because we won't need it
     adj_ob.n_shift = tuple(np.array(adj_ob.n_shift) * 0)
     adj_ob.n_shift_tensor = adj_ob.n_shift_tensor * 0

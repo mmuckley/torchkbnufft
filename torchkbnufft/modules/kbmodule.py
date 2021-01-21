@@ -3,7 +3,8 @@ from typing import Optional, Sequence, Union
 
 import torch
 import torch.nn as nn
-from ._nufft.utils import build_table
+
+from .._nufft.utils import build_table
 
 DTYPE_MAP = [
     (torch.complex128, torch.float64),

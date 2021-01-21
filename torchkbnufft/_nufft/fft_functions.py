@@ -1,9 +1,11 @@
-import numpy as np
+from typing import Optional
+
 import torch
 import torch.nn.functional as F
 from packaging import version
+from torch import Tensor
 
-from ..math import complex_mult, conj_complex_mult
+from .._math import complex_mult, conj_complex_mult
 
 if version.parse(torch.__version__) >= version.parse("1.7.0"):
     from .fft_compatibility import fft_new as fft_fn
@@ -13,163 +15,153 @@ else:
     from .fft_compatibility import ifft_old as ifft_fn
 
 
-def scale_and_fft_on_image_volume(x, scaling_coef, grid_size, im_size, norm):
+def crop_dims(image: Tensor, dim_list: Tensor, end_list: Tensor):
+    if image.is_complex():
+        is_complex = True
+        image = torch.view_as_real(image)  # index select only works for real
+    else:
+        is_complex = False
+
+    for (dim, end) in zip(dim_list, end_list):
+        image = torch.index_select(image, dim, torch.arange(end))
+
+    if is_complex:
+        image = torch.view_as_complex(image)
+
+    return image
+
+
+def fft_and_scale(
+    image: Tensor,
+    scaling_coef: Tensor,
+    grid_size: Tensor,
+    im_size: Tensor,
+    norm: Optional[str] = None,
+) -> Tensor:
     """Applies the FFT and any relevant scaling factors to x.
 
     Args:
-        x (tensor): The image to be FFT'd.
-        scaling_coef (tensor): The NUFFT scaling coefficients to be multiplied
-            prior to FFT.
-        grid_size (tensor): The oversampled grid size.
-        im_size (tensor): The image dimensions for x.
-        norm (str): Type of normalization factor to use. If 'ortho', uses
+        image: The image to be FFT'd.
+        scaling_coef: The NUFFT scaling coefficients to be multiplied prior to
+            FFT.
+        grid_size: The oversampled grid size.
+        im_size: The image dimensions for x.
+        norm; Optional: Type of normalization factor to use. If 'ortho', uses
             orthogonal FFT, otherwise, no normalization is applied.
 
     Returns:
-        tensor: The oversampled FFT of x.
+        The oversampled FFT of image.
     """
+    if norm is not None and norm != "ortho":
+        raise ValueError("Only option for norm is 'ortho'.")
+
+    normalized = True if norm == "ortho" else False
+
     # zero pad for oversampled nufft
-    # also calculate fft permutations
-    pad_sizes = []
-    permute_dims = [0, 1]
-    inv_permute_dims = [0, 1, 2 + grid_size.shape[0]]
-    for i in range(grid_size.shape[0]):
+    if image.is_complex():
+        pad_sizes = []
+    else:
+        pad_sizes = [0, 0]
+    for (gd, im) in zip(grid_size.flip((0,)), im_size.flip((0,))):
         pad_sizes.append(0)
-        pad_sizes.append(int(grid_size[-1 - i] - im_size[-1 - i]))
-        permute_dims.append(3 + i)
-        inv_permute_dims.append(2 + i)
-    permute_dims.append(2)
-    pad_sizes = tuple(pad_sizes)
-    permute_dims = tuple(permute_dims)
-    inv_permute_dims = tuple(inv_permute_dims)
-    while len(scaling_coef.shape) < len(x.shape):
-        scaling_coef = scaling_coef.unsqueeze(0)
+        pad_sizes.append(int(gd - im))
 
-    # multiply by scaling coefs
-    x = complex_mult(x, scaling_coef, dim=2)
+    # scaling coef unsqueeze
+    if not image.is_complex():
+        scaling_coef = torch.view_as_real(scaling_coef)
 
-    # zero pad and fft
-    x = F.pad(x, pad_sizes)
-    x = x.permute(permute_dims)
-    x = fft_fn(x, grid_size.numel())
-    if norm == "ortho":
-        x = x / torch.sqrt(torch.prod(grid_size))
-    x = x.permute(inv_permute_dims)
+    scaling_coef = scaling_coef.unsqueeze(0).unsqueeze(0)
 
-    return x
+    # multiply by scaling_coef, pad, then fft
+    return fft_fn(
+        F.pad(complex_mult(image, scaling_coef), tuple(pad_sizes)),
+        grid_size.numel(),
+        normalized=normalized,
+    )
 
 
-def ifft_and_scale_on_gridded_data(x, scaling_coef, grid_size, im_size, norm):
+def ifft_and_scale(
+    image: Tensor,
+    scaling_coef: Tensor,
+    grid_size: Tensor,
+    im_size: Tensor,
+    norm: Optional[str] = None,
+):
     """Applies the iFFT and any relevant scaling factors to x.
 
     Args:
-        x (tensor): The image to be iFFT'd.
-        scaling_coef (tensor): The NUFFT scaling coefficients to be multiplied
-            after iFFT.
-        grid_size (tensor): The oversampled grid size.
-        im_size (tensor): The image dimensions for x.
-        norm (str): Type of normalization factor to use. If 'ortho', uses
-            orthogonal iFFT, otherwise, no normalization is applied.
+        image: The image to be iFFT'd.
+        scaling_coef: The NUFFT scaling coefficients to be multiplied after
+            iFFT.
+        grid_size: The oversampled grid size.
+        im_size: The image dimensions for x.
+        norm: Type of normalization factor to use. If 'ortho', uses orthogonal
+            iFFT, otherwise, no normalization is applied.
 
     Returns:
-        tensor: The iFFT of x.
+        The iFFT of image.
     """
-    # permutations for torch fft
-    permute_dims = [0, 1]
-    inv_permute_dims = [0, 1, 2 + grid_size.shape[0]]
-    for i in range(grid_size.shape[0]):
-        permute_dims.append(3 + i)
-        inv_permute_dims.append(2 + i)
-    permute_dims.append(2)
-    permute_dims = tuple(permute_dims)
-    inv_permute_dims = tuple(inv_permute_dims)
+    if norm is not None and norm != "ortho":
+        raise ValueError("Only option for norm is 'ortho'.")
 
-    # do the inverse fft
-    x = x.permute(permute_dims)
-    x = ifft_fn(x, grid_size.numel())
-    x = x.permute(inv_permute_dims)
+    normalized = True if norm == "ortho" else False
 
-    # crop to output size
-    crop_starts = tuple(np.array(x.shape).astype(np.int) * 0)
-    crop_ends = [x.shape[0], x.shape[1], x.shape[2]]
-    for dim in im_size:
-        crop_ends.append(int(dim))
-    x = x[tuple(map(slice, crop_starts, crop_ends))]
+    # calculate crops
+    dims = torch.arange(len(im_size)) + 2
 
-    # scaling
-    if norm == "ortho":
-        x = x * torch.sqrt(torch.prod(grid_size))
-    else:
-        x = x * torch.prod(grid_size)
+    # scaling coef unsqueeze
+    if not image.is_complex():
+        scaling_coef = torch.view_as_real(scaling_coef)
 
-    # scaling coefficient multiply
-    while len(scaling_coef.shape) < len(x.shape):
-        scaling_coef = scaling_coef.unsqueeze(0)
+    scaling_coef = scaling_coef.unsqueeze(0).unsqueeze(0)
 
-    # try to broadcast multiply - batch over coil if not enough memory
-    raise_error = False
-    try:
-        x = conj_complex_mult(x, scaling_coef, dim=2)
-    except RuntimeError as e:
-        if "out of memory" in str(e) and not raise_error:
-            torch.cuda.empty_cache()
-            for coilind in range(x.shape[1]):
-                x[:, coilind, ...] = conj_complex_mult(
-                    x[:, coilind : coilind + 1, ...], scaling_coef, dim=2
-                )
-            raise_error = True
-        else:
-            raise e
-    except BaseException:
-        raise e
-
-    return x
+    # ifft, crop, then multiply by scaling_coef conjugate
+    return conj_complex_mult(
+        crop_dims(
+            ifft_fn(image, grid_size.numel(), normalized=normalized), dims, im_size
+        ),
+        scaling_coef,
+    )
 
 
-def fft_filter(x, kern, norm=None):
+def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = None):
     """FFT-based filtering on a 2-size oversampled grid."""
-    im_size = torch.tensor(x.shape).to(torch.long)[3:]
+    if norm is not None and norm != "ortho":
+        raise ValueError("Only option for norm is 'ortho'.")
+
+    normalized = True if norm == "ortho" else False
+
+    if image.is_complex:
+        im_size = torch.tensor(image.shape[2:], dtype=torch.long, device=image.device)
+    else:
+        im_size = torch.tensor(image.shape[2:-1], dtype=torch.long, device=image.device)
+
     grid_size = im_size * 2
 
     # set up n-dimensional zero pad
-    pad_sizes = []
-    permute_dims = [0, 1]
-    inv_permute_dims = [0, 1, 2 + grid_size.shape[0]]
-    for i in range(grid_size.shape[0]):
+    if image.is_complex():
+        pad_sizes = []
+    else:
+        pad_sizes = [0, 0]
+    for (gd, im) in zip(grid_size.flip((0,)), im_size.flip((0,))):
         pad_sizes.append(0)
-        pad_sizes.append(int(grid_size[-1 - i] - im_size[-1 - i]))
-        permute_dims.append(3 + i)
-        inv_permute_dims.append(2 + i)
-    permute_dims.append(2)
-    pad_sizes = tuple(pad_sizes)
-    permute_dims = tuple(permute_dims)
-    inv_permute_dims = tuple(inv_permute_dims)
+        pad_sizes.append(int(gd - im))
 
-    # zero pad and fft
-    x = F.pad(x, pad_sizes)
-    x = x.permute(permute_dims)
-    x = fft_fn(x, grid_size.numel())
-    if norm == "ortho":
-        x = x / torch.sqrt(torch.prod(grid_size.to(torch.double)))
-    x = x.permute(inv_permute_dims)
+    # calculate crops
+    dims = torch.arange(len(im_size)) + 2
 
-    # apply the filter
-    x = complex_mult(x, kern, dim=2)
-
-    # inverse fft
-    x = x.permute(permute_dims)
-    x = ifft_fn(x, grid_size.numel())
-    x = x.permute(inv_permute_dims)
-
-    # crop to input size
-    crop_starts = tuple(np.array(x.shape).astype(np.int) * 0)
-    crop_ends = [x.shape[0], x.shape[1], x.shape[2]]
-    for dim in im_size:
-        crop_ends.append(int(dim))
-    x = x[tuple(map(slice, crop_starts, crop_ends))]
-
-    # scaling, assume user handled adjoint scaling with their kernel
-    if norm == "ortho":
-        x = x / torch.sqrt(torch.prod(grid_size.to(torch.double)))
-
-    return x
+    # pad, forward fft, multiply filter kernel, inverse fft, then crop pad
+    return crop_dims(
+        ifft_fn(
+            complex_mult(
+                fft_fn(
+                    F.pad(image, pad_sizes), grid_size.numel(), normalized=normalized
+                ),
+                kernel,
+            ),
+            grid_size.numel(),
+            normalized=normalized,
+        ),
+        dims,
+        im_size,
+    )

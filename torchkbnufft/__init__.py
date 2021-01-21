@@ -5,7 +5,7 @@ __author__ = "Matthew Muckley"
 __author_email__ = "matt.muckley@gmail.com"
 __license__ = "MIT"
 __homepage__ = "https://github.com/mmuckley/torchkbnufft"
-__docs__ = "A robust, easy-to-deploy non-uniform Fast Fourier Transform in PyTorch."
+__docs__ = "A high-level, easy-to-deploy non-uniform Fast Fourier Transform in PyTorch."
 
 try:
     # This variable is injected in the __builtins__ by the build
@@ -19,12 +19,10 @@ if __TORCHKBNUFFT_SETUP__:
 
     sys.stderr.write("Partial import of during the build process.\n")
 else:
+    from ._nufft import utils as nufft_utils
     from ._nufft.utils import build_tensor_spmatrix
 
-    from .kbinterp import KbInterpAdjoint, KbInterpForward
-
-    # from .kbnufft import AdjKbNufft, KbNufft, ToepNufft
-    from .math import (
+    from ._math import (
         absolute,
         complex_mult,
         complex_sign,
@@ -32,17 +30,14 @@ else:
         imag_exp,
         inner_product,
     )
-
-    # from .mrisensenufft import AdjMriSenseNufft, MriSenseNufft, ToepSenseNufft
-    from ._nufft import utils as nufft_utils
+    from .modules import KbInterp, KbInterpAdjoint, KbNufft, KbNufftAdjoint, ToepNufft
 
     __all__ = [
-        "KbInterpForward",
+        "KbInterp",
         "KbInterpAdjoint",
-        # "KbNufft",
-        # "AdjKbNufft",
-        # "MriSenseNufft",
-        # "AdjMriSenseNufft",
+        "KbNufft",
+        "KbNufftAdjoint",
+        "ToepNufft",
         "absolute",
         "complex_mult",
         "complex_sign",

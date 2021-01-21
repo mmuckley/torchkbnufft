@@ -18,22 +18,33 @@ def fft_new(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
     norm = "ortho" if normalized else None
     dims = tuple(range(-ndim, 0))
 
-    image = torch.view_as_real(
-        torch.fft.fftn(  # type: ignore
-            torch.view_as_complex(image.contiguous()), dim=dims, norm=norm
-        )
-    )
+    if image.is_complex():
+        is_complex = True
+    else:
+        is_complex = False
+        image = torch.view_as_complex(image)
+
+    image = torch.fft.fftn(image, dim=dims, norm=norm)
+
+    if not is_complex:
+        image = torch.view_as_real(image)
 
     return image
 
 
 def ifft_new(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
-    norm = "ortho" if normalized else None
+    norm = "ortho" if normalized else "forward"
     dims = tuple(range(-ndim, 0))
-    image = torch.view_as_real(
-        torch.fft.ifftn(  # type: ignore
-            torch.view_as_complex(image.contiguous()), dim=dims, norm=norm
-        )
-    )
+
+    if image.is_complex():
+        is_complex = True
+    else:
+        is_complex = False
+        image = torch.view_as_complex(image)
+
+    image = torch.fft.ifftn(image, dim=dims, norm=norm)
+
+    if not is_complex:
+        image = torch.view_as_real(image)
 
     return image

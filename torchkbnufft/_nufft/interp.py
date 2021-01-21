@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from ..math import complex_mult, conj_complex_mult, imag_exp
+from .._math import complex_mult, conj_complex_mult, imag_exp
 
 
 def spmat_interp(

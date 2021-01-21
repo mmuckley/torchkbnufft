@@ -12,16 +12,16 @@ from .conftest import (
 )
 
 
-def test_interp_accuracy():
+def test_sense_nufft_accuracy():
     default_dtype = torch.get_default_dtype()
     torch.set_default_dtype(torch.double)
-    with open("tests/data/interp_data.pkl", "rb") as f:
+    with open("tests/data/nufft_data.pkl", "rb") as f:
         old_data = pickle.load(f)
 
     for (image, ktraj, old_kdata) in old_data:
         im_size = image.shape[2:-1]
 
-        forw_ob = tkbn.KbInterp(im_size=im_size, grid_size=im_size)
+        forw_ob = tkbn.KbNufft(im_size=im_size, grid_size=im_size)
 
         kdata = forw_ob(image, ktraj)
 
@@ -41,7 +41,7 @@ def test_interp_accuracy():
         ([1, 2, 17, 19, 12, 2], [1, 2, 112, 2], False),
     ],
 )
-def test_interp_adjoint(shape, kdata_shape, is_complex):
+def test_sense_nufft_adjoint(shape, kdata_shape, is_complex):
     default_dtype = torch.get_default_dtype()
     torch.set_default_dtype(torch.double)
     torch.manual_seed(123)
@@ -54,15 +54,15 @@ def test_interp_adjoint(shape, kdata_shape, is_complex):
     kdata = create_input_plus_noise(kdata_shape, is_complex)
     ktraj = create_ktraj(len(im_size), kdata_shape[2])
 
-    forw_ob = tkbn.KbInterp(im_size=im_size, grid_size=im_size)
-    adj_ob = tkbn.KbInterpAdjoint(im_size=im_size, grid_size=im_size)
+    forw_ob = tkbn.KbNufft(im_size=im_size)
+    adj_ob = tkbn.KbNufftAdjoint(im_size=im_size)
 
     # test with sparse matrices
     spmat = tkbn.build_tensor_spmatrix(
         ktraj,
         forw_ob.numpoints.numpy(),
         im_size,
-        im_size,
+        forw_ob.grid_size.tolist(),
         forw_ob.n_shift.numpy(),
         forw_ob.order.numpy(),
         forw_ob.alpha.numpy(),
@@ -84,7 +84,7 @@ def test_interp_adjoint(shape, kdata_shape, is_complex):
         ([1, 2, 17, 19, 12, 2], [1, 2, 112, 2], False),
     ],
 )
-def test_interp_autograd(shape, kdata_shape, is_complex):
+def test_sense_nufft_autograd(shape, kdata_shape, is_complex):
     default_dtype = torch.get_default_dtype()
     torch.set_default_dtype(torch.double)
     torch.manual_seed(123)
@@ -97,15 +97,15 @@ def test_interp_autograd(shape, kdata_shape, is_complex):
     kdata = create_input_plus_noise(kdata_shape, is_complex)
     ktraj = create_ktraj(len(im_size), kdata_shape[2])
 
-    forw_ob = tkbn.KbInterp(im_size=im_size, grid_size=im_size)
-    adj_ob = tkbn.KbInterpAdjoint(im_size=im_size, grid_size=im_size)
+    forw_ob = tkbn.KbNufft(im_size=im_size)
+    adj_ob = tkbn.KbNufftAdjoint(im_size=im_size)
 
     # test with sparse matrices
     spmat = tkbn.build_tensor_spmatrix(
         ktraj,
         forw_ob.numpoints.numpy(),
         im_size,
-        im_size,
+        forw_ob.grid_size.tolist(),
         forw_ob.n_shift.numpy(),
         forw_ob.order.numpy(),
         forw_ob.alpha.numpy(),
@@ -124,7 +124,7 @@ def test_interp_autograd(shape, kdata_shape, is_complex):
         ([3, 2, 13, 18, 12], [3, 2, 112], True),
     ],
 )
-def test_interp_complex_real_match(shape, kdata_shape, is_complex):
+def test_sense_nufft_complex_real_match(shape, kdata_shape, is_complex):
     default_dtype = torch.get_default_dtype()
     torch.set_default_dtype(torch.double)
     torch.manual_seed(123)
@@ -133,7 +133,7 @@ def test_interp_complex_real_match(shape, kdata_shape, is_complex):
     image = create_input_plus_noise(shape, is_complex)
     ktraj = create_ktraj(len(im_size), kdata_shape[2])
 
-    forw_ob = tkbn.KbInterp(im_size=im_size, grid_size=im_size)
+    forw_ob = tkbn.KbNufft(im_size=im_size)
 
     kdata_complex = forw_ob(image, ktraj)
     kdata_real = torch.view_as_complex(forw_ob(torch.view_as_real(image), ktraj))
@@ -145,7 +145,7 @@ def test_interp_complex_real_match(shape, kdata_shape, is_complex):
         ktraj,
         forw_ob.numpoints.numpy(),
         im_size,
-        im_size,
+        forw_ob.grid_size.tolist(),
         forw_ob.n_shift.numpy(),
         forw_ob.order.numpy(),
         forw_ob.alpha.numpy(),
