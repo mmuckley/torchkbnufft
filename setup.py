@@ -31,7 +31,7 @@ setup(
     url=torchkbnufft.__homepage__,
     download_url="https://github.com/mmuckley/torchkbnufft",
     license=torchkbnufft.__license__,
-    packages=find_packages(exclude=["tests", "notebooks", "speedtests"]),
+    packages=find_packages(exclude=["tests", "notebooks", "docs"]),
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     include_package_data=True,
