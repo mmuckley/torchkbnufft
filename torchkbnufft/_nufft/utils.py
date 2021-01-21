@@ -1,10 +1,17 @@
-from typing import List, Sequence, Tuple
+import itertools
+from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
 from scipy import special
 from scipy.sparse import coo_matrix
 from torch import Tensor
+
+DTYPE_MAP = [
+    (torch.complex128, torch.float64),
+    (torch.complex64, torch.float32),
+    (torch.complex32, torch.float16),
+]
 
 
 def build_tensor_spmatrix(
@@ -300,3 +307,89 @@ def compute_scaling_coefs(
         scaling_coef = scaling_coef * tmp
 
     return torch.tensor(scaling_coef)
+
+
+def init_fn(
+    im_size: Sequence[int],
+    grid_size: Optional[Sequence[int]] = None,
+    numpoints: Union[int, Sequence[int]] = 6,
+    n_shift: Optional[Sequence[int]] = None,
+    table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+    kbwidth: float = 2.34,
+    order: Union[float, Sequence[float]] = 0.0,
+    dtype: torch.dtype = None,
+):
+    im_size = tuple(im_size)
+    if grid_size is None:
+        grid_size = tuple([dim * 2 for dim in im_size])
+    else:
+        grid_size = tuple(grid_size)
+    if isinstance(numpoints, int):
+        numpoints = tuple([numpoints for _ in range(len(grid_size))])
+    else:
+        numpoints = tuple(numpoints)
+    if n_shift is None:
+        n_shift = tuple([dim // 2 for dim in im_size])
+    else:
+        n_shift = tuple(n_shift)
+    if isinstance(table_oversamp, int):
+        table_oversamp = tuple(table_oversamp for _ in range(len(grid_size)))
+    else:
+        table_oversamp = tuple(table_oversamp)
+    alpha = tuple(kbwidth * numpoint for numpoint in numpoints)
+    if isinstance(order, float):
+        order = tuple(order for _ in range(len(grid_size)))
+    else:
+        order = tuple(order)
+    if dtype is None:
+        dtype = torch.get_default_dtype()
+
+    # dimension checking
+    assert len(grid_size) == len(im_size)
+    assert len(n_shift) == len(im_size)
+    assert len(numpoints) == len(im_size)
+    assert len(alpha) == len(im_size)
+    assert len(order) == len(im_size)
+    assert len(table_oversamp) == len(im_size)
+
+    tables = build_table(
+        numpoints=numpoints,
+        table_oversamp=table_oversamp,
+        grid_size=grid_size,
+        im_size=im_size,
+        order=order,
+        alpha=alpha,
+    )
+    assert len(tables) == len(im_size)
+
+    # precompute interpolation offsets
+    offset_list = list(itertools.product(*[range(numpoint) for numpoint in numpoints]))
+
+    if dtype.is_floating_point:
+        real_dtype = dtype
+        for pair in DTYPE_MAP:
+            if pair[1] == real_dtype:
+                complex_dtype = pair[0]
+                break
+    elif dtype.is_complex:
+        complex_dtype = dtype
+        for pair in DTYPE_MAP:
+            if pair[0] == complex_dtype:
+                real_dtype = pair[1]
+                break
+    else:
+        raise TypeError("Unrecognized dtype.")
+
+    tables = [table.to(complex_dtype) for table in tables]
+
+    return (
+        tables,
+        torch.tensor(im_size, dtype=torch.long),
+        torch.tensor(grid_size, dtype=torch.long),
+        torch.tensor(n_shift, dtype=real_dtype),
+        torch.tensor(numpoints, dtype=torch.long),
+        torch.tensor(offset_list, dtype=torch.long),
+        torch.tensor(table_oversamp, dtype=torch.long),
+        torch.tensor(order, dtype=real_dtype),
+        torch.tensor(alpha, dtype=real_dtype),
+    )

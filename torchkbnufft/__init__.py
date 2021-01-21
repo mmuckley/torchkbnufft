@@ -31,6 +31,7 @@ else:
         inner_product,
     )
     from ._nufft import utils as nufft_utils
+    from ._nufft.dcomp import calculate_density_compensation_function
     from ._nufft.toep import calculate_toeplitz_kernel
     from ._nufft.utils import build_tensor_spmatrix
     from .modules import KbInterp, KbInterpAdjoint, KbNufft, KbNufftAdjoint, ToepNufft
@@ -42,10 +43,13 @@ else:
         "KbNufftAdjoint",
         "ToepNufft",
         "absolute",
+        "calculate_density_compensation_function",
+        "calculate_toeplitz_kernel",
         "complex_mult",
         "complex_sign",
         "conj_complex_mult",
         "functional",
         "imag_exp",
         "inner_product",
+        "modules",
     ]
