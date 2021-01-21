@@ -254,7 +254,11 @@ class ToepNufft(torch.nn.Module):
         super().__init__()
 
     def forward(
-        self, image: Tensor, kernel: Tensor, norm: Optional[str] = None
+        self,
+        image: Tensor,
+        kernel: Tensor,
+        smaps: Optional[Tensor] = None,
+        norm: Optional[str] = None,
     ) -> Tensor:
         """Toeplitz NUFFT forward function.
 
@@ -269,5 +273,26 @@ class ToepNufft(torch.nn.Module):
         Returns:
             tensor: x after applying the Toeplitz NUFFT.
         """
+        if smaps is None:
+            output = tkbnF.fft_filter(image=image, kernel=kernel, norm=norm)
+        else:
+            output = []
 
-        return tkbnF.fft_filter(image=image, kernel=kernel, norm=norm)
+            # do a batch loop to conserve memory
+            for (mini_image, smap) in zip(image, smaps):
+                mini_image = tkbn.complex_mult(
+                    mini_image.unsqueeze(0), smap.unsqueeze(0)
+                )
+                mini_image = tkbnF.fft_filter(
+                    image=mini_image, kernel=kernel, norm=norm
+                )
+                mini_image = torch.sum(
+                    tkbn.conj_complex_mult(mini_image, smap.unsqueeze(0)),
+                    dim=1,
+                    keepdim=True,
+                )
+                output.append(mini_image.squeeze(0))
+
+            output = torch.stack(output)
+
+        return output

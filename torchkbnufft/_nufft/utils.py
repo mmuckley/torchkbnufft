@@ -246,15 +246,15 @@ def compute_scaling_coefs(
     """Computes scaling coefficients for NUFFT operation.
 
     Args:
-        im_size (tuple): Size of base image.
-        grid_size (tuple): Size of the grid to interpolate from.
-        numpoints (tuple): Number of points to use for interpolation in each
-            dimension. Default is six points in each direction.
-        alpha (tuple): KB parameter.
-        order (tuple): Order of Kaiser-Bessel kernel.
+        im_size: Size of base image.
+        grid_size: Size of the grid to interpolate from.
+        numpoints: Number of points to use for interpolation in each dimension.
+            Default is six points in each direction.
+        alpha: KB parameter.
+        order: Order of Kaiser-Bessel kernel.
 
     Returns:
-        ndarray: The scaling coefficients.
+        The scaling coefficients.
     """
     num_coefs = np.array(range(im_size[0])) - (im_size[0] - 1) / 2
     scaling_coef = 1 / kaiser_bessel_ft(
