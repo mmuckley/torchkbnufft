@@ -41,7 +41,7 @@ def spmat_interp(
         dim=-1,
     )
 
-    return torch.view_as_complex(kdat).view(*output_size)
+    return torch.view_as_complex(kdat).reshape(*output_size)
 
 
 def spmat_interp_adjoint(
