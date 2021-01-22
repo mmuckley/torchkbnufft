@@ -5,7 +5,7 @@ import torchkbnufft.functional as tkbnF
 from torch import Tensor
 
 from .._nufft.utils import compute_scaling_coefs
-from .kbmodule import KbModule
+from ._kbmodule import KbModule
 
 
 class KbNufftModule(KbModule):
