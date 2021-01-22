@@ -318,6 +318,7 @@ def init_fn(
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
     dtype: torch.dtype = None,
+    device: torch.device = None,
 ):
     im_size = tuple(im_size)
     if grid_size is None:
@@ -343,6 +344,8 @@ def init_fn(
         order = tuple(order)
     if dtype is None:
         dtype = torch.get_default_dtype()
+    if device is None:
+        device = torch.device("cpu")
 
     # dimension checking
     assert len(grid_size) == len(im_size)
@@ -380,16 +383,16 @@ def init_fn(
     else:
         raise TypeError("Unrecognized dtype.")
 
-    tables = [table.to(complex_dtype) for table in tables]
+    tables = [table.to(dtype=complex_dtype, device=device) for table in tables]
 
     return (
         tables,
-        torch.tensor(im_size, dtype=torch.long),
-        torch.tensor(grid_size, dtype=torch.long),
-        torch.tensor(n_shift, dtype=real_dtype),
-        torch.tensor(numpoints, dtype=torch.long),
-        torch.tensor(offset_list, dtype=torch.long),
-        torch.tensor(table_oversamp, dtype=torch.long),
-        torch.tensor(order, dtype=real_dtype),
-        torch.tensor(alpha, dtype=real_dtype),
+        torch.tensor(im_size, dtype=torch.long, device=device),
+        torch.tensor(grid_size, dtype=torch.long, device=device),
+        torch.tensor(n_shift, dtype=real_dtype, device=device),
+        torch.tensor(numpoints, dtype=torch.long, device=device),
+        torch.tensor(offset_list, dtype=torch.long, device=device),
+        torch.tensor(table_oversamp, dtype=torch.long, device=device),
+        torch.tensor(order, dtype=real_dtype, device=device),
+        torch.tensor(alpha, dtype=real_dtype, device=device),
     )

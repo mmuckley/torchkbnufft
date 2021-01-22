@@ -30,16 +30,13 @@ def calculate_density_compensation_function(
     This code was contributed by Chaithya G.R. and Z. Ramzi.
 
     Args:
-        interpob (dict): the output of `KbNufftModule._extract_nufft_interpob`
-            containing all the hyper-parameters for the nufft computation.
-        ktraj (tensor): The k-space trajectory in radians/voxel dimension (d, m).
-            d is the number of spatial dimensions, and m is the length of the
-            trajectory.
-        num_iterations (int): default 10
-            number of iterations
+        ktraj (tensor): The k-space trajectory in radians/voxel dimension
+            (d, m). d is the number of spatial dimensions, and m is the length
+            of the trajectory.
+        num_iterations: Number of iterations
 
     Returns:
-        tensor: The density compensation coefficients for ktraj of size (m).
+        The density compensation coefficients for ktraj of size (m).
     """
     device = ktraj.device
 
@@ -63,6 +60,7 @@ def calculate_density_compensation_function(
         kbwidth=kbwidth,
         order=order,
         dtype=ktraj.dtype,
+        device=device,
     )
 
     tables = [table.to(device) for table in tables]
@@ -72,17 +70,18 @@ def calculate_density_compensation_function(
     offsets_t = offsets_t.to(device)
     grid_size_t = grid_size_t.to(device)
 
-    test_sig = torch.ones([1, 1, ktraj.shape[-1]])
+    test_sig = torch.ones([1, 1, ktraj.shape[-1]], dtype=tables[0].dtype, device=device)
     for _ in range(num_iterations):
-        new_sig = tkbnF.kb_table_interp_adjoint(
-            tkbnF.kb_table_interp(
-                image=test_sig,
+        new_sig = tkbnF.kb_table_interp(
+            tkbnF.kb_table_interp_adjoint(
+                data=test_sig,
                 omega=ktraj,
                 tables=tables,
                 n_shift=n_shift_t,
                 numpoints=numpoints_t,
                 table_oversamp=table_oversamp_t,
                 offsets=offsets_t,
+                grid_size=grid_size_t,
             ),
             omega=ktraj,
             tables=tables,
@@ -90,7 +89,6 @@ def calculate_density_compensation_function(
             numpoints=numpoints_t,
             table_oversamp=table_oversamp_t,
             offsets=offsets_t,
-            grid_size=grid_size_t,
         )
 
         # Basically we are doing abs here, do we have utils for this?
