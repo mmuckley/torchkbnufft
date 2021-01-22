@@ -154,10 +154,10 @@ adjnufft_ob = tkbn.KbNufftAdjoint(im_size=im_size)
 toep_ob = tkbn.ToepNufft()
 
 # precompute the embedded Toeplitz FFT kernel
-kern = tkbn.calculate_toeplitz_kernel(adjnufft_ob, ktraj)
+kernel = tkbn.calculate_toeplitz_kernel(ktraj, im_size)
 
 # use FFT kernel from embedded Toeplitz matrix
-image = toep_ob(image, kern)
+image = toep_ob(image, kernel)
 ```
 
 A detailed example of sparse matrix precomputation usage is included 
