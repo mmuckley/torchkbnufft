@@ -41,6 +41,7 @@ class KbNufftModule(KbModule):
         kbwidth: float = 2.34,
         order: Union[float, Sequence[float]] = 0.0,
         dtype: torch.dtype = None,
+        device: torch.device = None,
     ):
         super().__init__(
             im_size=im_size,
@@ -51,6 +52,7 @@ class KbNufftModule(KbModule):
             kbwidth=kbwidth,
             order=order,
             dtype=dtype,
+            device=device,
         )
 
         scaling_coef = compute_scaling_coefs(

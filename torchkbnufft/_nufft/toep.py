@@ -1,18 +1,24 @@
-import copy
-from typing import Optional
+from typing import Optional, Sequence, Union
 
 import torch
+import torchkbnufft as tkbn
 from torch import Tensor
 
-from ..modules.kbnufft import KbNufftAdjoint
+from ..modules import KbNufftAdjoint
 from .fft import fft_fn
 
 
 def calculate_toeplitz_kernel(
-    adj_ob: KbNufftAdjoint,
     omega: Tensor,
+    im_size: Sequence[int],
     weights: Optional[Tensor] = None,
     norm: Optional[str] = None,
+    grid_size: Optional[Sequence[int]] = None,
+    numpoints: Union[int, Sequence[int]] = 6,
+    n_shift: Optional[Sequence[int]] = None,
+    table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+    kbwidth: float = 2.34,
+    order: Union[float, Sequence[float]] = 0.0,
 ) -> Tensor:
     """Calculates an FFT kernel for Toeplitz embedding over batches.
 
@@ -32,12 +38,19 @@ def calculate_toeplitz_kernel(
             operation for all batches.
     """
     device = omega.device
-    adj_ob = copy.deepcopy(adj_ob)
     normalized = True if norm == "ortho" else False
 
-    # remove this because we won't need it
-    assert isinstance(adj_ob.n_shift, Tensor)
-    adj_ob.n_shift = adj_ob.n_shift * 0
+    adj_ob = tkbn.KbNufftAdjoint(
+        im_size=im_size,
+        grid_size=grid_size,
+        numpoints=numpoints,
+        n_shift=[0 for _ in range(omega.shape[0])],
+        table_oversamp=table_oversamp,
+        kbwidth=kbwidth,
+        order=order,
+        dtype=omega.dtype,
+        device=omega.device,
+    )
 
     # if we don't have any weights, just use ones
     assert isinstance(adj_ob.table_0, Tensor)
