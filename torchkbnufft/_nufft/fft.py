@@ -158,10 +158,10 @@ def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = None) -> Ten
     # pad, forward fft, multiply filter kernel, inverse fft, then crop pad
     return crop_dims(
         ifft_fn(
-            fft_fn(F.pad(image, pad_sizes), grid_size.numel(), normalized=True)
+            fft_fn(F.pad(image, pad_sizes), grid_size.numel(), normalized=normalized)
             * kernel,
             grid_size.numel(),
-            normalized=True,
+            normalized=normalized,
         ),
         dims,
         im_size,

@@ -187,8 +187,8 @@ class KbInterpAdjoint(KbInterpModule):
     * :attr:`im_size` is the size of the base image (used for calculating the
       kernel but not for the actual operation).
 
-    * :attr:`grid_size` is the size of the grid after forward FFT. To reduce
-      errors, NUFFT operations are done on an oversampled grid to reduce
+    * :attr:`grid_size` is the size of the grid after adjoint interpolation. To
+      reduce errors, NUFFT operations are done on an oversampled grid to reduce
       interpolation distances. This will typically be 1.25 to 2 times
       :attr:`im_size`.
 

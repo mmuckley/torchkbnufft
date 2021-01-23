@@ -11,20 +11,7 @@ from ._kbmodule import KbModule
 class KbNufftModule(KbModule):
     """Parent class for KbNufft classes.
 
-    Not all args are necessary to specify. If you only provide ``im_size``, the
-    code will try to infer reasonable defaults based on ``im_size``.
-
-    Args:
-        im_size: Size of image.
-        grid_size; Optional: Size of grid to use for interpolation, typically
-            1.25 to 2 times `im_size`.
-        numpoints: Number of neighbors to use for interpolation.
-        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
-        table_oversamp: Table oversampling factor.
-        kbwidth: Size of Kaiser-Bessel kernel.
-        order: Order of Kaiser-Bessel kernel.
-        dtype: Data type for tensor buffers.
-        device: Which device to create tensors on.
+    See subclasses for an explanation of inputs.
     """
 
     def __init__(
@@ -65,25 +52,67 @@ class KbNufftModule(KbModule):
 
 
 class KbNufft(KbNufftModule):
-    """Non-uniform FFT forward PyTorch module.
+    r"""Non-uniform FFT PyTorch module.
 
     This object applies the FFT and interpolates a grid of Fourier data to
-    off-grid locations using a Kaiser-Bessel kernel.
+    off-grid locations using a Kaiser-Bessel kernel. Consider an off-grid
+    signal :math:`Y` to be estimated from an image-domain signal :math:`X`,
+    then this layer applies:
 
-    Not all args are necessary to specify. If you only provide ``im_size``, the
-    code will try to infer reasonable defaults based on ``im_size``.
+    .. math::
+        X_k = \sum_{n=0}^{N-1} s_n x_n e^{-i \gamma k n}
+    .. math::
+        Y(\omega_m) = \sum_{j=1}^J X_{\{k_m+j\}_K} u^*_j(\omega_m)
+
+    In the first step, an image-domain signal :math:`x_n` is converted to a
+    gridded, oversampled frequency-domain signal, :math:`X_k`. The scaling
+    coefficeints :math:`s_n` are multiplied to precompensate for NUFFT
+    interpolation errors.
+
+    In the second step, :math:`u`, the Kaiser-Bessel kernel, is used to
+    estimate :math:`X_k` at off-grid frequency locations :math:`\omega`.
+    :math:`k_m` is the index of the nearest sample of :math:`X` to frequency
+    location :math:`\omega_m`, and :math:`J` is the number of nearest neighbors
+    to use from the Kaiser-Bessel kernel. For a detailed description see
+    `Nonuniform fast Fourier transforms using min-max interpolation
+    (JA Fessler and BP Sutton)
+    <https://ieeexplore.ieee.org/abstract/document/1166689>`_.
+
+    When called, the parameters of this class define properties of the kernel
+    and how the interpolation is applied.
+
+    * :attr:`im_size` is the size of the base image.
+
+    * :attr:`grid_size` is the size of the grid after forward FFT. To reduce
+      errors, NUFFT operations are done on an oversampled grid to reduce
+      interpolation distances. This will typically be 1.25 to 2 times
+      :attr:`im_size`.
+
+    * :attr:`numpoints` is the number of nearest neighbors of the kernel to use
+      for interpolation.
+
+    * :attr:`n_shift` is the FFT shift distance, typically
+      :attr:`im_size // 2`.
 
     Args:
-        im_size: Size of image.
-        grid_size; Optional: Size of grid to use for interpolation, typically
-            1.25 to 2 times `im_size`.
-        numpoints: Number of neighbors to use for interpolation.
-        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
-        table_oversamp: Table oversampling factor.
-        kbwidth: Size of Kaiser-Bessel kernel.
-        order: Order of Kaiser-Bessel kernel.
-        dtype: Data type for tensor buffers.
-        device: Which device to create tensors on.
+        im_size (tuple): Size of image with length being the number of
+            dimensions.
+        grid_size (tuple, optional): Size of grid to use for interpolation,
+            typically 1.25 to 2 times ``im_size``. Default: ``2 * im_size``
+        numpoints (int or tuple, optional): Number of neighbors to use for
+            interpolation in each dimension. Default: ``6``
+        n_shift (tuple, optional): Size for fftshift. Default:
+            ``im_size // 2``.
+        table_oversamp (int or tuple, optional): Table oversampling factor.
+            Default: ``2 ** 10``
+        kbwidth (float, optional): Size of Kaiser-Bessel kernel. Default:
+            ``2.34``
+        order (float or tuple, optional): Order of Kaiser-Bessel kernel.
+            Default: ``0``
+        dtype (torch.dtype, optional): Data type for tensor buffers. Default:
+            ``torch.get_default_dtype()``
+        device (torch.device, optional): Which device to create tensors on.
+            Default: ``torch.device('cpu')``
     """
 
     def forward(
@@ -96,27 +125,29 @@ class KbNufft(KbNufftModule):
     ) -> Tensor:
         """Apply FFT and interpolate from gridded data to scattered data.
 
-        Input tensors should be of shape `(N, C) + im_size`, where `N` is the
-        batch size and `C` is the number of sensitivity coils. `omega`, the
-        k-space trajectory, should be of size `(len(im_size), klength)`, where
-        `klength` is the length of the k-space trajectory.
+        Input tensors should be of shape ``(N, C) + im_size``, where ``N`` is
+        the batch size and ``C`` is the number of sensitivity coils. ``omega``,
+        the k-space trajectory, should be of size ``(len(im_size), klength)``,
+        where ``klength`` is the length of the k-space trajectory.
 
         If your tensors are real, ensure that 2 is the size of the last
         dimension.
 
         Args:
-            image: Object to be NUFFT'd.
-            omega: k-space trajectory (in radians/voxel).
-            interp_mats; Optional: 2-tuple of real, imaginary sparse matrices
-                to use for sparse matrix NUFFT interpolation (overrides
-                default table interpolation).
-            smaps; Optional: Sensitivity maps. If input, these will be
+            image (Tensor): Object to be NUFFT'd.
+            omega (Tensor): k-space trajectory (in radians/voxel).
+            interp_mats (tuple, optional): 2-tuple of real, imaginary spars
+                matrices to use for sparse matrix NUFFT interpolation
+                (overrides default table interpolation).
+            smaps (Tensor, optional): Sensitivity maps. If input, these will be
                 multiplied before the forward NUFFT.
-            norm; Optional: Whether to apply normalization with the FFT
-                operation. Options are `ortho` or `None`.
+            norm (string, optional): Whether to apply normalization with the
+                FFT operation. Options are ``"ortho"` or ``None``. Default:
+                ``None``
 
         Returns:
-            `image` calculated at Fourier frequencies specified by `omega`.
+            Tensor: ``image`` calculated at Fourier frequencies specified by
+            ``omega``.
         """
         if smaps is not None:
             if not smaps.dtype == image.dtype:
@@ -185,25 +216,71 @@ class KbNufft(KbNufftModule):
 
 
 class KbNufftAdjoint(KbNufftModule):
-    """Non-uniform FFT adjoint PyTorch module.
+    r"""Non-uniform FFT adjoint PyTorch module.
 
     This object interpolates off-grid Fourier data to on-grid locations
-    using a Kaiser-Bessel kernel prior to inverse DFT.
+    using a Kaiser-Bessel kernel prior to inverse DFT. Consider an image-domain
+    signal :math:`X` to be estimated from an off-grid Fourier signal :math:`Y`,
+    then this layer applies:
 
-    Not all args are necessary to specify. If you only provide ``im_size``, the
-    code will try to infer reasonable defaults based on ``im_size``.
+    .. math::
+        X_{\{k_m+j\}_K} = \sum_{j=1}^J Y(\omega_m) u_j(\omega_m)
+    .. math::
+        x_n = s_n^* \sum_{k=0}^{K-1} X_k e^{i \gamma k n}
+
+    In the first step, :math:`u`, the Kaiser-Bessel kernel, is used to
+    estimate :math:`Y` at on-grid frequency by using locations :math:`\omega`.
+    :math:`k_m` is the index of the nearest sample of :math:`X` to frequency
+    location :math:`\omega_m`, and :math:`J` is the number of nearest neighbors
+    to use from the Kaiser-Bessel kernel.
+
+    In the second step, an image-domain signal :math:`x_n` is estimated from a
+    gridded, oversampled frequency-domain signal, :math:`X_k` by applying the
+    inverse FFT, after which the complex conjugate scaling coefficients
+    :math:`s_n` are multiplied. For a detailed description see
+    `Nonuniform fast Fourier transforms using min-max interpolation
+    (JA Fessler and BP Sutton)
+    <https://ieeexplore.ieee.org/abstract/document/1166689>`_.
+
+    Note:
+
+        This function is not the inverse of ``KbNufft``, is is the adjoint.
+
+    When called, the parameters of this class define properties of the kernel
+    and how the interpolation is applied.
+
+    * :attr:`im_size` is the size of the base image.
+
+    * :attr:`grid_size` is the size of the grid after adjoint interpolation. To
+      reduce errors, NUFFT operations are done on an oversampled grid to reduce
+      interpolation distances. This will typically be 1.25 to 2 times
+      :attr:`im_size`.
+
+    * :attr:`numpoints` is the number of nearest neighbors of the kernel to use
+      for interpolation.
+
+    * :attr:`n_shift` is the FFT shift distance, typically
+      :attr:`im_size // 2`.
 
     Args:
-        im_size: Size of image.
-        grid_size; Optional: Size of grid to use for interpolation, typically
-            1.25 to 2 times `im_size`.
-        numpoints: Number of neighbors to use for interpolation.
-        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
-        table_oversamp: Table oversampling factor.
-        kbwidth: Size of Kaiser-Bessel kernel.
-        order: Order of Kaiser-Bessel kernel.
-        dtype: Data type for tensor buffers.
-        device: Which device to create tensors on.
+        im_size (tuple): Size of image with length being the number of
+            dimensions.
+        grid_size (tuple, optional): Size of grid to use for interpolation,
+            typically 1.25 to 2 times ``im_size``. Default: ``2 * im_size``
+        numpoints (int or tuple, optional): Number of neighbors to use for
+            interpolation in each dimension. Default: ``6``
+        n_shift (tuple, optional): Size for fftshift. Default:
+            ``im_size // 2``.
+        table_oversamp (int or tuple, optional): Table oversampling factor.
+            Default: ``2 ** 10``
+        kbwidth (float, optional): Size of Kaiser-Bessel kernel. Default:
+            ``2.34``
+        order (float or tuple, optional): Order of Kaiser-Bessel kernel.
+            Default: ``0``
+        dtype (torch.dtype, optional): Data type for tensor buffers. Default:
+            ``torch.get_default_dtype()``
+        device (torch.device, optional): Which device to create tensors on.
+            Default: ``torch.device('cpu')``
     """
 
     def forward(
@@ -216,27 +293,28 @@ class KbNufftAdjoint(KbNufftModule):
     ) -> Tensor:
         """Interpolate from scattered data to gridded data and then iFFT.
 
-        Input tensors should be of shape `(N, C) + klength`, where `N` is the
-        batch size and `C` is the number of sensitivity coils. `omega`, the
-        k-space trajectory, should be of size `(len(im_size), klength)`, where
-        `klength` is the length of the k-space trajectory.
+        Input tensors should be of shape ``(N, C) + klength``, where ``N`` is
+        the batch size and ``C`` is the number of sensitivity coils. ``omega``,
+        the k-space trajectory, should be of size ``(len(im_size), klength)``,
+        where ``klength`` is the length of the k-space trajectory.
 
         If your tensors are real, ensure that 2 is the size of the last
         dimension.
 
         Args:
-            data: Data to be gridded and then inverse FFT'd.
-            omega: k-space trajectory (in radians/voxel).
-            interp_mats; Optional: 2-tuple of real, imaginary sparse matrices
-                to use for sparse matrix NUFFT interpolation (overrides
-                default table interpolation).
-            smaps; Optional: Sensitivity maps. If input, these will be
+            data (Tensor): Data to be gridded and then inverse FFT'd.
+            omega (Tensor): k-space trajectory (in radians/voxel).
+            interp_mats (tuple, optional) 2-tuple of real, imaginary sparse
+                matrices to use for sparse matrix NUFFT interpolation
+                (overrides default table interpolation).
+            smaps(Tensor, optional): Sensitivity maps. If input, these will be
                 multiplied before the forward NUFFT.
-            norm; Optional: Whether to apply normalization with the FFT
-                operation. Options are `ortho` or `None`.
+            norm (string, optional): Whether to apply normalization with the
+                FFT operation. Options are ``"ortho"`` or ``None``. Default:
+                ``None``
 
         Returns:
-            `data` transformed to the image domain.
+            Tensor: ``data`` transformed to the image domain.
         """
         if smaps is not None:
             if not smaps.dtype == data.dtype:
@@ -305,11 +383,12 @@ class KbNufftAdjoint(KbNufftModule):
 
 
 class ToepNufft(torch.nn.Module):
-    """Forward/backward NUFFT with Toeplitz embedding.
+    r"""Forward/backward NUFFT with Toeplitz embedding.
 
-    This module applies Tx, where T is a matrix such that T = A'A, where A is
-    a NUFFT matrix. Using Toeplitz embedding, this module computes the A'A
-    operation without interpolations, which is extremely fast.
+    This module applies :math:`Tx`, where :math:`T` is a matrix such that
+    :math:`T \approx A'A`, where :math:`A` is a NUFFT matrix. Using Toeplitz
+    embedding, this module approximates the :math:`A'A` operation without
+    interpolations, which is extremely fast.
 
     The module is intended to be used in combination with an fft kernel
     computed to be the frequency response of an embedded Toeplitz matrix. The
@@ -330,19 +409,21 @@ class ToepNufft(torch.nn.Module):
         image: Tensor,
         kernel: Tensor,
         smaps: Optional[Tensor] = None,
-        norm: Optional[str] = None,
+        norm: Optional[str] = "ortho",
     ) -> Tensor:
         """Toeplitz NUFFT forward function.
 
         Args:
-            image: The image to apply the forward/backward Toeplitz-embedded
-                NUFFT to.
-            kernel: The filter response taking into account Toeplitz embedding.
-            norm; Optional: Whether to apply normalization with the FFT
-                operation. Options are `ortho` or `None`.
+            image (Tensor): The image to apply the forward/backward
+                Toeplitz-embedded NUFFT to.
+            kernel (Tensor): The filter response taking into account Toeplitz
+                embedding.
+            norm (string, optional): Whether to apply normalization with the
+                FFT operation. Options are ``"ortho"`` or ``None``. Default:
+                ``"ortho"``
 
         Returns:
-            `image` after applying the Toeplitz NUFFT.
+            Tensor: ``image`` after applying the Toeplitz NUFFT.
         """
         if smaps is not None:
             if not smaps.dtype == image.dtype:
