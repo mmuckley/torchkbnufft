@@ -24,6 +24,8 @@ jobs:
     - name: Format and lint
       run: |
         black --check .
+        flake8 torchkbnufft
+        mypy torchkbnufft
     - name: Test with pytest
       run: |
         pytest tests
