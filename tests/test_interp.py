@@ -58,14 +58,10 @@ def test_interp_adjoint(shape, kdata_shape, is_complex):
     adj_ob = tkbn.KbInterpAdjoint(im_size=im_size, grid_size=im_size)
 
     # test with sparse matrices
-    spmat = tkbn.build_tensor_spmatrix(
+    spmat = tkbn.calculate_tensor_spmatrix(
         ktraj,
-        forw_ob.numpoints.numpy(),
         im_size,
-        im_size,
-        forw_ob.n_shift.numpy(),
-        forw_ob.order.numpy(),
-        forw_ob.alpha.numpy(),
+        grid_size=im_size,
     )
 
     nufft_adjoint_test(image, kdata, ktraj, forw_ob, adj_ob, spmat)
@@ -101,14 +97,10 @@ def test_interp_autograd(shape, kdata_shape, is_complex):
     adj_ob = tkbn.KbInterpAdjoint(im_size=im_size, grid_size=im_size)
 
     # test with sparse matrices
-    spmat = tkbn.build_tensor_spmatrix(
+    spmat = tkbn.calculate_tensor_spmatrix(
         ktraj,
-        forw_ob.numpoints.numpy(),
         im_size,
-        im_size,
-        forw_ob.n_shift.numpy(),
-        forw_ob.order.numpy(),
-        forw_ob.alpha.numpy(),
+        grid_size=im_size,
     )
 
     nufft_autograd_test(image, kdata, ktraj, forw_ob, adj_ob, spmat)
@@ -141,14 +133,10 @@ def test_interp_complex_real_match(shape, kdata_shape, is_complex):
     assert torch.allclose(kdata_complex, kdata_real)
 
     # test with sparse matrices
-    spmat = tkbn.build_tensor_spmatrix(
+    spmat = tkbn.calculate_tensor_spmatrix(
         ktraj,
-        forw_ob.numpoints.numpy(),
         im_size,
-        im_size,
-        forw_ob.n_shift.numpy(),
-        forw_ob.order.numpy(),
-        forw_ob.alpha.numpy(),
+        grid_size=im_size,
     )
 
     kdata_complex = forw_ob(image, ktraj, spmat)

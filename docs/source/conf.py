@@ -16,6 +16,7 @@ import sys
 sys.path.insert(0, os.path.abspath("../.."))
 
 import torchkbnufft
+import torch
 
 
 # -- Project information -----------------------------------------------------
@@ -44,8 +45,9 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinxcontrib.katex",
     "sphinx.ext.autosectionlabel",
+    "sphinx_autodoc_typehints",
 ]
-autodoc_mock_imports = ["torch"]
+# autodoc_mock_imports = ["torch"]
 
 # build the templated autosummary files
 autosummary_generate = True
@@ -57,6 +59,11 @@ numpydoc_show_class_members = False
 autosectionlabel_prefix_document = True
 
 napoleon_use_ivar = True
+# napoleon_use_param = True
+
+napoleon_type_aliases = {
+    "Tensor": ":py:class:`torch.Tensor`",
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -86,3 +93,12 @@ html_theme = "classic"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+coverage_ignore_functions = ["torch.jit"]
+
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "torch": ("https://pytorch.org/docs/stable/", None),
+}

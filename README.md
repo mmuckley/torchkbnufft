@@ -126,7 +126,7 @@ import torchkbnufft as tkbn
 adjnufft_ob = tkbn.KbNufftAdjoint(im_size=im_size)
 
 # precompute the sparse interpolation matrices
-interp_mats = tkbn.build_tensor_spmatrix(
+interp_mats = tkbn.calculate_tensor_spmatrix(
     ktraj,
     adjnufft_ob.numpoints.tolist(),
     adjnufft_ob.im_size.tolist(),

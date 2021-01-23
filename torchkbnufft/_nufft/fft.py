@@ -123,17 +123,25 @@ def ifft_and_scale(
 
 
 @torch.jit.script
-def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = None) -> Tensor:
-    """FFT-based filtering on an oversampled grid.
+def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = "ortho") -> Tensor:
+    r"""FFT-based filtering on an oversampled grid.
+
+    This is a wrapper for the operation
+
+    .. math::
+        \text{output} = iFFT(\text{kernel}*FFT(\text{image}))
+
+    where :math:`iFFT` and :math:`FFT` are both implemented as oversampled
+    FFTs.
 
     Args:
         image: The image to be filtered.
         kernel: FFT-domain filter.
-        norm; Optional: Type of normalization factor to use. If 'ortho', uses
-            orthogonal FFT, otherwise, no normalization is applied.
+        norm: Whether to apply normalization with the FFT operation. Options
+            are ``"ortho"`` or ``None``.
 
     Returns:
-        Filtered version of `image`.
+        Filtered version of ``image``.
     """
     normalized = False
     if norm is not None:

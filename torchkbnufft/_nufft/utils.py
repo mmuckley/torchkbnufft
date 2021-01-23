@@ -14,60 +14,6 @@ DTYPE_MAP = [
 ]
 
 
-def build_tensor_spmatrix(
-    omega: np.ndarray,
-    numpoints: Sequence[int],
-    im_size: Sequence[int],
-    grid_size: Sequence[int],
-    n_shift: Sequence[int],
-    order: Sequence[float],
-    alpha: Sequence[float],
-) -> Tuple[Tensor, Tensor]:
-    """Builds a sparse matrix with the interpolation coefficients.
-
-    This builds the interpolation matrices directly from scipy Kaiser-Bessel
-    functions, so using them for a NUFFT should be a little more accurate than
-    table interpolation.
-
-    Args:
-        omega: k-space trajectory (in radians/voxel).
-        numpoints: Number of neighbors to use for interpolation.
-        im_size: Size of image.
-        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
-            times `im_size`.
-        n_shift: Size for fftshift, usually `im_size // 2`.
-        order: Order of Kaiser-Bessel kernel.
-        alpha: KB parameter.
-
-    Returns:
-        2-Tuple of (real, imaginary) tensors for NUFFT interpolation.
-    """
-    coo = build_numpy_spmatrix(
-        omega=omega,
-        numpoints=numpoints,
-        im_size=im_size,
-        grid_size=grid_size,
-        n_shift=n_shift,
-        order=order,
-        alpha=alpha,
-    )
-
-    values = coo.data
-    indices = np.stack((coo.row, coo.col))
-
-    inds = torch.tensor(indices, dtype=torch.long)
-    real_vals = torch.tensor(np.real(values))
-    imag_vals = torch.tensor(np.imag(values))
-    shape = coo.shape
-
-    interp_mats = (
-        torch.sparse.FloatTensor(inds, real_vals, torch.Size(shape)),  # type: ignore
-        torch.sparse.FloatTensor(inds, imag_vals, torch.Size(shape)),  # type: ignore
-    )
-
-    return interp_mats
-
-
 def build_numpy_spmatrix(
     omega: np.ndarray,
     numpoints: Sequence[int],
@@ -348,40 +294,27 @@ def init_fn(
             order
             alpha
     """
-    im_size = tuple(im_size)
-    if grid_size is None:
-        grid_size = tuple([dim * 2 for dim in im_size])
-    else:
-        grid_size = tuple(grid_size)
-    if isinstance(numpoints, int):
-        numpoints = tuple([numpoints for _ in range(len(grid_size))])
-    else:
-        numpoints = tuple(numpoints)
-    if n_shift is None:
-        n_shift = tuple([dim // 2 for dim in im_size])
-    else:
-        n_shift = tuple(n_shift)
-    if isinstance(table_oversamp, int):
-        table_oversamp = tuple(table_oversamp for _ in range(len(grid_size)))
-    else:
-        table_oversamp = tuple(table_oversamp)
-    alpha = tuple(kbwidth * numpoint for numpoint in numpoints)
-    if isinstance(order, float):
-        order = tuple(order for _ in range(len(grid_size)))
-    else:
-        order = tuple(order)
-    if dtype is None:
-        dtype = torch.get_default_dtype()
-    if device is None:
-        device = torch.device("cpu")
-
-    # dimension checking
-    assert len(grid_size) == len(im_size)
-    assert len(n_shift) == len(im_size)
-    assert len(numpoints) == len(im_size)
-    assert len(alpha) == len(im_size)
-    assert len(order) == len(im_size)
-    assert len(table_oversamp) == len(im_size)
+    (
+        im_size,
+        grid_size,
+        numpoints,
+        n_shift,
+        table_oversamp,
+        order,
+        alpha,
+        dtype,
+        device,
+    ) = validate_args(
+        im_size,
+        grid_size,
+        numpoints,
+        n_shift,
+        table_oversamp,
+        kbwidth,
+        order,
+        dtype,
+        device,
+    )
 
     tables = build_table(
         numpoints=numpoints,
@@ -423,4 +356,73 @@ def init_fn(
         torch.tensor(table_oversamp, dtype=torch.long, device=device),
         torch.tensor(order, dtype=real_dtype, device=device),
         torch.tensor(alpha, dtype=real_dtype, device=device),
+    )
+
+
+def validate_args(
+    im_size: Sequence[int],
+    grid_size: Optional[Sequence[int]] = None,
+    numpoints: Union[int, Sequence[int]] = 6,
+    n_shift: Optional[Sequence[int]] = None,
+    table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+    kbwidth: float = 2.34,
+    order: Union[float, Sequence[float]] = 0.0,
+    dtype: torch.dtype = None,
+    device: torch.device = None,
+) -> Tuple[
+    Sequence[int],
+    Sequence[int],
+    Sequence[int],
+    Sequence[int],
+    Sequence[int],
+    Sequence[float],
+    Sequence[float],
+    torch.dtype,
+    torch.device,
+]:
+    im_size = tuple(im_size)
+    if grid_size is None:
+        grid_size = tuple([dim * 2 for dim in im_size])
+    else:
+        grid_size = tuple(grid_size)
+    if isinstance(numpoints, int):
+        numpoints = tuple([numpoints for _ in range(len(grid_size))])
+    else:
+        numpoints = tuple(numpoints)
+    if n_shift is None:
+        n_shift = tuple([dim // 2 for dim in im_size])
+    else:
+        n_shift = tuple(n_shift)
+    if isinstance(table_oversamp, int):
+        table_oversamp = tuple(table_oversamp for _ in range(len(grid_size)))
+    else:
+        table_oversamp = tuple(table_oversamp)
+    alpha = tuple(kbwidth * numpoint for numpoint in numpoints)
+    if isinstance(order, float):
+        order = tuple(order for _ in range(len(grid_size)))
+    else:
+        order = tuple(order)
+    if dtype is None:
+        dtype = torch.get_default_dtype()
+    if device is None:
+        device = torch.device("cpu")
+
+    # dimension checking
+    assert len(grid_size) == len(im_size)
+    assert len(n_shift) == len(im_size)
+    assert len(numpoints) == len(im_size)
+    assert len(alpha) == len(im_size)
+    assert len(order) == len(im_size)
+    assert len(table_oversamp) == len(im_size)
+
+    return (
+        im_size,
+        grid_size,
+        numpoints,
+        n_shift,
+        table_oversamp,
+        order,
+        alpha,
+        dtype,
+        device,
     )

@@ -19,7 +19,7 @@ These are the primary workhorse modules for applying NUFFT operations.
     KbNufftAdjoint
     ToepNufft
 
-Auxiliary Functions
+Utility Functions
 ----------------------------------
 
 Functions for calcualting density compensation and Toeplitz kernels.
@@ -29,6 +29,7 @@ Functions for calcualting density compensation and Toeplitz kernels.
     :nosignatures:
 
     calculate_density_compensation_function
+    calculate_tensor_spmatrix
     calculate_toeplitz_kernel
 
 Math Functions

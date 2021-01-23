@@ -75,23 +75,18 @@ class KbInterp(KbInterpModule):
       :attr:`im_size // 2`.
 
     Args:
-        im_size (tuple): Size of image with length being the number of
-            dimensions.
-        grid_size (tuple, optional): Size of grid to use for interpolation,
-            typically 1.25 to 2 times ``im_size``. Default: ``2 * im_size``
-        numpoints (int or tuple, optional): Number of neighbors to use for
-            interpolation in each dimension. Default: ``6``
-        n_shift (tuple, optional): Size for fftshift. Default:
-            ``im_size // 2``.
-        table_oversamp (int or tuple, optional): Table oversampling factor.
-            Default: ``2 ** 10``
-        kbwidth (float, optional): Size of Kaiser-Bessel kernel. Default:
-            ``2.34``
-        order (float or tuple, optional): Order of Kaiser-Bessel kernel.
-            Default: ``0``
-        dtype (torch.dtype, optional): Data type for tensor buffers. Default:
+        im_size: Size of image with length being the number of dimensions.
+        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
+            times ``im_size``. Default: ``2 * im_size``
+        numpoints: Number of neighbors to use for interpolation in each
+            dimension.
+        n_shift: Size for fftshift. Default: ``im_size // 2``.
+        table_oversamp: Table oversampling factor.
+        kbwidth: Size of Kaiser-Bessel kernel.
+        order: Order of Kaiser-Bessel kernel.
+        dtype: Data type for tensor buffers. Default:
             ``torch.get_default_dtype()``
-        device (torch.device, optional): Which device to create tensors on.
+        device: Which device to create tensors on.
             Default: ``torch.device('cpu')``
     """
 
@@ -112,15 +107,14 @@ class KbInterp(KbInterpModule):
         dimension.
 
         Args:
-            image (Tensor): Gridded data to be interpolated to scattered data.
-            omega (Tensor): k-space trajectory (in radians/voxel).
-            interp_mats (tuple, optional): 2-tuple of real, imaginary sparse
-                matrices to use for sparse matrix KB interpolation (overrides
-                default table interpolation).
+            image: Gridded data to be interpolated to scattered data.
+            omega: k-space trajectory (in radians/voxel).
+            interp_mats: 2-tuple of real, imaginary sparse matrices to use for
+                sparse matrix KB interpolation (overrides default table
+                interpolation).
 
         Returns:
-            Tensor: ``image`` calculated at Fourier frequencies specified by
-            ``omega``.
+            ``image`` calculated at Fourier frequencies specified by ``omega``.
         """
         is_complex = True
         if not image.is_complex():
@@ -199,23 +193,18 @@ class KbInterpAdjoint(KbInterpModule):
       :attr:`im_size // 2`.
 
     Args:
-        im_size (tuple): Size of image with length being the number of
-            dimensions.
-        grid_size (tuple, optional): Size of grid to use for interpolation,
-            typically 1.25 to 2 times ``im_size``. Default: ``2 * im_size``
-        numpoints (int or tuple, optional): Number of neighbors to use for
-            interpolation in each dimension. Default: ``6``
-        n_shift (tuple, optional): Size for fftshift. Default:
-            ``im_size // 2``.
-        table_oversamp (int or tuple, optional): Table oversampling factor.
-            Default: ``2 ** 10``
-        kbwidth (float, optional): Size of Kaiser-Bessel kernel. Default:
-            ``2.34``
-        order (float or tuple, optional): Order of Kaiser-Bessel kernel.
-            Default: ``0``
-        dtype (torch.dtype, optional): Data type for tensor buffers. Default:
+        im_size: Size of image with length being the number of dimensions.
+        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
+            times ``im_size``. Default: ``2 * im_size``
+        numpoints: Number of neighbors to use for interpolation in each
+            dimension.
+        n_shift: Size for fftshift. Default: ``im_size // 2``.
+        table_oversamp: Table oversampling factor.
+        kbwidth: Size of Kaiser-Bessel kernel.
+        order: Order of Kaiser-Bessel kernel.
+        dtype: Data type for tensor buffers. Default:
             ``torch.get_default_dtype()``
-        device (torch.device, optional): Which device to create tensors on.
+        device: Which device to create tensors on.
             Default: ``torch.device('cpu')``
     """
 
@@ -237,14 +226,14 @@ class KbInterpAdjoint(KbInterpModule):
         dimension.
 
         Args:
-            data (Tensor): Data to be gridded and then inverse FFT'd.
-            omega (Tensor): k-space trajectory (in radians/voxel).
-            interp_mats (tuple, optional): 2-tuple of real, imaginary sparse
-                matrices to use for sparse matrix KB interpolation (overrides
-                default table interpolation).
+            data: Data to be gridded.
+            omega: k-space trajectory (in radians/voxel).
+            interp_mats: 2-tuple of real, imaginary sparse matrices to use for
+                sparse matrix KB interpolation (overrides default table
+                interpolation).
 
         Returns:
-            Tensor: ``data`` transformed to the image domain.
+            ``data`` transformed to the image domain.
         """
         is_complex = True
         if not data.is_complex():

@@ -21,20 +21,26 @@ def kb_spmat_nufft(
 ) -> Tensor:
     """Kaiser-Bessel NUFFT with sparse matrix interpolation.
 
+    See :py:meth:`~torchkbnufft.KbNufft` for an overall description of
+    the forward NUFFT.
+
+    To calculate the sparse matrix tuple, see
+    :py:meth:`~torchkbnufft.calculate_tensor_spmatrix`.
+
     Args:
         image: Image to be NUFFT'd to scattered data.
         scaling_coef: Image-domain coefficients to pre-compensate for
             interpolation errors.
-        im_size: Size of image.
-        grid_size; Optional: Size of grid to use for interpolation, typically
-            1.25 to 2 times `im_size`.
+        im_size: Size of image with length being the number of dimensions.
+        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
+            times ``im_size``.
         interp_mats: 2-tuple of real, imaginary sparse matrices to use for
             sparse matrix KB interpolation.
-        norm; Optional: Whether to apply normalization with the FFT operation.
-            Options are `ortho` or `None`.
+        norm: Whether to apply normalization with the FFT operation. Options
+            are ``"ortho"`` or ``None``.
 
     Returns:
-        `image` calculated at scattered Fourier locations.
+        ``image`` calculated at scattered Fourier locations.
     """
     image = fft_and_scale(
         image=image,
@@ -60,20 +66,26 @@ def kb_spmat_nufft_adjoint(
 ) -> Tensor:
     """Kaiser-Bessel adjoint NUFFT with sparse matrix interpolation.
 
+    See :py:meth:`~torchkbnufft.KbNufftAdjoint` for an overall description of
+    the forward NUFFT.
+
+    To calculate the sparse matrix tuple, see
+    :py:meth:`~torchkbnufft.calculate_tensor_spmatrix`.
+
     Args:
         data: Scattered data to be iNUFFT'd to an image.
         scaling_coef: Image-domain coefficients to pre-compensate for
             interpolation errors.
-        im_size: Size of image.
-        grid_size; Optional: Size of grid to use for interpolation, typically
-            1.25 to 2 times `im_size`.
+        im_size: Size of image with length being the number of dimensions.
+        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
+            times ``im_size``.
         interp_mats: 2-tuple of real, imaginary sparse matrices to use for
             sparse matrix KB interpolation.
-        norm; Optional: Whether to apply normalization with the FFT operation.
-            Options are `ortho` or `None`.
+        norm: Whether to apply normalization with the FFT operation. Options
+            are ``"ortho"`` or ``None``.
 
     Returns:
-        `data` transformed to an image.
+        ``data`` transformed to an image.
     """
     data = kb_spmat_interp_adjoint(
         data=data, interp_mats=interp_mats, grid_size=grid_size
@@ -103,25 +115,28 @@ def kb_table_nufft(
 ) -> Tensor:
     """Kaiser-Bessel NUFFT with table interpolation.
 
+    See :py:meth:`~torchkbnufft.KbNufft` for an overall description of
+    the forward NUFFT.
+
     Args:
         image: Image to be NUFFT'd to scattered data.
         scaling_coef: Image-domain coefficients to pre-compensate for
             interpolation errors.
-        im_size: Size of image.
-        grid_size; Optional: Size of grid to use for interpolation, typically
-            1.25 to 2 times `im_size`.
+        im_size: Size of image with length being the number of dimensions.
+        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
+            times ``im_size``.
         omega: k-space trajectory (in radians/voxel).
         tables: Interpolation tables (one table for each dimension).
-        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
+        n_shift: Size for fftshift, usually ``im_size // 2``.
         numpoints: Number of neighbors to use for interpolation.
         table_oversamp: Table oversampling factor.
         offsets: A list of offsets, looping over all possible combinations of
             `numpoints`.
-        norm; Optional: Whether to apply normalization with the FFT operation.
-            Options are `ortho` or `None`.
+        norm: Whether to apply normalization with the FFT operation.
+            Options are ``"ortho"`` or ``None``.
 
     Returns:
-        `image` calculated at scattered Fourier locations.
+        ``image`` calculated at scattered Fourier locations.
     """
     image = fft_and_scale(
         image=image,
@@ -157,25 +172,28 @@ def kb_table_nufft_adjoint(
 ) -> Tensor:
     """Kaiser-Bessel NUFFT adjoint with table interpolation.
 
+    See :py:meth:`~torchkbnufft.KbNufftAdjoint` for an overall description of
+    the forward NUFFT.
+
     Args:
         data: Scattered data to be iNUFFT'd to an image.
         scaling_coef: Image-domain coefficients to pre-compensate for
             interpolation errors.
-        im_size: Size of image.
-        grid_size; Optional: Size of grid to use for interpolation, typically
-            1.25 to 2 times `im_size`.
+        im_size: Size of image with length being the number of dimensions.
+        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
+            times ``im_size``.
         omega: k-space trajectory (in radians/voxel).
         tables: Interpolation tables (one table for each dimension).
-        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
+        n_shift: Size for fftshift, usually ``im_size // 2``.
         numpoints: Number of neighbors to use for interpolation.
         table_oversamp: Table oversampling factor.
         offsets: A list of offsets, looping over all possible combinations of
             `numpoints`.
-        norm; Optional: Whether to apply normalization with the FFT operation.
-            Options are `ortho` or `None`.
+        norm: Whether to apply normalization with the FFT operation.
+            Options are ``"ortho"`` or ``None``.
 
     Returns:
-        `data` transformed to an image.
+        ``data`` transformed to an image.
     """
     data = kb_table_interp_adjoint(
         data=data,

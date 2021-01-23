@@ -2,6 +2,30 @@ import torch
 from torch import Tensor
 
 
+def absolute(val: Tensor, dim: int = -1) -> Tensor:
+    """Complex absolute value.
+
+    Args:
+        val: A tensor to have its absolute value computed.
+        dim: An integer indicating the complex dimension (for real inputs
+            only).
+
+    Returns:
+        The absolute value of ``val``.
+    """
+    if torch.is_complex(val):
+        abs_val = torch.abs(val)
+    else:
+        if not val.shape[dim] == 2:
+            raise ValueError("Real input does not have dimension size 2 at dim.")
+
+        abs_val = torch.sqrt(
+            val.select(dim, 0) ** 2 + val.select(dim, 1) ** 2
+        ).unsqueeze(dim)
+
+    return abs_val
+
+
 def complex_mult(val1: Tensor, val2: Tensor, dim: int = -1) -> Tensor:
     """Complex multiplication, real/imag are in dimension dim.
 
@@ -12,7 +36,7 @@ def complex_mult(val1: Tensor, val2: Tensor, dim: int = -1) -> Tensor:
             only).
 
     Returns:
-        val1 * val2, where * executes complex multiplication.
+        ``val1 * val2``, where ``*`` executes complex multiplication.
     """
     if not val1.dtype == val2.dtype:
         raise ValueError("val1 has different dtype than val2.")
@@ -35,6 +59,31 @@ def complex_mult(val1: Tensor, val2: Tensor, dim: int = -1) -> Tensor:
     return val3
 
 
+def complex_sign(val: Tensor, dim: int = -1) -> Tensor:
+    """Complex sign function value.
+
+    Args:
+        val: A tensor to have its complex sign computed.
+        dim: An integer indicating the complex dimension (for real inputs
+            only).
+
+    Returns:
+        The complex sign of ``val``.
+    """
+    is_complex = False
+    if torch.is_complex(val):
+        is_complex = True
+        val = torch.view_as_real(val)
+        dim = -1
+    elif not val.shape[dim] == 2:
+        raise ValueError("Real input does not have dimension size 2 at dim.")
+
+    sign_val = torch.atan2(val.select(dim, 1), val.select(dim, 0))
+    sign_val = imag_exp(sign_val, dim=dim, return_complex=is_complex)
+
+    return sign_val
+
+
 def conj_complex_mult(val1: Tensor, val2: Tensor, dim: int = -1) -> Tensor:
     """Complex multiplication, real/imag are in dimension dim.
 
@@ -45,7 +94,7 @@ def conj_complex_mult(val1: Tensor, val2: Tensor, dim: int = -1) -> Tensor:
             only).
 
     Returns:
-        val3 = val1 * conj(val2), where * executes complex multiplication.
+        ``val3 = val1 * conj(val2)``, where * executes complex multiplication.
     """
     if not val1.dtype == val2.dtype:
         raise ValueError("val1 has different dtype than val2.")
@@ -77,7 +126,7 @@ def imag_exp(val: Tensor, dim: int = -1, return_complex: bool = True) -> Tensor:
             real outputs only).
 
     Returns:
-        val2 = exp(i*val), where i is sqrt(-1).
+        ``val2 = exp(i*val)``, where ``i`` is ``sqrt(-1)``.
     """
     val2 = torch.stack((torch.cos(val), torch.sin(val)), -1)
     if return_complex:
@@ -96,7 +145,7 @@ def inner_product(val1: Tensor, val2: Tensor, dim: int = -1) -> Tensor:
             only).
 
     Returns:
-        The complex inner product of val1 and val2.
+        The complex inner product of ``val1`` and ``val2``.
     """
     if not val1.dtype == val2.dtype:
         raise ValueError("val1 has different dtype than val2.")
@@ -115,52 +164,3 @@ def inner_product(val1: Tensor, val2: Tensor, dim: int = -1) -> Tensor:
         inprod = torch.sum(inprod)
 
     return inprod
-
-
-def absolute(val: Tensor, dim: int = -1) -> Tensor:
-    """Complex absolute value.
-
-    Args:
-        val: A tensor to have its absolute value computed.
-        dim: An integer indicating the complex dimension (for real inputs
-            only).
-
-    Returns:
-        The absolute value of t.
-    """
-    if torch.is_complex(val):
-        abs_val = torch.abs(val)
-    else:
-        if not val.shape[dim] == 2:
-            raise ValueError("Real input does not have dimension size 2 at dim.")
-
-        abs_val = torch.sqrt(
-            val.select(dim, 0) ** 2 + val.select(dim, 1) ** 2
-        ).unsqueeze(dim)
-
-    return abs_val
-
-
-def complex_sign(val: Tensor, dim: int = -1) -> Tensor:
-    """Complex sign function value.
-
-    Args:
-        val: A tensor to have its complex sign computed.
-        dim: An integer indicating the complex dimension (for real inputs
-            only).
-
-    Returns:
-        The complex sign of val.
-    """
-    is_complex = False
-    if torch.is_complex(val):
-        is_complex = True
-        val = torch.view_as_real(val)
-        dim = -1
-    elif not val.shape[dim] == 2:
-        raise ValueError("Real input does not have dimension size 2 at dim.")
-
-    sign_val = torch.atan2(val.select(dim, 1), val.select(dim, 0))
-    sign_val = imag_exp(sign_val, dim=dim, return_complex=is_complex)
-
-    return sign_val

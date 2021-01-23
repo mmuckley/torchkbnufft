@@ -20,26 +20,27 @@ def calculate_density_compensation_function(
 ) -> Tensor:
     """Numerical density compensation estimation for any trajectory.
 
-    Based on the method of Pipe:
+    This function has optional parameters for initializing a NUFFT object. See
+    :py:meth:`~torchkbnufft.KbInterp` for details.
 
-    Pipe JG, Menon P. Sampling density compensation in MRI: rationale and an
-    iterative numerical solution. MRM. 1999 Jan;41(1):179-86.
+    * :attr:`ktraj` should be of size ``(len(im_size), klength)``,
+      where ``klength`` is the length of the k-space trajectory.
+
+    Based on the `method of Pipe
+    <https://doi.org/10.1002/(SICI)1522-2594(199901)41:1%3C179::AID-MRM25%3E3.0.CO;2-V>`_.
 
     This code was contributed by Chaithya G.R. and Z. Ramzi.
 
     Args:
-        ktraj: The k-space trajectory in radians/voxel dimension ``(d, m)``.
-            ``d`` is the number of spatial dimensions, and m is the length of
-            the trajectory.
-        im_size: Size of image.
+        ktraj: k-space trajectory (in radians/voxel).
+        im_size: Size of image with length being the number of dimensions.
         num_iterations: Number of iterations.
-        grid_size; Optional: Size of grid to use for interpolation, typically
-            1.25 to 2 times ``im_size``.
-        numpoints: Number of neighbors to use for interpolation.
-        n_shift; Optional: Size for fftshift, usually ``im_size // 2``.
+        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
+            times ``im_size``. Default: ``2 * im_size``
+        numpoints: Number of neighbors to use for interpolation in each
+            dimension. Default: ``6``
+        n_shift: Size for fftshift. Default: ``im_size // 2``.
         table_oversamp: Table oversampling factor.
-        offsets: A list of offsets, looping over all possible combinations of
-            ``numpoints``.
         kbwidth: Size of Kaiser-Bessel kernel.
         order: Order of Kaiser-Bessel kernel.
 

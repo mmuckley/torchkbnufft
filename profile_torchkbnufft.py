@@ -44,7 +44,7 @@ def profile_torchkbnufft(
 
     # precompute the sparse interpolation matrices
     if sparse_mats_flag:
-        interp_mats = tkbn.build_tensor_spmatrix(
+        interp_mats = tkbn.calculate_tensor_spmatrix(
             ktraj,
             forw_ob.numpoints.tolist(),
             forw_ob.im_size.tolist(),

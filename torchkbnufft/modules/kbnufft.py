@@ -95,23 +95,18 @@ class KbNufft(KbNufftModule):
       :attr:`im_size // 2`.
 
     Args:
-        im_size (tuple): Size of image with length being the number of
-            dimensions.
-        grid_size (tuple, optional): Size of grid to use for interpolation,
-            typically 1.25 to 2 times ``im_size``. Default: ``2 * im_size``
-        numpoints (int or tuple, optional): Number of neighbors to use for
-            interpolation in each dimension. Default: ``6``
-        n_shift (tuple, optional): Size for fftshift. Default:
-            ``im_size // 2``.
-        table_oversamp (int or tuple, optional): Table oversampling factor.
-            Default: ``2 ** 10``
-        kbwidth (float, optional): Size of Kaiser-Bessel kernel. Default:
-            ``2.34``
-        order (float or tuple, optional): Order of Kaiser-Bessel kernel.
-            Default: ``0``
-        dtype (torch.dtype, optional): Data type for tensor buffers. Default:
+        im_size: Size of image with length being the number of dimensions.
+        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
+            times ``im_size``. Default: ``2 * im_size``
+        numpoints: Number of neighbors to use for interpolation in each
+            dimension.
+        n_shift: Size for fftshift. Default: ``im_size // 2``.
+        table_oversamp: Table oversampling factor.
+        kbwidth: Size of Kaiser-Bessel kernel.
+        order: Order of Kaiser-Bessel kernel.
+        dtype: Data type for tensor buffers. Default:
             ``torch.get_default_dtype()``
-        device (torch.device, optional): Which device to create tensors on.
+        device: Which device to create tensors on.
             Default: ``torch.device('cpu')``
     """
 
@@ -134,20 +129,18 @@ class KbNufft(KbNufftModule):
         dimension.
 
         Args:
-            image (Tensor): Object to be NUFFT'd.
-            omega (Tensor): k-space trajectory (in radians/voxel).
-            interp_mats (tuple, optional): 2-tuple of real, imaginary spars
-                matrices to use for sparse matrix NUFFT interpolation
-                (overrides default table interpolation).
-            smaps (Tensor, optional): Sensitivity maps. If input, these will be
-                multiplied before the forward NUFFT.
-            norm (string, optional): Whether to apply normalization with the
-                FFT operation. Options are ``"ortho"` or ``None``. Default:
-                ``None``
+            image: Object to calculate off-grid Fourier samples from.
+            omega: k-space trajectory (in radians/voxel).
+            interp_mats: 2-tuple of real, imaginary sparse matrices to use for
+                sparse matrix NUFFT interpolation (overrides default table
+                interpolation).
+            smaps: Sensitivity maps. If input, these will be multiplied before
+                the forward NUFFT.
+            norm: Whether to apply normalization with the FFT operation.
+                Options are ``"ortho"` or ``None``.
 
         Returns:
-            Tensor: ``image`` calculated at Fourier frequencies specified by
-            ``omega``.
+            ``image`` calculated at Fourier frequencies specified by ``omega``.
         """
         if smaps is not None:
             if not smaps.dtype == image.dtype:
@@ -263,23 +256,18 @@ class KbNufftAdjoint(KbNufftModule):
       :attr:`im_size // 2`.
 
     Args:
-        im_size (tuple): Size of image with length being the number of
-            dimensions.
-        grid_size (tuple, optional): Size of grid to use for interpolation,
-            typically 1.25 to 2 times ``im_size``. Default: ``2 * im_size``
-        numpoints (int or tuple, optional): Number of neighbors to use for
-            interpolation in each dimension. Default: ``6``
-        n_shift (tuple, optional): Size for fftshift. Default:
-            ``im_size // 2``.
-        table_oversamp (int or tuple, optional): Table oversampling factor.
-            Default: ``2 ** 10``
-        kbwidth (float, optional): Size of Kaiser-Bessel kernel. Default:
-            ``2.34``
-        order (float or tuple, optional): Order of Kaiser-Bessel kernel.
-            Default: ``0``
-        dtype (torch.dtype, optional): Data type for tensor buffers. Default:
+        im_size: Size of image with length being the number of dimensions.
+        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
+            times ``im_size``. Default: ``2 * im_size``
+        numpoints: Number of neighbors to use for interpolation in each
+            dimension.
+        n_shift: Size for fftshift. Default: ``im_size // 2``.
+        table_oversamp: Table oversampling factor.
+        kbwidth: Size of Kaiser-Bessel kernel.
+        order: Order of Kaiser-Bessel kernel.
+        dtype: Data type for tensor buffers. Default:
             ``torch.get_default_dtype()``
-        device (torch.device, optional): Which device to create tensors on.
+        device: Which device to create tensors on.
             Default: ``torch.device('cpu')``
     """
 
@@ -302,19 +290,18 @@ class KbNufftAdjoint(KbNufftModule):
         dimension.
 
         Args:
-            data (Tensor): Data to be gridded and then inverse FFT'd.
-            omega (Tensor): k-space trajectory (in radians/voxel).
-            interp_mats (tuple, optional) 2-tuple of real, imaginary sparse
-                matrices to use for sparse matrix NUFFT interpolation
-                (overrides default table interpolation).
-            smaps(Tensor, optional): Sensitivity maps. If input, these will be
-                multiplied before the forward NUFFT.
-            norm (string, optional): Whether to apply normalization with the
-                FFT operation. Options are ``"ortho"`` or ``None``. Default:
-                ``None``
+            data: Data to be gridded and then inverse FFT'd.
+            omega: k-space trajectory (in radians/voxel).
+            interp_mats: 2-tuple of real, imaginary sparse matrices to use for
+                sparse matrix NUFFT interpolation (overrides default table
+                interpolation).
+            smaps: Sensitivity maps. If input, these will be multiplied before
+                the forward NUFFT.
+            norm: Whether to apply normalization with the FFT operation.
+                Options are ``"ortho"`` or ``None``.
 
         Returns:
-            Tensor: ``data`` transformed to the image domain.
+            ``data`` transformed to the image domain.
         """
         if smaps is not None:
             if not smaps.dtype == data.dtype:
@@ -392,9 +379,8 @@ class ToepNufft(torch.nn.Module):
 
     The module is intended to be used in combination with an fft kernel
     computed to be the frequency response of an embedded Toeplitz matrix. The
-    kernel is calculated offline via
-
-    ``torchkbnufft.calculate_toeplitz_kernel``
+    kernel is calculated using
+    :py:meth:`~torchkbnufft.calculate_toeplitz_kernel`.
 
     The corresponding kernel is then passed to this module in its forward
     forward operation, which applies a (zero-padded) fft filter using the
@@ -414,16 +400,14 @@ class ToepNufft(torch.nn.Module):
         """Toeplitz NUFFT forward function.
 
         Args:
-            image (Tensor): The image to apply the forward/backward
-                Toeplitz-embedded NUFFT to.
-            kernel (Tensor): The filter response taking into account Toeplitz
-                embedding.
-            norm (string, optional): Whether to apply normalization with the
-                FFT operation. Options are ``"ortho"`` or ``None``. Default:
-                ``"ortho"``
+            image: The image to apply the forward/backward Toeplitz-embedded
+                NUFFT to.
+            kernel: The filter response taking into account Toeplitz embedding.
+            norm: Whether to apply normalization with the FFT operation.
+                Options are ``"ortho"`` or ``None``.
 
         Returns:
-            Tensor: ``image`` after applying the Toeplitz NUFFT.
+            ``image`` after applying the Toeplitz NUFFT.
         """
         if smaps is not None:
             if not smaps.dtype == image.dtype:

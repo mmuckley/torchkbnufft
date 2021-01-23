@@ -20,24 +20,37 @@ def calculate_toeplitz_kernel(
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
 ) -> Tensor:
-    """Calculates an FFT kernel for Toeplitz embedding over batches.
+    r"""Calculates an FFT kernel for Toeplitz embedding.
 
     The kernel is calculated using a adjoint NUFFT object. If the adjoint
-    applies A', then this script calculates D where F'DF = A'WA, where F is a
-    DFT matrix and W is a set of non-Cartesian k-space weights. D can then be
-    used to approximate A'WA without any interpolation operations.
+    applies :math:`A'`, then this script calculates :math:`D` where
+    :math:`F'DF \approx A'WA`, where :math:`F` is a DFT matrix and W is a set of
+    non-Cartesian k-space weights. :math:`D` can then be used to approximate
+    :math:`A'WA` without any interpolation operations.
+
+    For details on Toeplitz embedding, see
+    `Efficient numerical methods in non-uniform sampling theory
+    (Feichtinger et al.)
+    <https://link.springer.com/article/10.1007/s002110050101>`_.
+
+    This function has optional parameters for initializing a NUFFT object. See
+    :py:meth:`~torchkbnufft.KbNufftAdjoint` for details.
+
+    * :attr:`omega` should be of size ``(len(im_size), klength)``,
+      where ``klength`` is the length of the k-space trajectory.
 
     Args:
         omega: k-space trajectory (in radians/voxel).
-        im_size: Size of image.
-        weights; Optional: Non-Cartesian k-space weights (e.g., density
-            compensation).
-        norm; Optional: Whether to apply normalization with the FFT
-            operation. Options are ``"ortho"`` or ``None``.
-        grid_size; Optional: Size of grid to use for interpolation, typically
-            1.25 to 2 times ``im_size``.
-        numpoints: Number of neighbors to use for interpolation.
-        n_shift; Optional: Size for fftshift, usually ``im_size // 2``.
+        im_size: Size of image with length being the number of dimensions.
+        weights: Non-Cartesian k-space weights (e.g., density compensation).
+            Default: ``torch.ones(omega.shape[1])``
+        norm: Whether to apply normalization with the FFT operation. Options
+            are ``"ortho"`` or ``None``.
+        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
+            times ``im_size``. Default: ``2 * im_size``
+        numpoints: Number of neighbors to use for interpolation in each
+            dimension.
+        n_shift: Size for fftshift. Default: ``im_size // 2``.
         table_oversamp: Table oversampling factor.
         kbwidth: Size of Kaiser-Bessel kernel.
         order: Order of Kaiser-Bessel kernel.
