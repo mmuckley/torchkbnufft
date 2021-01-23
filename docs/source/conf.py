@@ -15,15 +15,17 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
 
+import torchkbnufft
+
 
 # -- Project information -----------------------------------------------------
 
 project = "torchkbnufft"
-copyright = "2019, Matthew Muckley"
+copyright = "2021, Matthew Muckley"
 author = "Matthew Muckley"
 
 # The full version, including alpha/beta/rc tags
-release = "v0.3.2.post1"
+release = f"v{torchkbnufft.__version__}"
 
 
 # -- General configuration ---------------------------------------------------
@@ -40,22 +42,28 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinxcontrib.katex",
     "sphinx.ext.autosectionlabel",
-    "autoapi.extension",
 ]
-autoapi_dirs = ["../../torchkbnufft"]
-autoapi_generate_api_docs = False
-autodoc_mock_imports = ["torch"]
+# autodoc_mock_imports = ["torch"]
+
+# build the templated autosummary files
+autosummary_generate = True
+numpydoc_show_class_members = False
 
 # autosectionlabel throws warnings if section names are duplicated.
 # The following tells autosectionlabel to not throw a warning for
 # duplicated section names that are in different documents.
 autosectionlabel_prefix_document = True
 
+napoleon_use_ivar = True
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
 html_sidebars = {"**": ["globaltoc.html", "searchbox.html"]}
+
+source_suffix = ".rst"
 
 master_doc = "index"
 

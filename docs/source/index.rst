@@ -20,8 +20,6 @@ This documentation consists of the API.
 
    torchkbnufft
    torchkbnufft.functional
-   torchkbnufft.mri
-   torchkbnufft.nufft
 
 
 Indices and tables

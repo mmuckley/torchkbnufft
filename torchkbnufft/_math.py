@@ -126,7 +126,7 @@ def absolute(val: Tensor, dim: int = -1) -> Tensor:
             only).
 
     Returns:
-        tensor: The absolute value of t.
+        The absolute value of t.
     """
     if torch.is_complex(val):
         abs_val = torch.abs(val)

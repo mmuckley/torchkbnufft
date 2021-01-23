@@ -33,11 +33,11 @@ def calculate_toeplitz_kernel(
         weights; Optional: Non-Cartesian k-space weights (e.g., density
             compensation).
         norm; Optional: Whether to apply normalization with the FFT
-            operation. Options are `ortho` or `None`.
+            operation. Options are ``"ortho"`` or ``None``.
         grid_size; Optional: Size of grid to use for interpolation, typically
-            1.25 to 2 times `im_size`.
+            1.25 to 2 times ``im_size``.
         numpoints: Number of neighbors to use for interpolation.
-        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
+        n_shift; Optional: Size for fftshift, usually ``im_size // 2``.
         table_oversamp: Table oversampling factor.
         kbwidth: Size of Kaiser-Bessel kernel.
         order: Order of Kaiser-Bessel kernel.
@@ -103,7 +103,7 @@ def adjoint_flip_and_concat(
         weights: Non-Cartesian k-space weights (e.g., density compensation).
         adj_ob: An object for adjoint NUFFTs.
         norm; Optional: Whether to apply normalization with the FFT
-            operation. Options are `ortho` or `None`.
+            operation. Options are ``"ortho"`` or ``None``.
 
     Returns:
         Toeplitz kernel calculated by iterating over permutations.
