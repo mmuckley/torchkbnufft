@@ -1,4 +1,4 @@
-# Torch KB-NUFFT
+# torchkbnufft
 
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/facebookresearch/fastMRI/blob/master/LICENSE.md)
 ![CI Badge](https://github.com/mmuckley/torchkbnufft/workflows/Build%20and%20test/badge.svg?branch=master)
@@ -13,7 +13,7 @@ pip install torchkbnufft
 
 ## About
 
-Torch KB-NUFFT implements a non-uniform Fast Fourier Transform [1, 2] with
+`torchkbnufft` implements a non-uniform Fast Fourier Transform [1, 2] with
 Kaiser-Bessel gridding in PyTorch. The implementation is completely in Python,
 facilitating robustness and flexible deployment in human-readable code. NUFFT
 functions are each wrapped as a ```torch.autograd.Function```, allowing
@@ -55,9 +55,17 @@ Behavior can also be inferred by inspecting the source code [here](https://githu
 
 ## Examples
 
+Jupyter notebook examples are in the ```notebooks/``` folder.
+
+- [Basic Example](notebooks/SENSE%20Example.ipynb)
+- [SENSE-NUFFT Example](notebooks/SENSE%20Example.ipynb)
+- [Sparse Matrix Example](notebooks/Sparse%20Matrix%20Example.ipynb)
+- [Toeplitz Example]((notebooks/Toeplitz%20Example.ipynb))
+
 ### Simple Forward NUFFT
 
-Jupyter notebook examples are in the ```notebooks/``` folder. The following minimalist code loads a Shepp-Logan phantom and computes a single radial spoke of k-space data:
+The following minimalist code loads a Shepp-Logan phantom and computes a single
+radial spoke of k-space data:
 
 ```python
 import torch
