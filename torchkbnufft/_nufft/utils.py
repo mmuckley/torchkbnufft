@@ -30,11 +30,12 @@ def build_tensor_spmatrix(
     table interpolation.
 
     Args:
-        omega: An array of coordinates to interpolate to (radians/voxel).
-        numpoints: Number of points to use for interpolation in each dimension.
-        im_size: Size of base image.
-        grid_size: Size of the grid to interpolate from.
-        n_shift: Number of points to shift for fftshifts.
+        omega: k-space trajectory (in radians/voxel).
+        numpoints: Number of neighbors to use for interpolation.
+        im_size: Size of image.
+        grid_size: Size of grid to use for interpolation, typically 1.25 to 2
+            times `im_size`.
+        n_shift: Size for fftshift, usually `im_size // 2`.
         order: Order of Kaiser-Bessel kernel.
         alpha: KB parameter.
 
@@ -239,11 +240,10 @@ def kaiser_bessel_ft(
     """Computes FT of KB function for scaling in image domain.
 
     Args:
-        om (ndarray): An array of coordinates to interpolate to.
-        npts (int): Number of points to use for interpolation in each
-            dimension.
-        order (int): Order of Kaiser-Bessel kernel.
-        alpha (double or array of doubles): KB parameter.
+        omega: An array of coordinates to interpolate to.
+        numpoints: Number of points to use for interpolation in each dimension.
+        alpha: KB parameter.
+        order: Order of Kaiser-Bessel kernel.
         d (int):  # TODO: find what d is
 
     Returns:
@@ -319,7 +319,35 @@ def init_fn(
     order: Union[float, Sequence[float]] = 0.0,
     dtype: torch.dtype = None,
     device: torch.device = None,
-):
+) -> Tuple[
+    List[Tensor], Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor
+]:
+    """Initialization function for NUFFT objects.
+
+    Args:
+        im_size: Size of image.
+        grid_size; Optional: Size of grid to use for interpolation, typically
+            1.25 to 2 times `im_size`.
+        numpoints: Number of neighbors to use for interpolation.
+        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
+        table_oversamp: Table oversampling factor.
+        kbwidth: Size of Kaiser-Bessel kernel.
+        order: Order of Kaiser-Bessel kernel.
+        dtype: Data type for tensor buffers.
+        device: Which device to create tensors on.
+
+    Returns:
+        Tuple containing all variables recast as Tensors:
+            tables (List of tensors)
+            im_size
+            grid_size
+            n_shift
+            numpoints
+            offset_list
+            table_oversamp
+            order
+            alpha
+    """
     im_size = tuple(im_size)
     if grid_size is None:
         grid_size = tuple([dim * 2 for dim in im_size])

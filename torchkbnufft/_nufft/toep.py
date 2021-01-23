@@ -28,14 +28,22 @@ def calculate_toeplitz_kernel(
     used to approximate A'WA without any interpolation operations.
 
     Args:
-        adj_ob (object): The adjoint NUFFT object.
-        om (tensor): The k-space trajectory in radians/voxel.
-        weights (tensor, default=None): Non-Cartesian k-space weights (e.g.,
-            density compensation). Optional.
+        omega: k-space trajectory (in radians/voxel).
+        im_size: Size of image.
+        weights; Optional: Non-Cartesian k-space weights (e.g., density
+            compensation).
+        norm; Optional: Whether to apply normalization with the FFT
+            operation. Options are `ortho` or `None`.
+        grid_size; Optional: Size of grid to use for interpolation, typically
+            1.25 to 2 times `im_size`.
+        numpoints: Number of neighbors to use for interpolation.
+        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
+        table_oversamp: Table oversampling factor.
+        kbwidth: Size of Kaiser-Bessel kernel.
+        order: Order of Kaiser-Bessel kernel.
 
     Returns:
-        tensor: The FFT kernel for approximating the forward/backward
-            operation for all batches.
+        The FFT kernel for approximating the forward/adjoint operation.
     """
     device = omega.device
     normalized = True if norm == "ortho" else False
@@ -84,6 +92,22 @@ def adjoint_flip_and_concat(
     adj_ob: KbNufftAdjoint,
     norm: Optional[str] = None,
 ) -> Tensor:
+    """Calculate oversampled Toeplitz kernel by iterating over permutations.
+
+    This function calculates the Hermitian-symmetric kernel by applying an
+    adjoint NUFFT to a query signal over all possible dimension flips. It
+    accomplishes this via recursions.
+
+    Args:
+        omega: k-space trajectory (in radians/voxel).
+        weights: Non-Cartesian k-space weights (e.g., density compensation).
+        adj_ob: An object for adjoint NUFFTs.
+        norm; Optional: Whether to apply normalization with the FFT
+            operation. Options are `ortho` or `None`.
+
+    Returns:
+        Toeplitz kernel calculated by iterating over permutations.
+    """
     im_dim = dim + 2
 
     if dim < omega.shape[0] - 1:
@@ -120,11 +144,11 @@ def reflect_conj_concat(kernel: Tensor, dim: int) -> Tensor:
     """Reflects and conjugates kern before concatenating along dim.
 
     Args:
-        kern (tensor): One half of a full, Hermitian-symmetric kernel.
-        dim (int): The integer across which to apply Hermitian symmetry.
+        kernel: One half of a full, Hermitian-symmetric kernel.
+        dim: The integer across which to apply Hermitian symmetry.
 
     Returns:
-        tensor: The full FFT kernel after Hermitian-symmetric reflection.
+        The full FFT kernel after Hermitian-symmetric reflection.
     """
     dtype, device = kernel.dtype, kernel.device
     flipdims = torch.arange(dim, kernel.ndim, device=device)

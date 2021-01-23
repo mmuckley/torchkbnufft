@@ -17,26 +17,34 @@ def calculate_density_compensation_function(
     table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
-):
-    """Numerical density compensation estimation for a any trajectory.
+) -> Tensor:
+    """Numerical density compensation estimation for any trajectory.
 
-    Estimates the density compensation function numerically using a NUFFT
-    interpolator operator and a k-space trajectory (ktraj).
-    This function implements Pipe et al
+    Based on the method of Pipe:
 
-    This function uses a nufft hyper parameter dictionary, the associated nufft
-    operators and k-space trajectory.
+    Pipe JG, Menon P. Sampling density compensation in MRI: rationale and an
+    iterative numerical solution. MRM. 1999 Jan;41(1):179-86.
 
     This code was contributed by Chaithya G.R. and Z. Ramzi.
 
     Args:
-        ktraj (tensor): The k-space trajectory in radians/voxel dimension
-            (d, m). d is the number of spatial dimensions, and m is the length
-            of the trajectory.
-        num_iterations: Number of iterations
+        ktraj: The k-space trajectory in radians/voxel dimension `(d, m)`. `d`
+            is the number of spatial dimensions, and m is the length of the
+            trajectory.
+        im_size: Size of image.
+        num_iterations: Number of iterations.
+        grid_size; Optional: Size of grid to use for interpolation, typically
+            1.25 to 2 times `im_size`.
+        numpoints: Number of neighbors to use for interpolation.
+        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
+        table_oversamp: Table oversampling factor.
+        offsets: A list of offsets, looping over all possible combinations of
+            `numpoints`.
+        kbwidth: Size of Kaiser-Bessel kernel.
+        order: Order of Kaiser-Bessel kernel.
 
     Returns:
-        The density compensation coefficients for ktraj of size (m).
+        The density compensation coefficients for `ktraj`.
     """
     device = ktraj.device
 

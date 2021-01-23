@@ -7,6 +7,7 @@ from torch import Tensor
 
 
 def fft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
+    """Function for managing FFT normalizations."""
     norm = "ortho" if normalized else None
     dims = [el for el in range(-ndim, 0)]
 
@@ -14,13 +15,15 @@ def fft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
 
 
 def ifft_fn(image: Tensor, ndim: int, normalized: bool = False) -> Tensor:
+    """Function for managing FFT normalizations."""
     norm = "ortho" if normalized else "forward"
     dims = [el for el in range(-ndim, 0)]
 
-    return torch.fft.ifftn(image, dim=dims, norm=norm)  # typte: ignore
+    return torch.fft.ifftn(image, dim=dims, norm=norm)  # type: ignore
 
 
-def crop_dims(image: Tensor, dim_list: Tensor, end_list: Tensor):
+def crop_dims(image: Tensor, dim_list: Tensor, end_list: Tensor) -> Tensor:
+    """Crops an n-dimensional Tensor."""
     image = torch.view_as_real(image)  # index select only works for real
 
     for (dim, end) in zip(dim_list, end_list):
@@ -33,18 +36,19 @@ def crop_dims(image: Tensor, dim_list: Tensor, end_list: Tensor):
 def fft_and_scale(
     image: Tensor,
     scaling_coef: Tensor,
-    grid_size: Tensor,
     im_size: Tensor,
+    grid_size: Tensor,
     norm: Optional[str] = None,
 ) -> Tensor:
-    """Applies the FFT and any relevant scaling factors to x.
+    """Applies the FFT and any relevant scaling factors.
 
     Args:
         image: The image to be FFT'd.
         scaling_coef: The NUFFT scaling coefficients to be multiplied prior to
             FFT.
-        grid_size: The oversampled grid size.
-        im_size: The image dimensions for x.
+        im_size: Size of image.
+        grid_size; Optional: Size of grid to use for interpolation, typically
+            1.25 to 2 times `im_size`.
         norm; Optional: Type of normalization factor to use. If 'ortho', uses
             orthogonal FFT, otherwise, no normalization is applied.
 
@@ -78,23 +82,24 @@ def fft_and_scale(
 def ifft_and_scale(
     image: Tensor,
     scaling_coef: Tensor,
-    grid_size: Tensor,
     im_size: Tensor,
+    grid_size: Tensor,
     norm: Optional[str] = None,
-):
-    """Applies the iFFT and any relevant scaling factors to x.
+) -> Tensor:
+    """Applies the iFFT and any relevant scaling factors.
 
     Args:
         image: The image to be iFFT'd.
-        scaling_coef: The NUFFT scaling coefficients to be multiplied after
-            iFFT.
-        grid_size: The oversampled grid size.
-        im_size: The image dimensions for x.
-        norm: Type of normalization factor to use. If 'ortho', uses orthogonal
-            iFFT, otherwise, no normalization is applied.
+        scaling_coef: The NUFFT scaling coefficients to be conjugate multiplied
+            after to FFT.
+        im_size: Size of image.
+        grid_size; Optional: Size of grid to use for interpolation, typically
+            1.25 to 2 times `im_size`.
+        norm; Optional: Type of normalization factor to use. If 'ortho', uses
+            orthogonal FFT, otherwise, no normalization is applied.
 
     Returns:
-        The iFFT of image.
+        The iFFT of `image`.
     """
     normalized = False
     if norm is not None:
@@ -118,8 +123,18 @@ def ifft_and_scale(
 
 
 @torch.jit.script
-def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = None):
-    """FFT-based filtering on a 2-size oversampled grid."""
+def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = None) -> Tensor:
+    """FFT-based filtering on an oversampled grid.
+
+    Args:
+        image: The image to be filtered.
+        kernel: FFT-domain filter.
+        norm; Optional: Type of normalization factor to use. If 'ortho', uses
+            orthogonal FFT, otherwise, no normalization is applied.
+
+    Returns:
+        Filtered version of `image`.
+    """
     normalized = False
     if norm is not None:
         if norm == "ortho":
@@ -128,8 +143,7 @@ def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = None):
             raise ValueError("Only option for norm is 'ortho'.")
 
     im_size = torch.tensor(image.shape[2:], dtype=torch.long, device=image.device)
-
-    grid_size = im_size * 2
+    grid_size = torch.tensor(kernel.shape[2:], dtype=torch.long, device=image.device)
 
     # set up n-dimensional zero pad
     # zero pad for oversampled nufft

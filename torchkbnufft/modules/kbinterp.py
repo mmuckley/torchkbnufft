@@ -10,18 +10,20 @@ from ._kbmodule import KbModule
 class KbInterpModule(KbModule):
     """Parent class for KbInterp classes.
 
-    This implementation collects all init functions into one place. It inherits
-    from torch.nn.Module via torchkbnufft.kbmodule.KbModule.
+    Not all args are necessary to specify. If you only provide ``im_size``, the
+    code will try to infer reasonable defaults based on ``im_size``.
 
     Args:
-        im_size: Size of base image.
-        grid_size; Optional: Size of the grid to interpolate to.
-        numpoints: Number of points to use for interpolation in each dimension.
-            Default is six points in each direction.
-        n_shift; Optional: Number of points to shift for fftshifts.
+        im_size: Size of image.
+        grid_size; Optional: Size of grid to use for interpolation, typically
+            1.25 to 2 times `im_size`.
+        numpoints: Number of neighbors to use for interpolation.
+        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
         table_oversamp: Table oversampling factor.
-        kbwidth: Kaiser-Bessel width parameter.
+        kbwidth: Size of Kaiser-Bessel kernel.
         order: Order of Kaiser-Bessel kernel.
+        dtype: Data type for tensor buffers.
+        device: Which device to create tensors on.
     """
 
     def __init__(
@@ -50,23 +52,25 @@ class KbInterpModule(KbModule):
 
 
 class KbInterp(KbInterpModule):
-    """Non-uniform FFT forward interpolation PyTorch layer.
+    """Non-uniform KB interpolation layer.
 
     This object interpolates a grid of Fourier data to off-grid locations
-    using a Kaiser-Bessel kernel. It is implemented as a PyTorch nn layer.
+    using a Kaiser-Bessel kernel.
+
+    Not all args are necessary to specify. If you only provide ``im_size``, the
+    code will try to infer reasonable defaults based on ``im_size``.
 
     Args:
-        im_size (int or tuple of ints): Size of base image.
-        grid_size (int or tuple of ints, default=2*im_size): Size of the grid
-            to interpolate to.
-        numpoints (int or tuple of ints, default=6): Number of points to use
-            for interpolation in each dimension. Default is six points in each
-            direction.
-        n_shift (int or tuple of ints, default=im_size//2): Number of points to
-            shift for fftshifts.
-        table_oversamp (int, default=2^10): Table oversampling factor.
-        kbwidth (double, default=2.34): Kaiser-Bessel width parameter.
-        order (double, default=0): Order of Kaiser-Bessel kernel.
+        im_size: Size of image.
+        grid_size; Optional: Size of grid to use for interpolation, typically
+            1.25 to 2 times `im_size`.
+        numpoints: Number of neighbors to use for interpolation.
+        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
+        table_oversamp: Table oversampling factor.
+        kbwidth: Size of Kaiser-Bessel kernel.
+        order: Order of Kaiser-Bessel kernel.
+        dtype: Data type for tensor buffers.
+        device: Which device to create tensors on.
     """
 
     def forward(
@@ -77,17 +81,23 @@ class KbInterp(KbInterpModule):
     ) -> Tensor:
         """Interpolate from gridded data to scattered data.
 
-        Inputs are assumed to be batch/chans x coil x real/imag x image dims.
-        Om should be nbatch x ndims x klength.
+        Input tensors should be of shape `(N, C) + im_size`, where `N` is the
+        batch size and `C` is the number of sensitivity coils. `omega`, the
+        k-space trajectory, should be of size `(len(im_size), klength)`, where
+        `klength` is the length of the k-space trajectory.
+
+        If your tensors are real, ensure that 2 is the size of the last
+        dimension.
 
         Args:
-            image: The DFT of the signal.
-            omega: A new set of omega coordinates to interpolate to in
-                radians/voxel.
-            interp_mats: Tuple with two interpolation matrices (real, imag).
+            image: Gridded data to be interpolated to scattered data.
+            omega: k-space trajectory (in radians/voxel).
+            interp_mats; Optional: 2-tuple of real, imaginary sparse matrices
+                to use for sparse matrix KB interpolation (overrides default
+                table interpolation).
 
         Returns:
-            image computed at off-grid locations in omega.
+            `image` calculated at Fourier frequencies specified by `omega`.
         """
         is_complex = True
         if not image.is_complex():
@@ -131,18 +141,20 @@ class KbInterpAdjoint(KbInterpModule):
     This object interpolates off-grid Fourier data to on-grid locations
     using a Kaiser-Bessel kernel. It is implemented as a PyTorch nn layer.
 
+    Not all args are necessary to specify. If you only provide ``im_size``, the
+    code will try to infer reasonable defaults based on ``im_size``.
+
     Args:
-        im_size (int or tuple of ints): Size of base image.
-        grid_size (int or tuple of ints, default=2*im_size): Size of the grid
-            to interpolate to.
-        numpoints (int or tuple of ints, default=6): Number of points to use
-            for interpolation in each dimension. Default is six points in each
-            direction.
-        n_shift (int or tuple of ints, default=im_size//2): Number of points to
-            shift for fftshifts.
-        table_oversamp (int, default=2^10): Table oversampling factor.
-        kbwidth (double, default=2.34): Kaiser-Bessel width parameter.
-        order (double, default=0): Order of Kaiser-Bessel kernel.
+        im_size: Size of image.
+        grid_size; Optional: Size of grid to use for interpolation, typically
+            1.25 to 2 times `im_size`.
+        numpoints: Number of neighbors to use for interpolation.
+        n_shift; Optional: Size for fftshift, usually `im_size // 2`.
+        table_oversamp: Table oversampling factor.
+        kbwidth: Size of Kaiser-Bessel kernel.
+        order: Order of Kaiser-Bessel kernel.
+        dtype: Data type for tensor buffers.
+        device: Which device to create tensors on.
     """
 
     def forward(
@@ -154,17 +166,23 @@ class KbInterpAdjoint(KbInterpModule):
     ) -> Tensor:
         """Interpolate from scattered data to gridded data.
 
-        Apply table interpolation adjoint. Inputs are assumed to be batch/chans
-        x coil x real/imag x kspace length. Om should be nbatch x ndims x
-        klength.
+        Input tensors should be of shape `(N, C) + klength`, where `N` is the
+        batch size and `C` is the number of sensitivity coils. `omega`, the
+        k-space trajectory, should be of size `(len(im_size), klength)`, where
+        `klength` is the length of the k-space trajectory.
+
+        If your tensors are real, ensure that 2 is the size of the last
+        dimension.
 
         Args:
-            data: The off-grid k-space data.
-            omega: The coordinates of the off-grid dtaa.
-            interp_mats: Tuple with two interpolation matrices (real, imag).
+            data: Data to be gridded and then inverse FFT'd.
+            omega: k-space trajectory (in radians/voxel).
+            interp_mats; Optional: 2-tuple of real, imaginary sparse matrices
+                to use for sparse matrix KB interpolation (overrides default
+                table interpolation).
 
         Returns:
-            data computed at on-grid locations.
+            `data` transformed to the image domain.
         """
         is_complex = True
         if not data.is_complex():
