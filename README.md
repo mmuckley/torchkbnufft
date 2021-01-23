@@ -3,7 +3,7 @@
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/facebookresearch/fastMRI/blob/master/LICENSE.md)
 ![CI Badge](https://github.com/mmuckley/torchkbnufft/workflows/Build%20and%20test/badge.svg?branch=master)
 
-[API](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](https://github.com/mmuckley/torchkbnufft/tree/master/notebooks) | [Sedona Workshop Demo](https://github.com/mmuckley/torchkbnufft_demo)
+[Documentation](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](https://github.com/mmuckley/torchkbnufft/tree/master/notebooks) | [Sedona Workshop Demo](https://github.com/mmuckley/torchkbnufft_demo)
 
 Simple installation from PyPI:
 
@@ -39,7 +39,7 @@ It is generally best to start with Table interpolation and then experiment with
 the other modes for your problem.
 
 Sensitivity maps can be incorporated by passing them into a `KbNufft` or
-`KbNufftAdjoint` object
+`KbNufftAdjoint` object.
 
 ## Documentation
 
