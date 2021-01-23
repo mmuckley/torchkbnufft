@@ -10,7 +10,7 @@ __docs__ = "A high-level, easy-to-deploy non-uniform Fast Fourier Transform in P
 try:
     # This variable is injected in the __builtins__ by the build
     # process.
-    __TORCHKBNUFFT_SETUP__: bool
+    __TORCHKBNUFFT_SETUP__  # type: ignore
 except NameError:
     __TORCHKBNUFFT_SETUP__ = False
 
