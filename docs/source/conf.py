@@ -45,7 +45,7 @@ extensions = [
     "sphinxcontrib.katex",
     "sphinx.ext.autosectionlabel",
 ]
-# autodoc_mock_imports = ["torch"]
+autodoc_mock_imports = ["torch"]
 
 # build the templated autosummary files
 autosummary_generate = True

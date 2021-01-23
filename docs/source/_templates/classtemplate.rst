@@ -1,12 +1,11 @@
-﻿.. role:: hidden
+.. role:: hidden
     :class: hidden-section
-.. currentmodule:: torchkbnufft
+.. currentmodule:: {{ module }}
 
 
-KbInterp
-========
+{{ name | underline}}
 
-.. autoclass:: KbInterp
+.. autoclass:: {{ name }}
     :members:
 
 

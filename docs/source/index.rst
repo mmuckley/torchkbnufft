@@ -21,7 +21,6 @@ This documentation consists of the API.
    torchkbnufft
    torchkbnufft.functional
 
-
 Indices and tables
 ==================
 
