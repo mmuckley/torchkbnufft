@@ -22,7 +22,7 @@ These are the primary workhorse modules for applying NUFFT operations.
 Utility Functions
 ----------------------------------
 
-Functions for calcualting density compensation and Toeplitz kernels.
+Functions for calculating density compensation and Toeplitz kernels.
 
 .. autosummary::
     :toctree: generated
