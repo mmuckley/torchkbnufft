@@ -1,4 +1,4 @@
 sphinx
 sphinx-rtd-theme
-sphinx-contrib-katex
+sphinxcontrib-katex
 sphinx-autodoc-typehints
