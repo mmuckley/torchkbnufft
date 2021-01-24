@@ -1,6 +1,6 @@
 # torchkbnufft
 
-[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/facebookresearch/fastMRI/blob/master/LICENSE.md)
+[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 ![CI Badge](https://github.com/mmuckley/torchkbnufft/workflows/Build%20and%20test/badge.svg?branch=master)
 
 [Documentation](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](notebooks) | [Sedona Workshop Demo](https://github.com/mmuckley/torchkbnufft_demo)
@@ -43,6 +43,9 @@ Sensitivity maps can be incorporated by passing them into a `KbNufft` or
 
 ## Documentation
 
+An html-based documentation reference on
+[Read the Docs](https://torchkbnufft.readthedocs.io).
+
 Most files are accompanied with docstrings that can be read with ```help``` while running IPython. Example:
 
 ```python
@@ -50,9 +53,6 @@ from torchkbnufft import KbNufft
 
 help(KbNufft)
 ```
-
-An html-based documentation reference is
-[here](https://torchkbnufft.readthedocs.io).
 
 ## Examples
 
