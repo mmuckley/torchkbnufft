@@ -92,8 +92,7 @@ class KbInterp(KbInterpModule):
 
     Examples:
 
-        >>> image = torch.randn(8, 8) + 1j * torch.randn(8, 8)
-        >>> image = image.unsqueeze(0).unsqueeze(0)
+        >>> image = torch.randn(1, 1, 8, 8) + 1j * torch.randn(1, 1, 8, 8)
         >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
         >>> kb_ob = tkbn.KbInterp(im_size=(8, 8), grid_size=(8, 8))
         >>> data = kb_ob(image, omega)
@@ -216,6 +215,13 @@ class KbInterpAdjoint(KbInterpModule):
             ``torch.get_default_dtype()``
         device: Which device to create tensors on.
             Default: ``torch.device('cpu')``
+
+    Examples:
+
+        >>> data = torch.randn(1, 1, 12) + 1j * torch.randn(1, 1, 12)
+        >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
+        >>> adjkb_ob = tkbn.KbInterpAdjoint(im_size=(8, 8), grid_size=(8, 8))
+        >>> image = adjkb_ob(data, omega)
     """
 
     def forward(
