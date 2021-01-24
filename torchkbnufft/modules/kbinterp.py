@@ -178,7 +178,7 @@ class KbInterpAdjoint(KbInterpModule):
     For a detailed description see
     `Nonuniform fast Fourier transforms using min-max interpolation
     (JA Fessler and BP Sutton)
-    <https://ieeexplore.ieee.org/abstract/document/1166689>`_.
+    <https://doi.org/10.1109/TSP.2002.807005>`_.
 
     Note:
 

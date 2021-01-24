@@ -57,7 +57,7 @@ class KbNufft(KbNufftModule):
     This object applies the FFT and interpolates a grid of Fourier data to
     off-grid locations using a Kaiser-Bessel kernel. Consider an off-grid
     signal :math:`Y` to be estimated from an image-domain signal :math:`x`,
-    then this layer applies:
+    then in one dimension this layer applies:
 
     .. math::
         X_k = \sum_{n=0}^{N-1} s_n x_n e^{-i \gamma k n}
@@ -76,7 +76,7 @@ class KbNufft(KbNufftModule):
     to use from the Kaiser-Bessel kernel. For a detailed description see
     `Nonuniform fast Fourier transforms using min-max interpolation
     (JA Fessler and BP Sutton)
-    <https://ieeexplore.ieee.org/abstract/document/1166689>`_.
+    <https://doi.org/10.1109/TSP.2002.807005>`_.
 
     When called, the parameters of this class define properties of the kernel
     and how the interpolation is applied.
@@ -221,7 +221,7 @@ class KbNufftAdjoint(KbNufftModule):
     This object interpolates off-grid Fourier data to on-grid locations
     using a Kaiser-Bessel kernel prior to inverse DFT. Consider an image-domain
     signal :math:`x` to be estimated from an off-grid Fourier signal :math:`Y`,
-    then this layer applies:
+    then in one dimension this layer applies:
 
     .. math::
         X_{\{k_m+j\}_K} = \sum_{j=1}^J Y(\omega_m) u_j(\omega_m)
@@ -240,7 +240,7 @@ class KbNufftAdjoint(KbNufftModule):
     :math:`s_n` are multiplied. For a detailed description see
     `Nonuniform fast Fourier transforms using min-max interpolation
     (JA Fessler and BP Sutton)
-    <https://ieeexplore.ieee.org/abstract/document/1166689>`_.
+    <https://doi.org/10.1109/TSP.2002.807005>`_.
 
     Note:
 
