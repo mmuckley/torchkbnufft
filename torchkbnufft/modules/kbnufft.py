@@ -100,7 +100,7 @@ class KbNufft(KbNufftModule):
             times ``im_size``. Default: ``2 * im_size``
         numpoints: Number of neighbors to use for interpolation in each
             dimension.
-        n_shift: Size for fftshift. Default: ``im_size // 2``.
+        n_shift: Size for ``fftshift``. Default: ``im_size // 2``.
         table_oversamp: Table oversampling factor.
         kbwidth: Size of Kaiser-Bessel kernel.
         order: Order of Kaiser-Bessel kernel.
@@ -268,7 +268,7 @@ class KbNufftAdjoint(KbNufftModule):
             times ``im_size``. Default: ``2 * im_size``
         numpoints: Number of neighbors to use for interpolation in each
             dimension.
-        n_shift: Size for fftshift. Default: ``im_size // 2``.
+        n_shift: Size for ``fftshift``. Default: ``im_size // 2``.
         table_oversamp: Table oversampling factor.
         kbwidth: Size of Kaiser-Bessel kernel.
         order: Order of Kaiser-Bessel kernel.
