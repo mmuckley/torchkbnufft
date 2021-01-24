@@ -47,8 +47,6 @@ def profile_torchkbnufft(
         interp_mats = tkbn.calc_tensor_spmatrix(
             ktraj,
             im_size,
-            dtype=ktraj.dtype,
-            device=ktraj.device,
         )
         interp_mats = tuple([t.to(device) for t in interp_mats])
     if toep_flag:

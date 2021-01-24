@@ -172,45 +172,45 @@ def table_interp(
     # offset from k-space to first coef loc
     base_offset = 1 + torch.floor(tm - numpoints.unsqueeze(1) / 2.0).to(dtype=int_type)
 
-    # run the table interpolator for each batch element
-    output = []
-    for mini_image in image:
-        # flatten image dimensions, initialize output
-        mini_image = mini_image.reshape(mini_image.shape[0], -1)
-        kdat = torch.zeros(
-            size=(mini_image.shape[0], tm.shape[-1]), dtype=dtype, device=device
+    # flatten image dimensions
+    image = image.reshape(image.shape[0], image.shape[1], -1)
+    kdat = torch.zeros(
+        image.shape[0], image.shape[1], tm.shape[-1], dtype=dtype, device=device
+    )
+    # loop over offsets and take advantage of broadcasting
+    for offset in offsets:
+        coef, arr_ind = calc_coef_and_indices(
+            tm=tm,
+            base_offset=base_offset,
+            offset_increments=offset,
+            tables=tables,
+            centers=centers,
+            table_oversamp=table_oversamp,
+            grid_size=grid_size,
         )
 
-        # loop over offsets and take advantage of broadcasting
-        for offset in offsets:
-            coef, arr_ind = calc_coef_and_indices(
-                tm=tm,
-                base_offset=base_offset,
-                offset_increments=offset,
-                tables=tables,
-                centers=centers,
-                table_oversamp=table_oversamp,
-                grid_size=grid_size,
-            )
-
-            # unsqueeze coil dimension for on-grid indices
-            arr_ind = arr_ind.unsqueeze(0).expand(kdat.shape[0], -1)
-
-            # gather and multiply coefficients
-            kdat += coef.unsqueeze(0) * torch.gather(mini_image, 1, arr_ind)
-
-        # phase for fftshift
-        kdat = (
-            kdat
-            * imag_exp(
-                torch.mv(torch.transpose(omega, 1, 0), n_shift),
-                return_complex=True,
-            ).unsqueeze(0)
+        # unsqueeze coil dimension for on-grid indices
+        arr_ind = (
+            arr_ind.unsqueeze(0).unsqueeze(0).expand(kdat.shape[0], kdat.shape[1], -1)
         )
 
-        output.append(kdat)
+        # gather and multiply coefficients
+        kdat += coef * torch.gather(image, 2, arr_ind)
 
-    return torch.stack(output)
+    # phase for fftshift
+    return kdat * imag_exp(
+        torch.mv(torch.transpose(omega, 1, 0), n_shift),
+        return_complex=True,
+    )
+
+
+def accum_tensor(image: Tensor, arr_ind: Tensor, coef: Tensor, data: Tensor) -> Tensor:
+    """We fork this function for the adjoint interpolation."""
+    return image.index_put_(
+        (arr_ind,),
+        coef * data,
+        accumulate=True,
+    )
 
 
 @torch.jit.script
@@ -243,51 +243,53 @@ def table_interp_adjoint(
     # offset from k-space to first coef loc
     base_offset = 1 + torch.floor(tm - numpoints.unsqueeze(1) / 2.0).to(dtype=int_type)
 
-    # run the table interpolator for each batch element
-    output = []
-    for mini_data in data:
-        image = torch.zeros(
-            size=(mini_data.shape[0], output_prod),
-            dtype=dtype,
-            device=device,
+    # initialized flattened image
+    image = torch.zeros(
+        size=(data.shape[0], data.shape[1], output_prod),
+        dtype=dtype,
+        device=device,
+    )
+
+    # phase for fftshift
+    data = (
+        data
+        * imag_exp(
+            torch.mv(torch.transpose(omega, 1, 0), n_shift),
+            return_complex=True,
+        ).conj()
+    )
+
+    # loop over offsets and take advantage of numpy broadcasting
+    for offset in offsets:
+        coef, arr_ind = calc_coef_and_indices(
+            tm=tm,
+            base_offset=base_offset,
+            offset_increments=offset,
+            tables=tables,
+            centers=centers,
+            table_oversamp=table_oversamp,
+            grid_size=grid_size,
+            conjcoef=True,
         )
 
-        # phase for fftshift
-        mini_data = (
-            mini_data
-            * imag_exp(
-                torch.mv(torch.transpose(omega, 1, 0), n_shift),
-                return_complex=True,
-            ).conj()
-        )
-
-        # loop over offsets and take advantage of numpy broadcasting
-        for offset in offsets:
-            coef, arr_ind = calc_coef_and_indices(
-                tm=tm,
-                base_offset=base_offset,
-                offset_increments=offset,
-                tables=tables,
-                centers=centers,
-                table_oversamp=table_oversamp,
-                grid_size=grid_size,
-                conjcoef=True,
-            )
-
-            # the following code takes ordered data and scatters it on to an image grid
-            # profiling for a 2D problem showed drastic differences in performances
-            # for these two implementations on cpu/gpu, but they do the same thing
-            if device == torch.device("cpu"):
-                tmp = coef * mini_data
-                for coilind in range(image.shape[0]):
-                    image[coilind].index_put_(
-                        (arr_ind,),
-                        tmp[coilind],
-                        accumulate=True,
+        # the following code takes ordered data and scatters it on to an image grid
+        # profiling for a 2D problem showed drastic differences in performances
+        # for these two implementations on cpu/gpu, but they do the same thing
+        if device == torch.device("cpu"):
+            futures: List[torch.jit.Future[torch.Tensor]] = []
+            for batch_ind in range(image.shape[0]):
+                for coil_ind in range(image.shape[1]):
+                    futures.append(
+                        torch.jit.fork(
+                            accum_tensor,
+                            image[batch_ind, coil_ind],
+                            arr_ind,
+                            coef,
+                            data[batch_ind, coil_ind],
+                        )
                     )
-            else:
-                image.index_add_(1, arr_ind, coef * mini_data)
+            _ = [torch.jit.wait(future) for future in futures]
+        else:
+            image.index_add_(2, arr_ind, coef * data)
 
-        output.append(image)
-
-    return torch.stack(output).reshape(output_size)
+    return image.view(output_size)
