@@ -25,7 +25,7 @@ def kb_spmat_nufft(
     the forward NUFFT.
 
     To calculate the sparse matrix tuple, see
-    :py:meth:`~torchkbnufft.calculate_tensor_spmatrix`.
+    :py:meth:`~torchkbnufft.calc_tensor_spmatrix`.
 
     Args:
         image: Image to be NUFFT'd to scattered data.
@@ -70,7 +70,7 @@ def kb_spmat_nufft_adjoint(
     the adjoint NUFFT.
 
     To calculate the sparse matrix tuple, see
-    :py:meth:`~torchkbnufft.calculate_tensor_spmatrix`.
+    :py:meth:`~torchkbnufft.calc_tensor_spmatrix`.
 
     Args:
         data: Scattered data to be iNUFFT'd to an image.

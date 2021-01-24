@@ -57,7 +57,7 @@ radial spoke of k-space data:
    adjnufft_ob = tkbn.KbNufftAdjoint(im_size=im_size)
 
    # precompute the sparse interpolation matrices
-   interp_mats = tkbn.calculate_tensor_spmatrix(
+   interp_mats = tkbn.calc_tensor_spmatrix(
       ktraj,
       im_size=im_size
    )
@@ -84,7 +84,7 @@ shows an example:
    toep_ob = tkbn.ToepNufft()
 
    # precompute the embedded Toeplitz FFT kernel
-   kernel = tkbn.calculate_toeplitz_kernel(ktraj, im_size)
+   kernel = tkbn.calc_toeplitz_kernel(ktraj, im_size)
 
    # use FFT kernel from embedded Toeplitz matrix
    image = toep_ob(image, kernel)

@@ -52,7 +52,7 @@ def calc_tensor_spmatrix(
 
         >>> data = torch.randn(1, 1, 12) + 1j * torch.randn(1, 1, 12)
         >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
-        >>> spmats = tkbn.calculate_tensor_spmatrix(omega, (8, 8))
+        >>> spmats = tkbn.calc_tensor_spmatrix(omega, (8, 8))
         >>> adjkb_ob = tkbn.KbNufftAdjoint(im_size=(8, 8))
         >>> image = adjkb_ob(data, omega, spmats)
     """

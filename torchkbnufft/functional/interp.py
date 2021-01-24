@@ -17,7 +17,7 @@ def kb_spmat_interp(image: Tensor, interp_mats: Tuple[Tensor, Tensor]) -> Tensor
     interpolation.
 
     To calculate the sparse matrix tuple, see
-    :py:meth:`~torchkbnufft.calculate_tensor_spmatrix`.
+    :py:meth:`~torchkbnufft.calc_tensor_spmatrix`.
 
     Args:
         image: Gridded data to be interpolated to scattered data.
@@ -39,7 +39,7 @@ def kb_spmat_interp_adjoint(
     adjoint interpolation.
 
     To calculate the sparse matrix tuple, see
-    :py:meth:`~torchkbnufft.calculate_tensor_spmatrix`.
+    :py:meth:`~torchkbnufft.calc_tensor_spmatrix`.
 
     Args:
         data: Scattered data to be interpolated to gridded data.

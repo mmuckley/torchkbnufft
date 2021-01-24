@@ -63,7 +63,7 @@ def calc_toeplitz_kernel(
         >>> image = torch.randn(1, 1, 8, 8) + 1j * torch.randn(1, 1, 8, 8)
         >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
         >>> toep_ob = tkbn.ToepNufft()
-        >>> kernel = tkbn.calculate_toeplitz_kernel(omega, im_size=(8, 8))
+        >>> kernel = tkbn.calc_toeplitz_kernel(omega, im_size=(8, 8))
         >>> data = toep_ob(image, kernel)
     """
     device = omega.device

@@ -51,7 +51,7 @@ def calc_density_compensation_function(
 
         >>> data = torch.randn(1, 1, 12) + 1j * torch.randn(1, 1, 12)
         >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
-        >>> dcomp = tkbn.calculate_density_compensation_function(omega, (8, 8))
+        >>> dcomp = tkbn.calc_density_compensation_function(omega, (8, 8))
         >>> adjkb_ob = tkbn.KbNufftAdjoint(im_size=(8, 8))
         >>> image = adjkb_ob(data * dcomp, omega)
     """

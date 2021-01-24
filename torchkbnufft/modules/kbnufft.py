@@ -396,7 +396,7 @@ class ToepNufft(torch.nn.Module):
     The module is intended to be used in combination with an fft kernel
     computed to be the frequency response of an embedded Toeplitz matrix. The
     kernel is calculated using
-    :py:meth:`~torchkbnufft.calculate_toeplitz_kernel`.
+    :py:meth:`~torchkbnufft.calc_toeplitz_kernel`.
 
     The corresponding kernel is then passed to this module in its forward
     forward operation, which applies a (zero-padded) fft filter using the
@@ -407,7 +407,7 @@ class ToepNufft(torch.nn.Module):
         >>> image = torch.randn(1, 1, 8, 8) + 1j * torch.randn(1, 1, 8, 8)
         >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
         >>> toep_ob = tkbn.ToepNufft()
-        >>> kernel = tkbn.calculate_toeplitz_kernel(omega, im_size=(8, 8))
+        >>> kernel = tkbn.calc_toeplitz_kernel(omega, im_size=(8, 8))
         >>> data = toep_ob(image, kernel)
     """
 
