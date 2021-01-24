@@ -108,6 +108,13 @@ class KbNufft(KbNufftModule):
             ``torch.get_default_dtype()``
         device: Which device to create tensors on.
             Default: ``torch.device('cpu')``
+
+    Examples:
+
+        >>> image = torch.randn(1, 1, 8, 8) + 1j * torch.randn(1, 1, 8, 8)
+        >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
+        >>> kb_ob = tkbn.KbNufft(im_size=(8, 8))
+        >>> data = kb_ob(image, omega)
     """
 
     def forward(
@@ -269,6 +276,13 @@ class KbNufftAdjoint(KbNufftModule):
             ``torch.get_default_dtype()``
         device: Which device to create tensors on.
             Default: ``torch.device('cpu')``
+
+    Examples:
+
+        >>> data = torch.randn(1, 1, 12) + 1j * torch.randn(1, 1, 12)
+        >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
+        >>> adjkb_ob = tkbn.KbNufftAdjoint(im_size=(8, 8), grid_size=(8, 8))
+        >>> image = adjkb_ob(data, omega)
     """
 
     def forward(
@@ -385,6 +399,14 @@ class ToepNufft(torch.nn.Module):
     The corresponding kernel is then passed to this module in its forward
     forward operation, which applies a (zero-padded) fft filter using the
     kernel.
+
+    Examples:
+
+        >>> image = torch.randn(1, 1, 8, 8) + 1j * torch.randn(1, 1, 8, 8)
+        >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
+        >>> toep_ob = tkbn.ToepNufft()
+        >>> kernel = tkbn.calculate_toeplitz_kernel(omega, im_size=(8, 8))
+        >>> data = toep_ob(image, kernel)
     """
 
     def __init__(self):
