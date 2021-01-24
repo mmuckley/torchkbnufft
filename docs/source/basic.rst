@@ -61,8 +61,6 @@ radial spoke of k-space data:
       ktraj,
       im_size=im_size
    )
-   # convert to correct data type
-   interp_mats = tuple([t.to(torch.float) for t in interp_mats])
 
    # use sparse matrices in adjoint
    image = adjnufft_ob(kdata, ktraj, interp_mats)
@@ -77,8 +75,6 @@ forward/backward ops in calculating the gradient. The following minimalist code
 shows an example:
 
 .. code-block:: python
-
-   import torchkbnufft as tkbn
 
    adjnufft_ob = tkbn.KbNufftAdjoint(im_size=im_size)
    toep_ob = tkbn.ToepNufft()

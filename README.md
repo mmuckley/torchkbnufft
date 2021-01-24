@@ -129,8 +129,6 @@ interp_mats = tkbn.calc_tensor_spmatrix(
     ktraj,
     im_size=im_size
 )
-# convert to correct data type
-interp_mats = tuple([t.to(torch.float) for t in interp_mats])
 
 # use sparse matrices in adjoint
 image = adjnufft_ob(kdata, ktraj, interp_mats)
