@@ -39,19 +39,16 @@ def profile_torchkbnufft(
 
     # precompute toeplitz kernel if using toeplitz
     if toep_flag:
-        kernel = tkbn.calculate_toeplitz_kernel(adj_ob, ktraj)
+        kernel = tkbn.calc_toeplitz_kernel(ktraj, im_size)
         toep_ob = tkbn.ToepNufft()
 
     # precompute the sparse interpolation matrices
     if sparse_mats_flag:
-        interp_mats = tkbn.calculate_tensor_spmatrix(
+        interp_mats = tkbn.calc_tensor_spmatrix(
             ktraj,
-            forw_ob.numpoints.tolist(),
-            forw_ob.im_size.tolist(),
-            forw_ob.grid_size.tolist(),
-            forw_ob.n_shift.tolist(),
-            forw_ob.order.tolist(),
-            forw_ob.alpha.tolist(),
+            im_size,
+            dtype=ktraj.dtype,
+            device=ktraj.device,
         )
         interp_mats = tuple([t.to(device) for t in interp_mats])
     if toep_flag:

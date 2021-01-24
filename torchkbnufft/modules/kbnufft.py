@@ -145,7 +145,7 @@ class KbNufft(KbNufftModule):
             smaps: Sensitivity maps. If input, these will be multiplied before
                 the forward NUFFT.
             norm: Whether to apply normalization with the FFT operation.
-                Options are ``"ortho"` or ``None``.
+                Options are ``"ortho"`` or ``None``.
 
         Returns:
             ``image`` calculated at Fourier frequencies specified by ``omega``.
@@ -283,7 +283,7 @@ class KbNufftAdjoint(KbNufftModule):
 
         >>> data = torch.randn(1, 1, 12) + 1j * torch.randn(1, 1, 12)
         >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
-        >>> adjkb_ob = tkbn.KbNufftAdjoint(im_size=(8, 8), grid_size=(8, 8))
+        >>> adjkb_ob = tkbn.KbNufftAdjoint(im_size=(8, 8))
         >>> image = adjkb_ob(data, omega)
     """
 

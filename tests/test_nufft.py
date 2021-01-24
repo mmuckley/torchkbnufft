@@ -58,7 +58,7 @@ def test_nufft_adjoint(shape, kdata_shape, is_complex):
     adj_ob = tkbn.KbNufftAdjoint(im_size=im_size)
 
     # test with sparse matrices
-    spmat = tkbn.calculate_tensor_spmatrix(
+    spmat = tkbn.calc_tensor_spmatrix(
         ktraj,
         im_size,
     )
@@ -96,7 +96,7 @@ def test_nufft_autograd(shape, kdata_shape, is_complex):
     adj_ob = tkbn.KbNufftAdjoint(im_size=im_size)
 
     # test with sparse matrices
-    spmat = tkbn.calculate_tensor_spmatrix(
+    spmat = tkbn.calc_tensor_spmatrix(
         ktraj,
         im_size,
     )
@@ -131,7 +131,7 @@ def test_nufft_complex_real_match(shape, kdata_shape, is_complex):
     assert torch.allclose(kdata_complex, kdata_real)
 
     # test with sparse matrices
-    spmat = tkbn.calculate_tensor_spmatrix(
+    spmat = tkbn.calc_tensor_spmatrix(
         ktraj,
         im_size,
     )

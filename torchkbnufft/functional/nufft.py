@@ -67,15 +67,15 @@ def kb_spmat_nufft_adjoint(
     """Kaiser-Bessel adjoint NUFFT with sparse matrix interpolation.
 
     See :py:meth:`~torchkbnufft.KbNufftAdjoint` for an overall description of
-    the forward NUFFT.
+    the adjoint NUFFT.
 
     To calculate the sparse matrix tuple, see
     :py:meth:`~torchkbnufft.calculate_tensor_spmatrix`.
 
     Args:
         data: Scattered data to be iNUFFT'd to an image.
-        scaling_coef: Image-domain coefficients to pre-compensate for
-            interpolation errors.
+        scaling_coef: Image-domain coefficients to compensate for interpolation
+            errors.
         im_size: Size of image with length being the number of dimensions.
         grid_size: Size of grid to use for interpolation, typically 1.25 to 2
             times ``im_size``.
@@ -173,12 +173,12 @@ def kb_table_nufft_adjoint(
     """Kaiser-Bessel NUFFT adjoint with table interpolation.
 
     See :py:meth:`~torchkbnufft.KbNufftAdjoint` for an overall description of
-    the forward NUFFT.
+    the adjoint NUFFT.
 
     Args:
         data: Scattered data to be iNUFFT'd to an image.
-        scaling_coef: Image-domain coefficients to pre-compensate for
-            interpolation errors.
+        scaling_coef: Image-domain coefficients to compensate for interpolation
+            errors.
         im_size: Size of image with length being the number of dimensions.
         grid_size: Size of grid to use for interpolation, typically 1.25 to 2
             times ``im_size``.

@@ -29,7 +29,7 @@ def test_dcomp_run(shape, kdata_shape, is_complex):
     ktraj = create_ktraj(len(im_size), kdata_shape[2])
 
     adj_ob = tkbn.KbNufftAdjoint(im_size=im_size)
-    dcomp = tkbn.calculate_density_compensation_function(ktraj=ktraj, im_size=im_size)
+    dcomp = tkbn.calc_density_compensation_function(ktraj=ktraj, im_size=im_size)
 
     if not is_complex:
         dcomp = torch.view_as_real(dcomp)

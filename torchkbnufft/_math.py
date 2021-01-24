@@ -118,7 +118,7 @@ def conj_complex_mult(val1: Tensor, val2: Tensor, dim: int = -1) -> Tensor:
 
 
 def imag_exp(val: Tensor, dim: int = -1, return_complex: bool = True) -> Tensor:
-    """Imaginary exponential, exp(ia), returns real/imag separate if real.
+    r"""Imaginary exponential.
 
     Args:
         val: A tensor to be exponentiated.

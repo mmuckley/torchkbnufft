@@ -87,7 +87,10 @@ add_module_names = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "classic"
+html_theme = "sphinx_rtd_theme"
+html_theme_options = {
+    "navigation_depth": 1,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -101,4 +104,5 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
 }

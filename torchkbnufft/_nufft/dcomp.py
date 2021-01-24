@@ -7,7 +7,7 @@ from torch import Tensor
 from .utils import init_fn
 
 
-def calculate_density_compensation_function(
+def calc_density_compensation_function(
     ktraj: Tensor,
     im_size: Sequence[int],
     num_iterations: int = 10,
@@ -46,6 +46,14 @@ def calculate_density_compensation_function(
 
     Returns:
         The density compensation coefficients for ``ktraj``.
+
+    Examples:
+
+        >>> data = torch.randn(1, 1, 12) + 1j * torch.randn(1, 1, 12)
+        >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
+        >>> dcomp = tkbn.calculate_density_compensation_function(omega, (8, 8))
+        >>> adjkb_ob = tkbn.KbNufftAdjoint(im_size=(8, 8))
+        >>> image = adjkb_ob(data * dcomp, omega)
     """
     device = ktraj.device
 
@@ -72,13 +80,6 @@ def calculate_density_compensation_function(
         device=device,
     )
 
-    tables = [table.to(device) for table in tables]
-    n_shift_t = n_shift_t.to(device)
-    numpoints_t = numpoints_t.to(device)
-    table_oversamp_t = table_oversamp_t.to(device)
-    offsets_t = offsets_t.to(device)
-    grid_size_t = grid_size_t.to(device)
-
     test_sig = torch.ones([1, 1, ktraj.shape[-1]], dtype=tables[0].dtype, device=device)
     for _ in range(num_iterations):
         new_sig = tkbnF.kb_table_interp(
@@ -100,7 +101,6 @@ def calculate_density_compensation_function(
             offsets=offsets_t,
         )
 
-        # Basically we are doing abs here, do we have utils for this?
         norm_new_sig = torch.abs(new_sig)
         test_sig = test_sig / norm_new_sig
 

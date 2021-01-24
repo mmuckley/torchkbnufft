@@ -8,7 +8,7 @@ from ..modules import KbNufftAdjoint
 from .fft import fft_fn
 
 
-def calculate_toeplitz_kernel(
+def calc_toeplitz_kernel(
     omega: Tensor,
     im_size: Sequence[int],
     weights: Optional[Tensor] = None,
@@ -24,9 +24,9 @@ def calculate_toeplitz_kernel(
 
     The kernel is calculated using a adjoint NUFFT object. If the adjoint
     applies :math:`A'`, then this script calculates :math:`D` where
-    :math:`F'DF \approx A'WA`, where :math:`F` is a DFT matrix and W is a set of
-    non-Cartesian k-space weights. :math:`D` can then be used to approximate
-    :math:`A'WA` without any interpolation operations.
+    :math:`F'DF \approx A'WA`, where :math:`F` is a DFT matrix and :math:`W` is
+    a set of non-Cartesian k-space weights. :math:`D` can then be used to
+    approximate :math:`A'WA` without any interpolation operations.
 
     For details on Toeplitz embedding, see
     `Efficient numerical methods in non-uniform sampling theory
@@ -57,6 +57,14 @@ def calculate_toeplitz_kernel(
 
     Returns:
         The FFT kernel for approximating the forward/adjoint operation.
+
+    Examples:
+
+        >>> image = torch.randn(1, 1, 8, 8) + 1j * torch.randn(1, 1, 8, 8)
+        >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
+        >>> toep_ob = tkbn.ToepNufft()
+        >>> kernel = tkbn.calculate_toeplitz_kernel(omega, im_size=(8, 8))
+        >>> data = toep_ob(image, kernel)
     """
     device = omega.device
     normalized = True if norm == "ortho" else False

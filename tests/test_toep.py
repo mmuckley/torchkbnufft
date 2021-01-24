@@ -36,7 +36,7 @@ def test_toeplitz_nufft_accuracy(shape, kdata_shape, is_complex):
     adj_ob = tkbn.KbNufftAdjoint(im_size=im_size)
     toep_ob = tkbn.ToepNufft()
 
-    kernel = tkbn.calculate_toeplitz_kernel(ktraj, im_size, norm="ortho")
+    kernel = tkbn.calc_toeplitz_kernel(ktraj, im_size, norm="ortho")
 
     fbn = adj_ob(
         forw_ob(image, ktraj, smaps=smaps, norm="ortho"),

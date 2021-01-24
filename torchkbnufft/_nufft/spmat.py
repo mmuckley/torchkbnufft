@@ -7,7 +7,7 @@ from torch import Tensor
 from .utils import build_numpy_spmatrix, validate_args
 
 
-def calculate_tensor_spmatrix(
+def calc_tensor_spmatrix(
     omega: Tensor,
     im_size: Sequence[int],
     grid_size: Optional[Sequence[int]] = None,
@@ -16,8 +16,6 @@ def calculate_tensor_spmatrix(
     table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
-    dtype: torch.dtype = None,
-    device: torch.device = None,
 ) -> Tuple[Tensor, Tensor]:
     r"""Builds a sparse matrix with the interpolation coefficients.
 
@@ -49,6 +47,14 @@ def calculate_tensor_spmatrix(
 
     Returns:
         2-Tuple of (real, imaginary) tensors for NUFFT interpolation.
+
+    Examples:
+
+        >>> data = torch.randn(1, 1, 12) + 1j * torch.randn(1, 1, 12)
+        >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
+        >>> spmats = tkbn.calculate_tensor_spmatrix(omega, (8, 8))
+        >>> adjkb_ob = tkbn.KbNufftAdjoint(im_size=(8, 8))
+        >>> image = adjkb_ob(data, omega, spmats)
     """
     (
         im_size,
@@ -68,8 +74,8 @@ def calculate_tensor_spmatrix(
         table_oversamp,
         kbwidth,
         order,
-        dtype,
-        device,
+        omega.dtype,
+        omega.device,
     )
     coo = build_numpy_spmatrix(
         omega=omega.cpu().numpy(),
@@ -84,9 +90,9 @@ def calculate_tensor_spmatrix(
     values = coo.data
     indices = np.stack((coo.row, coo.col))
 
-    inds = torch.tensor(indices, dtype=torch.long)
-    real_vals = torch.tensor(np.real(values))
-    imag_vals = torch.tensor(np.imag(values))
+    inds = torch.tensor(indices, dtype=torch.long, device=device)
+    real_vals = torch.tensor(np.real(values), dtype=dtype, device=device)
+    imag_vals = torch.tensor(np.imag(values), dtype=dtype, device=device)
     shape = coo.shape
 
     interp_mats = (

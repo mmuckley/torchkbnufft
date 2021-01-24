@@ -27,10 +27,11 @@ Functions for calculating density compensation and Toeplitz kernels.
 .. autosummary::
     :toctree: generated
     :nosignatures:
+    :template: functiontemplate.rst
 
-    calculate_density_compensation_function
-    calculate_tensor_spmatrix
-    calculate_toeplitz_kernel
+    calc_density_compensation_function
+    calc_tensor_spmatrix
+    calc_toeplitz_kernel
 
 Math Functions
 ----------------------------------
