@@ -56,7 +56,7 @@ class KbInterp(KbInterpModule):
     For a detailed description see
     `Nonuniform fast Fourier transforms using min-max interpolation
     (JA Fessler and BP Sutton)
-    <https://ieeexplore.ieee.org/abstract/document/1166689>`_.
+    <https://doi.org/10.1109/TSP.2002.807005>`_.
 
     When called, the parameters of this class define properties of the kernel
     and how the interpolation is applied.
@@ -89,6 +89,14 @@ class KbInterp(KbInterpModule):
             ``torch.get_default_dtype()``
         device: Which device to create tensors on.
             Default: ``torch.device('cpu')``
+
+    Examples:
+
+        >>> image = torch.randn(8, 8) + 1j * torch.randn(8, 8)
+        >>> image = image.unsqueeze(0).unsqueeze(0)
+        >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
+        >>> kb_ob = tkbn.KbInterp(im_size=(8, 8), grid_size=(8, 8))
+        >>> data = kb_ob(image, omega)
     """
 
     def forward(
