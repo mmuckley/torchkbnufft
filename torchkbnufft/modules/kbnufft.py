@@ -67,7 +67,8 @@ class KbNufft(KbNufftModule):
     In the first step, an image-domain signal :math:`x_n` is converted to a
     gridded, oversampled frequency-domain signal, :math:`X_k`. The scaling
     coefficeints :math:`s_n` are multiplied to precompensate for NUFFT
-    interpolation errors.
+    interpolation errors. The oversampling coefficient is
+    :math:`\gamma = 2\pi / K, K > N`.
 
     In the second step, :math:`u`, the Kaiser-Bessel kernel, is used to
     estimate :math:`X_k` at off-grid frequency locations :math:`\omega`.
@@ -237,7 +238,8 @@ class KbNufftAdjoint(KbNufftModule):
     In the second step, an image-domain signal :math:`x_n` is estimated from a
     gridded, oversampled frequency-domain signal, :math:`X_k` by applying the
     inverse FFT, after which the complex conjugate scaling coefficients
-    :math:`s_n` are multiplied. For a detailed description see
+    :math:`s_n` are multiplied. The oversampling coefficient is
+    :math:`\gamma = 2\pi / K, K > N`. For a detailed description see
     `Nonuniform fast Fourier transforms using min-max interpolation
     (JA Fessler and BP Sutton)
     <https://doi.org/10.1109/TSP.2002.807005>`_.
