@@ -8,42 +8,6 @@ TorchKbNufft Documentation
 
 `Documentation <https://torchkbnufft.readthedocs.io>`_ | `GitHub <https://github.com/mmuckley/torchkbnufft>`_ | `Notebook Examples <https://github.com/mmuckley/torchkbnufft/tree/master/notebooks>`_
 
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-   :caption: User Guide
-
-   basic
-
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-   :titlesonly:
-   :caption: API
-
-   torchkbnufft
-   torchkbnufft.functional
-
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-   :caption: Core Modules
-
-   generated/torchkbnufft.KbInterp
-   generated/torchkbnufft.KbInterpAdjoint
-   generated/torchkbnufft.KbNufft
-   generated/torchkbnufft.KbNufftAdjoint
-   generated/torchkbnufft.ToepNufft
-
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-   :caption: Utility Functions
-
-   generated/torchkbnufft.calc_density_compensation_function
-   generated/torchkbnufft.calc_tensor_spmatrix
-   generated/torchkbnufft.calc_toeplitz_kernel
-
 About
 -----
 
@@ -99,6 +63,42 @@ References
 2. Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). `Rapid gridding reconstruction with a minimal oversampling ratio <https://doi.org/10.1109/TMI.2005.848376>`_. *IEEE Transactions on Medical Imaging*, 24(6), 799-808.
 
 3. Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). `Efficient numerical methods in non-uniform sampling theory <https://doi.org/10.1007/s002110050101>`_. Numerische Mathematik, 69(4), 423-440.
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: User Guide
+
+   basic
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :titlesonly:
+   :caption: API
+
+   torchkbnufft
+   torchkbnufft.functional
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Core Modules
+
+   generated/torchkbnufft.KbInterp
+   generated/torchkbnufft.KbInterpAdjoint
+   generated/torchkbnufft.KbNufft
+   generated/torchkbnufft.KbNufftAdjoint
+   generated/torchkbnufft.ToepNufft
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Utility Functions
+
+   generated/torchkbnufft.calc_density_compensation_function
+   generated/torchkbnufft.calc_tensor_spmatrix
+   generated/torchkbnufft.calc_toeplitz_kernel
 
 Indices and tables
 ==================
