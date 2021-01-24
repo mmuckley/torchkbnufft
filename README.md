@@ -51,8 +51,6 @@ from torchkbnufft import KbNufft
 help(KbNufft)
 ```
 
-Behavior can also be inferred by inspecting the source code
-[here](https://github.com/mmuckley/torchkbnufft).
 An html-based documentation reference is
 [here](https://torchkbnufft.readthedocs.io).
 
@@ -88,7 +86,7 @@ ktraj = np.stack(
 )
 # convert to tensor, unsqueeze batch dimension
 # output size: (1, 2, klength)
-ktraj = torch.tensor(ktraj).to(torch.float)
+ktraj = torch.tensor(ktraj, dtype=torch.float)
 
 nufft_ob = tkbn.KbNufft(im_size=im_size)
 # outputs a (1, 1, 2, klength) vector of k-space data
@@ -124,8 +122,6 @@ code calculates sparse interpolation matrices and uses them to compute a single
 radial spoke of k-space data:
 
 ```python
-import torchkbnufft as tkbn
-
 adjnufft_ob = tkbn.KbNufftAdjoint(im_size=im_size)
 
 # precompute the sparse interpolation matrices
@@ -154,9 +150,6 @@ forward/backward ops in calculating the gradient. The following minimalist code
 shows an example:
 
 ```python
-import torchkbnufft as tkbn
-
-adjnufft_ob = tkbn.KbNufftAdjoint(im_size=im_size)
 toep_ob = tkbn.ToepNufft()
 
 # precompute the embedded Toeplitz FFT kernel
@@ -166,7 +159,7 @@ kernel = tkbn.calculate_toeplitz_kernel(ktraj, im_size)
 image = toep_ob(image, kernel)
 ```
 
-A detailed example of sparse matrix precomputation usage is included 
+A detailed example of Toeplitz embedding usage is included 
 [here](notebooks/Toeplitz%20Example.ipynb).
 
 ### Running on the GPU
@@ -182,10 +175,9 @@ ktraj = ktraj.to(torch.device('cuda'))
 image = adjnufft_ob(kdata, ktraj)
 ```
 
-Similar to programming low-level code, PyTorch will throw errors if the
-underlying ```dtype``` and ```device``` of all objects are not matching. Be
-sure to make sure your data and NUFFT objects are on the right device and in
-the right format to avoid these errors.
+PyTorch will throw errors if the underlying ```dtype``` and ```device``` of all
+objects are not matching. Be sure to make sure your data and NUFFT objects are
+on the right device and in the right format to avoid these errors.
 
 ## Computation Speed
 
@@ -209,11 +201,11 @@ the following is a partial list of other projects:
 
 ## References
 
-1. Fessler, J. A., & Sutton, B. P. (2003). Nonuniform fast Fourier transforms using min-max interpolation. *IEEE transactions on signal processing*, 51(2), 560-574.
+1. Fessler, J. A., & Sutton, B. P. (2003). [Nonuniform fast Fourier transforms using min-max interpolation](https://doi.org/10.1109/TSP.2002.807005). *IEEE Transactions on Signal Processing*, 51(2), 560-574.
 
-2. Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). Rapid gridding reconstruction with a minimal oversampling ratio. *IEEE transactions on medical imaging*, 24(6), 799-808.
+2. Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). [Rapid gridding reconstruction with a minimal oversampling ratio](https://doi.org/10.1109/TMI.2005.848376). *IEEE Transactions on Medical Imaging*, 24(6), 799-808.
 
-3. Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). Efficient numerical methods in non-uniform sampling theory. Numerische Mathematik, 69(4), 423-440.
+3. Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). [Efficient numerical methods in non-uniform sampling theory](https://doi.org/10.1007/s002110050101). Numerische Mathematik, 69(4), 423-440.
 
 ## Citation
 
