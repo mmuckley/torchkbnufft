@@ -15,8 +15,8 @@ pip install torchkbnufft
 
 `torchkbnufft` implements a non-uniform Fast Fourier Transform [1, 2] with
 Kaiser-Bessel gridding in PyTorch. The implementation is completely in Python,
-facilitating robustness and flexible deployment in human-readable code. NUFFT
-functions are each wrapped as a ```torch.autograd.Function```, allowing
+facilitating flexible deployment in human-readable code with no compilation.
+NUFFT functions are each wrapped as a ```torch.autograd.Function```, allowing
 backpropagation through NUFFT operators for training neural networks.
 
 This package was inspired in large part by the implementation of NUFFT
@@ -51,7 +51,10 @@ from torchkbnufft import KbNufft
 help(KbNufft)
 ```
 
-Behavior can also be inferred by inspecting the source code [here](https://github.com/mmuckley/torchkbnufft). An html-based API reference is [here](https://torchkbnufft.readthedocs.io).
+Behavior can also be inferred by inspecting the source code
+[here](https://github.com/mmuckley/torchkbnufft).
+An html-based documentation reference is
+[here](https://torchkbnufft.readthedocs.io).
 
 ## Examples
 
@@ -60,7 +63,7 @@ Jupyter notebook examples are in the ```notebooks/``` folder.
 - [Basic Example](notebooks/SENSE%20Example.ipynb)
 - [SENSE-NUFFT Example](notebooks/SENSE%20Example.ipynb)
 - [Sparse Matrix Example](notebooks/Sparse%20Matrix%20Example.ipynb)
-- [Toeplitz Example]((notebooks/Toeplitz%20Example.ipynb))
+- [Toeplitz Example](notebooks/Toeplitz%20Example.ipynb)
 
 ### Simple Forward NUFFT
 
