@@ -56,7 +56,7 @@ class KbNufft(KbNufftModule):
 
     This object applies the FFT and interpolates a grid of Fourier data to
     off-grid locations using a Kaiser-Bessel kernel. Consider an off-grid
-    signal :math:`Y` to be estimated from an image-domain signal :math:`X`,
+    signal :math:`Y` to be estimated from an image-domain signal :math:`x`,
     then this layer applies:
 
     .. math::
@@ -220,7 +220,7 @@ class KbNufftAdjoint(KbNufftModule):
 
     This object interpolates off-grid Fourier data to on-grid locations
     using a Kaiser-Bessel kernel prior to inverse DFT. Consider an image-domain
-    signal :math:`X` to be estimated from an off-grid Fourier signal :math:`Y`,
+    signal :math:`x` to be estimated from an off-grid Fourier signal :math:`Y`,
     then this layer applies:
 
     .. math::
