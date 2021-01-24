@@ -11,6 +11,7 @@ TorchKbNufft Documentation
 .. toctree::
    :hidden:
    :maxdepth: 1
+   :caption: User Guide
 
    basic
 
