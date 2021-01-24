@@ -29,7 +29,7 @@ def calculate_density_compensation_function(
     Based on the `method of Pipe
     <https://doi.org/10.1002/(SICI)1522-2594(199901)41:1%3C179::AID-MRM25%3E3.0.CO;2-V>`_.
 
-    This code was contributed by Chaithya G.R. and Z. Ramzi.
+    This code was contributed by Chaithya G.R.
 
     Args:
         ktraj: k-space trajectory (in radians/voxel).
