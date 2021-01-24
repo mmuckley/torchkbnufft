@@ -19,8 +19,7 @@ facilitating flexible deployment in human-readable code with no compilation.
 NUFFT functions are each wrapped as a ```torch.autograd.Function```, allowing
 backpropagation through NUFFT operators for training neural networks.
 
-This package was inspired in large part by the implementation of NUFFT
-operations in the
+This package was inspired in large part by the NUFFT implementation in the
 [Michigan Image Reconstruction Toolbox (Matlab)](https://github.com/JeffFessler/mirt).
 
 ### Operation Modes and Stages
@@ -65,8 +64,8 @@ Jupyter notebook examples are in the ```notebooks/``` folder.
 
 ### Simple Forward NUFFT
 
-The following minimalist code loads a Shepp-Logan phantom and computes a single
-radial spoke of k-space data:
+The following code loads a Shepp-Logan phantom and computes a single radial
+spoke of k-space data:
 
 ```python
 import torch
@@ -135,17 +134,16 @@ image = adjnufft_ob(kdata, ktraj, interp_mats)
 ```
 
 Sparse matrix multiplication is only implemented for real numbers in PyTorch,
-so you'll have to pass in floats instead of complex numbers. A detailed
-example of sparse matrix precomputation usage is
-[here](notebooks/Sparse%20Matrix%20Example.ipynb).
+which can limit their speed. A detailed example of sparse matrix precomputation
+usage is [here](notebooks/Sparse%20Matrix%20Example.ipynb).
 
 ### Toeplitz Embedding
 
 The package includes routines for calculating embedded Toeplitz kernels and
 using them as FFT filters for the forward/backward NUFFT operations [3]. This
 is very useful for gradient descent algorithms that must use the
-forward/backward ops in calculating the gradient. The following minimalist code
-shows an example:
+forward/backward ops in calculating the gradient. The following code shows an
+example:
 
 ```python
 toep_ob = tkbn.ToepNufft()

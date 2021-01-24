@@ -19,8 +19,7 @@ facilitating flexible deployment in human-readable code with no compilation.
 NUFFT functions are each wrapped as a :py:class:`torch.autograd.Function`, allowing
 backpropagation through NUFFT operators for training neural networks.
 
-This package was inspired in large part by the implementation of NUFFT
-operations in the
+This package was inspired in large part by the NUFFT implementation in the
 `Michigan Image Reconstruction Toolbox (Matlab)
 <https://github.com/JeffFessler/mirt>`_.
 
@@ -53,7 +52,7 @@ Sensitivity maps can be incorporated by passing them into a
 object. Auxiliary functions for calculating sparse interpolation matrices,
 density compensation functions, and Toeplitz filter kernels are also included.
 
-For example usage, see :doc:`basic`.
+For examples, see :doc:`basic`.
 
 References
 -----------

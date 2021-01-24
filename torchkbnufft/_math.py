@@ -27,7 +27,7 @@ def absolute(val: Tensor, dim: int = -1) -> Tensor:
 
 
 def complex_mult(val1: Tensor, val2: Tensor, dim: int = -1) -> Tensor:
-    """Complex multiplication, real/imag are in dimension dim.
+    """Complex multiplication.
 
     Args:
         val1: A tensor to be multiplied.
@@ -85,7 +85,7 @@ def complex_sign(val: Tensor, dim: int = -1) -> Tensor:
 
 
 def conj_complex_mult(val1: Tensor, val2: Tensor, dim: int = -1) -> Tensor:
-    """Complex multiplication, real/imag are in dimension dim.
+    """Complex multiplication, conjugating second input.
 
     Args:
         val1: A tensor to be multiplied.

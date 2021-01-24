@@ -1,10 +1,12 @@
 Basic Usage
 =============
 
-``torchkbnufft`` works primarily via PyTorch modules. You create a module with
+:py:mod:`torchkbnufft` works primarily via PyTorch modules. You create a module with
 the properties of your imaging setup. The module will calculate a Kaiser-Bessel
 kernel and some interpolation parameters based on your inputs. Then, you apply
-the module to your data stored as PyTorch tensors.
+the module to your data stored as PyTorch tensors. NUFFT operations are wrapped in
+:py:class:`torch.autograd.Function` classes for backpropagation and training
+neural networks.
 
 The following code loads a Shepp-Logan phantom and computes a single
 radial spoke of k-space data:
@@ -66,13 +68,13 @@ radial spoke of k-space data:
    image = adjnufft_ob(kdata, ktraj, interp_mats)
 
 Sparse matrix multiplication is only implemented for real numbers in PyTorch,
-so you'll have to pass in floats instead of complex numbers.
+which can limit their speed.
 
-The package includes routines for calculating embedded Toeplitz kernels and
-using them as FFT filters for the forward/backward NUFFT operations [3]. This
-is very useful for gradient descent algorithms that must use the
-forward/backward ops in calculating the gradient. The following minimalist code
-shows an example:
+The package includes routines for calculating 
+`embedded Toeplitz kernels <https://doi.org/10.1007/s002110050101>`_ and
+using them as FFT filters for the forward/backward NUFFT operations. This is very useful
+for gradient descent algorithms that must use the forward/backward ops in calculating
+the gradient. The following code shows an example:
 
 .. code-block:: python
 
@@ -101,6 +103,6 @@ underlying ``dtype`` and ``device`` of all objects are not matching. Be
 sure to make sure your data and NUFFT objects are on the right device and in
 the right format to avoid these errors.
 
-For more details, please examine the API or the `notebooks
+For more details, please examine the API in :doc:`torchkbnufft` or the `notebooks
 <https://github.com/mmuckley/torchkbnufft/tree/master/notebooks>`_
 in the GitHub repository.

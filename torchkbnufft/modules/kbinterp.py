@@ -42,18 +42,20 @@ class KbInterp(KbInterpModule):
     r"""Non-uniform Kaiser-Bessel interpolation layer.
 
     This object interpolates a grid of Fourier data to off-grid locations
-    using a Kaiser-Bessel kernel. Consider an off-grid signal :math:`Y` to be
-    estimated from an on-grid signal :math:`X`, then in one dimension this
-    layer applies:
+    using a Kaiser-Bessel kernel. Mathematically, in one dimension it estimates
+    :math:`Y_m, m \in [0, ..., M-1]` at frequency locations :math:`\omega_m`
+    from :math:`X_k, k \in [0, ..., K-1]`, the oversampled DFT of
+    :math:`x_n, n \in [0, ..., N-1]`. To perform the estimate, this layer
+    applies
 
     .. math::
-        Y(\omega_m) = \sum_{j=1}^J X_{\{k_m+j\}_K}u^*_j(\omega_m)
+        Y_m = \sum_{j=1}^J X_{\{k_m+j\}_K}u^*_j(\omega_m),
 
-    where :math:`u` is the Kaiser-Bessel kernel, :math:`\omega` is the k-space
-    coordinates in radians/voxel, :math:`k_m` is the index of the nearest
-    sample of :math:`X` to frequency location :math:`\omega_m`, and :math:`J`
-    is the number of nearest neighbors to use from the Kaiser-Bessel kernel.
-    For a detailed description see
+    where :math:`u` is the Kaiser-Bessel kernel, :math:`k_m` is the index of
+    the nearest sample of :math:`X` to frequency location :math:`\omega_m`,
+    and :math:`J` is the number of nearest neighbors to use from
+    :math:`X_k`. Multiple dimensions are handled separably. For a detailed
+    description of the notation see
     `Nonuniform fast Fourier transforms using min-max interpolation
     (JA Fessler and BP Sutton)
     <https://doi.org/10.1109/TSP.2002.807005>`_.
@@ -61,16 +63,16 @@ class KbInterp(KbInterpModule):
     When called, the parameters of this class define properties of the kernel
     and how the interpolation is applied.
 
-    * :attr:`im_size` is the size of the base image (used for calculating the
-      kernel but not for the actual operation).
+    * :attr:`im_size` is the size of the base image, analagous to :math:`N`
+      (used for calculating the kernel but not for the actual operation).
 
-    * :attr:`grid_size` is the size of the grid after forward FFT. To reduce
-      errors, NUFFT operations are done on an oversampled grid to reduce
-      interpolation distances. This will typically be 1.25 to 2 times
-      :attr:`im_size`.
+    * :attr:`grid_size` is the size of the grid prior to interpolation,
+      analogous to :math:`K`. To reduce errors, NUFFT operations are done on an
+      oversampled grid to reduce interpolation distances. This will typically
+      be 1.25 to 2 times :attr:`im_size`.
 
-    * :attr:`numpoints` is the number of nearest neighbors of the kernel to use
-      for interpolation.
+    * :attr:`numpoints` is the number of nearest to use for interpolation,
+      i.e., :math:`J`.
 
     * :attr:`n_shift` is the FFT shift distance, typically
       :attr:`im_size // 2`.
@@ -164,18 +166,21 @@ class KbInterpAdjoint(KbInterpModule):
     r"""Non-uniform Kaiser-Bessel interpolation adjoint layer.
 
     This object interpolates off-grid Fourier data to on-grid locations using a
-    Kaiser-Bessel kernel. Consider an off-grid signal :math:`Y` to be
-    interpolated to an on-grid signal :math:`X`, then in one dimension this
-    layer applies:
+    Kaiser-Bessel kernel. Mathematically, in one dimension it estimates
+    :math:`X_k, k \in [0, ..., K-1]`, the oversampled DFT of
+    :math:`x_n, n \in [0, ..., N-1]`, from a signal
+    :math:`Y_m, m \in [0, ..., M-1]` at frequency locations :math:`\omega_m`.
+    To perform the estimate, this layer applies
 
     .. math::
-        X_{\{k_m+j\}_K} = \sum_{j=1}^J Y(\omega_m) u_j(\omega_m)
+        X_k = \sum_{j=1}^J \sum_{m=0}^{M-1} Y_m u_j(\omega_m)
+        \mathbb{1}_{\{\{k_m+j\}_K=k\}},
 
-    where :math:`u` is the Kaiser-Bessel kernel, :math:`\omega` is the k-space
-    coordinates in radians/voxel, :math:`k_m` is the index of the nearest
-    sample of :math:`X` to frequency location :math:`\omega_m`, and :math:`J`
-    is the number of nearest neighbors to use from the Kaiser-Bessel kernel.
-    For a detailed description see
+    where :math:`u` is the Kaiser-Bessel kernel, :math:`k_m` is the index of
+    the nearest sample of :math:`X` to frequency location :math:`\omega_m`,
+    :math:`\mathbb{1}` is an indicator function, and :math:`J` is the number of
+    nearest neighbors to use from :math:`X_k`. Multiple dimensions are handled
+    separably. For a detailed description of the notation see
     `Nonuniform fast Fourier transforms using min-max interpolation
     (JA Fessler and BP Sutton)
     <https://doi.org/10.1109/TSP.2002.807005>`_.
@@ -187,16 +192,16 @@ class KbInterpAdjoint(KbInterpModule):
     When called, the parameters of this class define properties of the kernel
     and how the interpolation is applied.
 
-    * :attr:`im_size` is the size of the base image (used for calculating the
-      kernel but not for the actual operation).
+    * :attr:`im_size` is the size of the base image, analagous to :math:`N`
+      (used for calculating the kernel but not for the actual operation).
 
-    * :attr:`grid_size` is the size of the grid after adjoint interpolation. To
-      reduce errors, NUFFT operations are done on an oversampled grid to reduce
-      interpolation distances. This will typically be 1.25 to 2 times
-      :attr:`im_size`.
+    * :attr:`grid_size` is the size of the grid after adjoint interpolation,
+      analogous to :math:`K`. To reduce errors, NUFFT operations are done on an
+      oversampled grid to reduce interpolation distances. This will typically
+      be 1.25 to 2 times :attr:`im_size`.
 
-    * :attr:`numpoints` is the number of nearest neighbors of the kernel to use
-      for interpolation.
+    * :attr:`numpoints` is the number of nearest neighbors to use for
+      interpolation, i.e., :math:`J`.
 
     * :attr:`n_shift` is the FFT shift distance, typically
       :attr:`im_size // 2`.
