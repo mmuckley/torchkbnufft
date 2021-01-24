@@ -43,7 +43,8 @@ class KbInterp(KbInterpModule):
 
     This object interpolates a grid of Fourier data to off-grid locations
     using a Kaiser-Bessel kernel. Consider an off-grid signal :math:`Y` to be
-    estimated from an on-grid signal :math:`X`, then this layer applies:
+    estimated from an on-grid signal :math:`X`, then in one dimension this
+    layer applies:
 
     .. math::
         Y(\omega_m) = \sum_{j=1}^J X_{\{k_m+j\}_K}u^*_j(\omega_m)
@@ -157,7 +158,8 @@ class KbInterpAdjoint(KbInterpModule):
 
     This object interpolates off-grid Fourier data to on-grid locations using a
     Kaiser-Bessel kernel. Consider an off-grid signal :math:`Y` to be
-    interpolated to an on-grid signal :math:`X`, then this layer applies:
+    interpolated to an on-grid signal :math:`X`, then in one dimension this
+    layer applies:
 
     .. math::
         X_{\{k_m+j\}_K} = \sum_{j=1}^J Y(\omega_m) u_j(\omega_m)
