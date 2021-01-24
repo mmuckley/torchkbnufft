@@ -46,7 +46,9 @@ TorchKbNufft Documentation
 About
 -----
 
-:py:mod:`torchkbnufft` implements a non-uniform Fast Fourier Transform [1, 2] with
+:py:mod:`torchkbnufft` implements a non-uniform Fast Fourier Transform 
+[`1 <https://doi.org/10.1109/TSP.2002.807005>`_,
+`2 <https://doi.org/10.1109/TMI.2005.848376>`_] with
 Kaiser-Bessel gridding in PyTorch. The implementation is completely in Python,
 facilitating flexible deployment in human-readable code with no compilation.
 NUFFT functions are each wrapped as a :py:class:`torch.autograd.Function`, allowing
@@ -74,7 +76,8 @@ Operation Modes and Stages
 
 The package has three major classes of NUFFT operation mode: table-based NUFFT
 interpolation, sparse matrix-based NUFFT interpolation, and forward/backward
-operators with Toeplitz-embedded FFTs [3]. The Toeplitz method is always the
+operators with Toeplitz-embedded FFTs
+[`3 <https://doi.org/10.1007/s002110050101>`_]. The Toeplitz method is always the
 fastest for forward/backward NUFFTs. Depending on the problem, either the table
 or sparse matrix NUFFTs can be faster in other cases. It is generally best to
 start with Table interpolation and then experiment with the other modes for
@@ -86,6 +89,15 @@ object. Auxiliary functions for calculating sparse interpolation matrices,
 density compensation functions, and Toeplitz filter kernels are also included.
 
 For example usage, see :doc:`basic`.
+
+References
+-----------
+
+1. Fessler, J. A., & Sutton, B. P. (2003). `Nonuniform fast Fourier transforms using min-max interpolation <https://doi.org/10.1109/TSP.2002.807005>`_. *IEEE Transactions on Signal Processing*, 51(2), 560-574.
+
+2. Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). `Rapid gridding reconstruction with a minimal oversampling ratio <https://doi.org/10.1109/TMI.2005.848376>`_. *IEEE Transactions on Medical Imaging*, 24(6), 799-808.
+
+3. Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). `Efficient numerical methods in non-uniform sampling theory <https://doi.org/10.1007/s002110050101>`_. Numerische Mathematik, 69(4), 423-440.
 
 Indices and tables
 ==================

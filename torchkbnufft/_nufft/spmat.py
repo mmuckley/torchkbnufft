@@ -17,7 +17,7 @@ def calc_tensor_spmatrix(
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
 ) -> Tuple[Tensor, Tensor]:
-    r"""Builds a sparse matrix with the interpolation coefficients.
+    r"""Builds a sparse matrix for interpolation.
 
     This builds the interpolation matrices directly from scipy Kaiser-Bessel
     functions, so using them for a NUFFT should be a little more accurate than

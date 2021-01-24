@@ -18,7 +18,7 @@ def calc_density_compensation_function(
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
 ) -> Tensor:
-    """Numerical density compensation estimation for any trajectory.
+    """Numerical density compensation estimation.
 
     This function has optional parameters for initializing a NUFFT object. See
     :py:meth:`~torchkbnufft.KbInterp` for details.
