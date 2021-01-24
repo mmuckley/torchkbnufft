@@ -13,7 +13,7 @@ from .._autograd.interp import (
 def kb_spmat_interp(image: Tensor, interp_mats: Tuple[Tensor, Tensor]) -> Tensor:
     """Kaiser-Bessel sparse matrix interpolation.
 
-    See :py:meth:`~torchknufft.KbInterp` for an overall description of
+    See :py:class:`~torchkbnufft.KbInterp` for an overall description of
     interpolation.
 
     To calculate the sparse matrix tuple, see
@@ -35,7 +35,7 @@ def kb_spmat_interp_adjoint(
 ) -> Tensor:
     """Kaiser-Bessel sparse matrix interpolation adjoint.
 
-    See :py:meth:`~torchkbnufft.KbInterpAdjoint` for an overall description of
+    See :py:class:`~torchkbnufft.KbInterpAdjoint` for an overall description of
     adjoint interpolation.
 
     To calculate the sparse matrix tuple, see
@@ -63,7 +63,7 @@ def kb_table_interp(
 ) -> Tensor:
     """Kaiser-Bessel table interpolation.
 
-    See :py:meth:`~torchkbnufft.KbInterp` for an overall description of
+    See :py:class:`~torchkbnufft.KbInterp` for an overall description of
     interpolation and how to construct the function arguments.
 
     Args:
@@ -96,7 +96,7 @@ def kb_table_interp_adjoint(
 ) -> Tensor:
     """Kaiser-Bessel table interpolation adjoint.
 
-    See :py:meth:`~torchkbnufft.KbInterpAdjoint` for an overall description of
+    See :py:class:`~torchkbnufft.KbInterpAdjoint` for an overall description of
     adjoint interpolation.
 
     Args:

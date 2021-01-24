@@ -21,7 +21,7 @@ def kb_spmat_nufft(
 ) -> Tensor:
     """Kaiser-Bessel NUFFT with sparse matrix interpolation.
 
-    See :py:meth:`~torchkbnufft.KbNufft` for an overall description of
+    See :py:class:`~torchkbnufft.KbNufft` for an overall description of
     the forward NUFFT.
 
     To calculate the sparse matrix tuple, see
@@ -66,7 +66,7 @@ def kb_spmat_nufft_adjoint(
 ) -> Tensor:
     """Kaiser-Bessel adjoint NUFFT with sparse matrix interpolation.
 
-    See :py:meth:`~torchkbnufft.KbNufftAdjoint` for an overall description of
+    See :py:class:`~torchkbnufft.KbNufftAdjoint` for an overall description of
     the adjoint NUFFT.
 
     To calculate the sparse matrix tuple, see
@@ -115,7 +115,7 @@ def kb_table_nufft(
 ) -> Tensor:
     """Kaiser-Bessel NUFFT with table interpolation.
 
-    See :py:meth:`~torchkbnufft.KbNufft` for an overall description of
+    See :py:class:`~torchkbnufft.KbNufft` for an overall description of
     the forward NUFFT.
 
     Args:
@@ -172,7 +172,7 @@ def kb_table_nufft_adjoint(
 ) -> Tensor:
     """Kaiser-Bessel NUFFT adjoint with table interpolation.
 
-    See :py:meth:`~torchkbnufft.KbNufftAdjoint` for an overall description of
+    See :py:class:`~torchkbnufft.KbNufftAdjoint` for an overall description of
     the adjoint NUFFT.
 
     Args:

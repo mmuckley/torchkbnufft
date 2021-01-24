@@ -182,7 +182,7 @@ class KbInterpAdjoint(KbInterpModule):
 
     Note:
 
-        This function is not the inverse of ``KbInterp``; it is the adjoint.
+        This function is not the inverse of :py:class:`KbInterp`; it is the adjoint.
 
     When called, the parameters of this class define properties of the kernel
     and how the interpolation is applied.
