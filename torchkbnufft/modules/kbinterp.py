@@ -161,7 +161,7 @@ class KbInterp(KbInterpModule):
 
 
 class KbInterpAdjoint(KbInterpModule):
-    r"""Non-uniform FFT adjoint interpolation PyTorch layer.
+    r"""Non-uniform Kaiser-Bessel interpolation adjoint layer.
 
     This object interpolates off-grid Fourier data to on-grid locations using a
     Kaiser-Bessel kernel. Consider an off-grid signal :math:`Y` to be

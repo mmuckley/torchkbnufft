@@ -52,7 +52,7 @@ class KbNufftModule(KbModule):
 
 
 class KbNufft(KbNufftModule):
-    r"""Non-uniform FFT PyTorch module.
+    r"""Non-uniform FFT layer.
 
     This object applies the FFT and interpolates a grid of Fourier data to
     off-grid locations using a Kaiser-Bessel kernel. Consider an off-grid
@@ -217,7 +217,7 @@ class KbNufft(KbNufftModule):
 
 
 class KbNufftAdjoint(KbNufftModule):
-    r"""Non-uniform FFT adjoint PyTorch module.
+    r"""Non-uniform FFT adjoint layer.
 
     This object interpolates off-grid Fourier data to on-grid locations
     using a Kaiser-Bessel kernel prior to inverse DFT. Consider an image-domain
