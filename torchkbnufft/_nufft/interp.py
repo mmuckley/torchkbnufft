@@ -189,11 +189,6 @@ def table_interp(
             grid_size=grid_size,
         )
 
-        # unsqueeze coil dimension for on-grid indices
-        # arr_ind = (
-        #     arr_ind.unsqueeze(0).unsqueeze(0).expand(kdat.shape[0], kdat.shape[1], -1)
-        # )
-
         # gather and multiply coefficients
         kdat += coef * image[:, :, arr_ind]
 
