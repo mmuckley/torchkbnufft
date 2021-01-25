@@ -158,7 +158,7 @@ kernel = tkbn.calc_toeplitz_kernel(ktraj, im_size)
 image = toep_ob(image, kernel)
 ```
 
-A detailed example of Toeplitz embedding usage is included 
+A detailed example of Toeplitz embedding usage is included
 [here](notebooks/Toeplitz%20Example.ipynb).
 
 ### Running on the GPU
