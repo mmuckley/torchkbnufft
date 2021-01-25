@@ -87,11 +87,11 @@ ktraj = np.stack(
     (np.zeros(64), np.linspace(-np.pi, np.pi, klength))
 )
 # convert to tensor, unsqueeze batch dimension
-# output size: (1, 2, klength)
+# output size: (2, klength)
 ktraj = torch.tensor(ktraj, dtype=torch.float)
 
 nufft_ob = tkbn.KbNufft(im_size=im_size)
-# outputs a (1, 1, 2, klength) vector of k-space data
+# outputs a (1, 1, klength) vector of k-space data
 kdata = nufft_ob(x, ktraj)
 ```
 
