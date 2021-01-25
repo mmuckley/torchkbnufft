@@ -190,12 +190,12 @@ def table_interp(
         )
 
         # unsqueeze coil dimension for on-grid indices
-        arr_ind = (
-            arr_ind.unsqueeze(0).unsqueeze(0).expand(kdat.shape[0], kdat.shape[1], -1)
-        )
+        # arr_ind = (
+        #     arr_ind.unsqueeze(0).unsqueeze(0).expand(kdat.shape[0], kdat.shape[1], -1)
+        # )
 
         # gather and multiply coefficients
-        kdat += coef * torch.gather(image, 2, arr_ind)
+        kdat += coef * image[:, :, arr_ind]
 
     # phase for fftshift
     return kdat * imag_exp(
@@ -204,13 +204,14 @@ def table_interp(
     )
 
 
-def accum_tensor(image: Tensor, arr_ind: Tensor, coef: Tensor, data: Tensor) -> Tensor:
-    """We fork this function for the adjoint interpolation."""
-    return image.index_put_(
-        (arr_ind,),
-        coef * data,
-        accumulate=True,
-    )
+def accum_tensor_index_add(image: Tensor, arr_ind: Tensor, data: Tensor) -> Tensor:
+    """We fork this function for the adjoint accumulation."""
+    return image.index_add_(0, arr_ind, data)
+
+
+def accum_tensor_index_put(image: Tensor, arr_ind: Tensor, data: Tensor) -> Tensor:
+    """We fork this function for the adjoint accumulation."""
+    return image.index_put_((arr_ind,), data, accumulate=True)
 
 
 @torch.jit.script
@@ -259,6 +260,11 @@ def table_interp_adjoint(
         ).conj()
     )
 
+    # necessary for index_add_
+    # TODO: change when PyTorch supports complex numbers
+    if not device == torch.device("cpu"):
+        image = torch.view_as_real(image)
+
     # loop over offsets and take advantage of numpy broadcasting
     for offset in offsets:
         coef, arr_ind = calc_coef_and_indices(
@@ -272,24 +278,34 @@ def table_interp_adjoint(
             conjcoef=True,
         )
 
-        # the following code takes ordered data and scatters it on to an image grid
-        # profiling for a 2D problem showed drastic differences in performances
-        # for these two implementations on cpu/gpu, but they do the same thing
-        if device == torch.device("cpu"):
-            futures: List[torch.jit.Future[torch.Tensor]] = []
-            for batch_ind in range(image.shape[0]):
-                for coil_ind in range(image.shape[1]):
+        # this is a much faster way of doing index accumulation
+        tmp = coef * data
+        if not device == torch.device("cpu"):
+            tmp = torch.view_as_real(tmp)
+        futures: List[torch.jit.Future[torch.Tensor]] = []
+        for batch_ind in range(image.shape[0]):
+            for coil_ind in range(image.shape[1]):
+                if device == torch.device("cpu"):
                     futures.append(
                         torch.jit.fork(
-                            accum_tensor,
+                            accum_tensor_index_put,
                             image[batch_ind, coil_ind],
                             arr_ind,
-                            coef,
-                            data[batch_ind, coil_ind],
+                            tmp[batch_ind, coil_ind],
                         )
                     )
-            _ = [torch.jit.wait(future) for future in futures]
-        else:
-            image.index_add_(2, arr_ind, coef * data)
+                else:
+                    futures.append(
+                        torch.jit.fork(
+                            accum_tensor_index_add,
+                            image[batch_ind, coil_ind],
+                            arr_ind,
+                            tmp[batch_ind, coil_ind],
+                        )
+                    )
+        _ = [torch.jit.wait(future) for future in futures]
+
+    if not device == torch.device("cpu"):
+        image = torch.view_as_complex(image)
 
     return image.view(output_size)

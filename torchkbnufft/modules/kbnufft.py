@@ -47,7 +47,10 @@ class KbNufftModule(KbModule):
         )
 
         self.register_buffer(
-            "scaling_coef", scaling_coef.to(self.table_0.dtype)  # type: ignore
+            "scaling_coef", scaling_coef.to(
+                dtype=self.table_0.dtype,
+                device=device
+            )  # type: ignore
         )
 
 

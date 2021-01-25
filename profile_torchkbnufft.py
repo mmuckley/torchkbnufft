@@ -21,7 +21,8 @@ def profile_torchkbnufft(
         else:
             num_nuffts = 5
     else:
-        dtype = torch.float
+        complex_dtype = torch.complex64
+        real_dtype = torch.float
         if toep_flag:
             num_nuffts = 50
         else:
@@ -34,8 +35,8 @@ def profile_torchkbnufft(
     smap = smap.to(dtype=complex_dtype)
     interp_mats = None
 
-    forw_ob = tkbn.KbNufft(im_size=im_size, dtype=complex_dtype)
-    adj_ob = tkbn.KbNufftAdjoint(im_size=im_size, dtype=complex_dtype)
+    forw_ob = tkbn.KbNufft(im_size=im_size, dtype=complex_dtype, device=device)
+    adj_ob = tkbn.KbNufftAdjoint(im_size=im_size, dtype=complex_dtype, device=device)
 
     # precompute toeplitz kernel if using toeplitz
     if toep_flag:
