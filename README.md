@@ -13,11 +13,12 @@ pip install torchkbnufft
 
 ## About
 
-`torchkbnufft` implements a non-uniform Fast Fourier Transform [1, 2] with
-Kaiser-Bessel gridding in PyTorch. The implementation is completely in Python,
-facilitating flexible deployment in human-readable code with no compilation.
-NUFFT functions are each wrapped as a ```torch.autograd.Function```, allowing
-backpropagation through NUFFT operators for training neural networks.
+`torchkbnufft` implements a non-uniform Fast Fourier Transform
+[[1, 2](#references)] with Kaiser-Bessel gridding in PyTorch. The
+implementation is completely in Python, facilitating flexible deployment in
+readable code with no compilation. NUFFT functions are each wrapped as a
+```torch.autograd.Function```, allowing backpropagation through NUFFT operators
+for training neural networks.
 
 This package was inspired in large part by the NUFFT implementation in the
 [Michigan Image Reconstruction Toolbox (Matlab)](https://github.com/JeffFessler/mirt).
@@ -26,7 +27,8 @@ This package was inspired in large part by the NUFFT implementation in the
 
 The package has three major classes of NUFFT operation mode: table-based NUFFT
 interpolation, sparse matrix-based NUFFT interpolation, and forward/backward
-operators with Toeplitz-embedded FFTs [3]. Roughly, computation speed follows:
+operators with Toeplitz-embedded FFTs [[3](#references)]. Roughly, computation
+speed follows:
 
 | Type          | Speed                                                      |
 | ------------- | ---------------------------------------------------------- |
@@ -45,7 +47,8 @@ Sensitivity maps can be incorporated by passing them into a `KbNufft` or
 An html-based documentation reference on
 [Read the Docs](https://torchkbnufft.readthedocs.io).
 
-Most files are accompanied with docstrings that can be read with ```help``` while running IPython. Example:
+Most files are accompanied with docstrings that can be read with ```help```
+while running IPython. Example:
 
 ```python
 from torchkbnufft import KbNufft
@@ -140,10 +143,10 @@ usage is [here](notebooks/Sparse%20Matrix%20Example.ipynb).
 ### Toeplitz Embedding
 
 The package includes routines for calculating embedded Toeplitz kernels and
-using them as FFT filters for the forward/backward NUFFT operations [3]. This
-is very useful for gradient descent algorithms that must use the
-forward/backward ops in calculating the gradient. The following code shows an
-example:
+using them as FFT filters for the forward/backward NUFFT operations
+[[3](#references)]. This is very useful for gradient descent algorithms that
+must use the forward/backward ops in calculating the gradient. The following
+code shows an example:
 
 ```python
 toep_ob = tkbn.ToepNufft()
