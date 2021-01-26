@@ -9,9 +9,9 @@ To submit code, take the following steps:
 1. Fork the repository and make your changes.
 2. Add unit tests for any new functions or modules.
 3. Ensure your test suite passes.
-4. Make sure your code lints - we use [`black`](https://github.com/psf/black),
-[`flake8`](https://github.com/PyCQA/flake8), and
-[`mypy`](https://github.com/python/mypy).
+4. Make sure your code lints - we use [`black`](https://black.readthedocs.io/en/stable/),
+[`flake8`](https://flake8.pycqa.org/en/latest/), and
+[`mypy`](https://mypy.readthedocs.io/en/stable/).
 5. Add documentation. If you've added new functions that are exposed under
 `torchkbnufft`, ensure that they're properly linked in the `docs/` folder.
 6. Submit a [Pull Request](https://github.com/mmuckley/torchkbnufft/pulls) to
