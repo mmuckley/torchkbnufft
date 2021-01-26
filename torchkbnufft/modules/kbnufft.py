@@ -254,7 +254,8 @@ class KbNufftAdjoint(KbNufftModule):
 
     Note:
 
-        This function is not the inverse of :py:class:`KbNufft`; it is the adjoint.
+        This function is not the inverse of :py:class:`KbNufft`; it is the
+        adjoint.
 
     When called, the parameters of this class define properties of the kernel
     and how the interpolation is applied.
@@ -406,9 +407,8 @@ class ToepNufft(torch.nn.Module):
     You can use :py:meth:`~torchkbnufft.calc_toeplitz_kernel` to calculate the
     kernel.
 
-    The corresponding kernel is then passed to this module in its forward
-    forward operation, which applies a (zero-padded) fft filter using the
-    kernel.
+    The FFT kernel should be passed to this module's forward operation, which
+    applies a (zero-padded) FFT filter using the kernel.
 
     Examples:
 
@@ -416,7 +416,7 @@ class ToepNufft(torch.nn.Module):
         >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
         >>> toep_ob = tkbn.ToepNufft()
         >>> kernel = tkbn.calc_toeplitz_kernel(omega, im_size=(8, 8))
-        >>> data = toep_ob(image, kernel)
+        >>> image = toep_ob(image, kernel)
     """
 
     def __init__(self):
@@ -439,7 +439,7 @@ class ToepNufft(torch.nn.Module):
                 Options are ``"ortho"`` or ``None``.
 
         Returns:
-            ``image`` after applying the Toeplitz NUFFT.
+            ``image`` after applying the Toeplitz forward/backward NUFFT.
         """
         if smaps is not None:
             if not smaps.dtype == image.dtype:

@@ -64,7 +64,7 @@ def calc_toeplitz_kernel(
         >>> omega = torch.rand(2, 12) * 2 * np.pi - np.pi
         >>> toep_ob = tkbn.ToepNufft()
         >>> kernel = tkbn.calc_toeplitz_kernel(omega, im_size=(8, 8))
-        >>> data = toep_ob(image, kernel)
+        >>> image = toep_ob(image, kernel)
     """
     device = omega.device
     normalized = True if norm == "ortho" else False
