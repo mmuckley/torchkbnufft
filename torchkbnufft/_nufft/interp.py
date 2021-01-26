@@ -305,7 +305,7 @@ def table_interp_adjoint(
     if not device == torch.device("cpu"):
         image = torch.view_as_real(image)
 
-    # loop over offsets and take advantage of numpy broadcasting
+    # loop over offsets and take advantage of broadcasting
     for offset in offsets:
         coef, arr_ind = calc_coef_and_indices(
             tm=tm,
