@@ -52,10 +52,10 @@ class KbInterp(KbInterpModule):
         Y_m = \sum_{j=1}^J X_{\{k_m+j\}_K}u^*_j(\omega_m),
 
     where :math:`u` is the Kaiser-Bessel kernel, :math:`k_m` is the index of
-    the nearest sample of :math:`X` to frequency location :math:`\omega_m`,
-    and :math:`J` is the number of nearest neighbors to use from
-    :math:`X_k`. Multiple dimensions are handled separably. For a detailed
-    description of the notation see
+    the root offset of nearest samples of :math:`X` to frequency location
+    :math:`\omega_m`, and :math:`J` is the number of nearest neighbors to use
+    from  :math:`X_k`. Multiple dimensions are handled separably. For a
+    detailed description of the notation see
     `Nonuniform fast Fourier transforms using min-max interpolation
     (JA Fessler and BP Sutton)
     <https://doi.org/10.1109/TSP.2002.807005>`_.
@@ -177,10 +177,11 @@ class KbInterpAdjoint(KbInterpModule):
         \mathbb{1}_{\{\{k_m+j\}_K=k\}},
 
     where :math:`u` is the Kaiser-Bessel kernel, :math:`k_m` is the index of
-    the nearest sample of :math:`X` to frequency location :math:`\omega_m`,
-    :math:`\mathbb{1}` is an indicator function, and :math:`J` is the number of
-    nearest neighbors to use from :math:`X_k`. Multiple dimensions are handled
-    separably. For a detailed description of the notation see
+    the root offset of nearest samples of :math:`X` to frequency location
+    :math:`\omega_m`, :math:`\mathbb{1}` is an indicator function, and
+    :math:`J` is the number of nearest neighbors to use from :math:`X_k`.
+    Multiple dimensions are handled separably. For a detailed description of
+    the notation see
     `Nonuniform fast Fourier transforms using min-max interpolation
     (JA Fessler and BP Sutton)
     <https://doi.org/10.1109/TSP.2002.807005>`_.

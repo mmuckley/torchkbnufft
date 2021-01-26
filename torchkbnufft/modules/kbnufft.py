@@ -75,10 +75,10 @@ class KbNufft(KbNufftModule):
 
     In the second step, :math:`u`, the Kaiser-Bessel kernel, is used to
     estimate :math:`X_k` at off-grid frequency locations :math:`\omega_m`.
-    :math:`k_m` is the index of the nearest sample of :math:`X` to frequency
-    location :math:`\omega_m`, and :math:`J` is the number of nearest neighbors
-    to use from :math:`X_k`. Multiple dimensions are handled separably. For a
-    detailed description see
+    :math:`k_m` is the index of the root offset of nearest samples of :math:`X`
+    to frequency location :math:`\omega_m`, and :math:`J` is the number of
+    nearest neighbors to use from :math:`X_k`. Multiple dimensions are handled
+    separably. For a detailed description see
     `Nonuniform fast Fourier transforms using min-max interpolation
     (JA Fessler and BP Sutton)
     <https://doi.org/10.1109/TSP.2002.807005>`_.
@@ -237,10 +237,10 @@ class KbNufftAdjoint(KbNufftModule):
 
     In the first step, :math:`u`, the Kaiser-Bessel kernel, is used to
     estimate :math:`Y` at on-grid frequency locations from locations at
-    :math:`\omega`. :math:`k_m` is the index of the nearest sample of :math:`X`
-    to frequency location :math:`\omega_m`, :math:`\mathbb{1}` is an indicator
-    function, and :math:`J` is the number of nearest neighbors to use from
-    :math:`X_k, k \in [0, ..., K-1]`.
+    :math:`\omega`. :math:`k_m` is the index of the root offset of nearest
+    samples of :math:`X` to frequency location :math:`\omega_m`,
+    :math:`\mathbb{1}` is an indicator function, and :math:`J` is the number of
+    nearest neighbors to use from :math:`X_k, k \in [0, ..., K-1]`.
 
     In the second step, an image-domain signal :math:`x_n` is estimated from a
     gridded, oversampled frequency-domain signal, :math:`X_k` by applying the
