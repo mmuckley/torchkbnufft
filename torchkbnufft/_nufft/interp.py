@@ -256,7 +256,7 @@ def table_interp_adjoint(
     )
 
     # necessary for index_add_
-    # TODO: change when PyTorch supports complex numbers
+    # TODO: change when PyTorch supports complex numbers for index_add_, index_put_
     if not device == torch.device("cpu"):
         image = torch.view_as_real(image)
 

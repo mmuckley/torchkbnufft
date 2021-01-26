@@ -7,25 +7,24 @@ on: [push, pull_request]
 
 jobs:
   build-and-test:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r dev-requirements.txt
-        pip install -e .
-    - name: Format and lint
-      run: |
-        black --check .
-        flake8 torchkbnufft
-        mypy torchkbnufft
-    - name: Test with pytest
-      run: |
-        pytest tests
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r dev-requirements.txt
+          pip install -e .
+      - name: Format and lint
+        run: |
+          black --check .
+          flake8 torchkbnufft
+          mypy torchkbnufft
+      - name: Test with pytest
+        run: |
+          pytest tests

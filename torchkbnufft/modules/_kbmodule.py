@@ -75,25 +75,25 @@ class KbModule(nn.Module):
                     "dtypes, but got desired dtype={}".format(dtype)
                 )
 
-        if dtype.is_complex:
-            complex_dtype = dtype
-            for pair in DTYPE_MAP:
-                if pair[0] == complex_dtype:
-                    real_dtype = pair[1]
-                    break
-        elif dtype.is_floating_point:
-            real_dtype = dtype
-            for pair in DTYPE_MAP:
-                if pair[1] == real_dtype:
-                    complex_dtype = pair[0]
-                    break
-        else:
-            raise TypeError("Unrecognized type.")
+            if dtype.is_complex:
+                complex_dtype = dtype
+                for pair in DTYPE_MAP:
+                    if pair[0] == complex_dtype:
+                        real_dtype = pair[1]
+                        break
+            elif dtype.is_floating_point:
+                real_dtype = dtype
+                for pair in DTYPE_MAP:
+                    if pair[1] == real_dtype:
+                        complex_dtype = pair[0]
+                        break
+            else:
+                raise TypeError("Unrecognized type.")
 
         def convert(t):
-            if t.is_floating_point():
+            if t.is_floating_point() and dtype is not None:
                 cur_dtype = real_dtype
-            elif t.is_complex():
+            elif t.is_complex() and dtype is not None:
                 cur_dtype = complex_dtype
             else:
                 cur_dtype = None

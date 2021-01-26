@@ -3,7 +3,7 @@
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![CI Badge](https://github.com/mmuckley/torchkbnufft/workflows/Build%20and%20test/badge.svg?branch=master)
 
-[Documentation](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](notebooks) | [Sedona Workshop Demo](https://github.com/mmuckley/torchkbnufft_demo)
+[Documentation](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](notebooks)
 
 Simple installation from PyPI:
 
@@ -13,11 +13,12 @@ pip install torchkbnufft
 
 ## About
 
-`torchkbnufft` implements a non-uniform Fast Fourier Transform [1, 2] with
-Kaiser-Bessel gridding in PyTorch. The implementation is completely in Python,
-facilitating flexible deployment in human-readable code with no compilation.
-NUFFT functions are each wrapped as a ```torch.autograd.Function```, allowing
-backpropagation through NUFFT operators for training neural networks.
+`torchkbnufft` implements a non-uniform Fast Fourier Transform
+[[1, 2](#references)] with Kaiser-Bessel gridding in PyTorch. The
+implementation is completely in Python, facilitating flexible deployment in
+readable code with no compilation. NUFFT functions are each wrapped as a
+```torch.autograd.Function```, allowing backpropagation through NUFFT operators
+for training neural networks.
 
 This package was inspired in large part by the NUFFT implementation in the
 [Michigan Image Reconstruction Toolbox (Matlab)](https://github.com/JeffFessler/mirt).
@@ -26,7 +27,8 @@ This package was inspired in large part by the NUFFT implementation in the
 
 The package has three major classes of NUFFT operation mode: table-based NUFFT
 interpolation, sparse matrix-based NUFFT interpolation, and forward/backward
-operators with Toeplitz-embedded FFTs [3]. Roughly, computation speed follows:
+operators with Toeplitz-embedded FFTs [[3](#references)]. Roughly, computation
+speed follows:
 
 | Type          | Speed                                                      |
 | ------------- | ---------------------------------------------------------- |
@@ -45,7 +47,8 @@ Sensitivity maps can be incorporated by passing them into a `KbNufft` or
 An html-based documentation reference on
 [Read the Docs](https://torchkbnufft.readthedocs.io).
 
-Most files are accompanied with docstrings that can be read with ```help``` while running IPython. Example:
+Most files are accompanied with docstrings that can be read with ```help```
+while running IPython. Example:
 
 ```python
 from torchkbnufft import KbNufft
@@ -84,11 +87,11 @@ ktraj = np.stack(
     (np.zeros(64), np.linspace(-np.pi, np.pi, klength))
 )
 # convert to tensor, unsqueeze batch dimension
-# output size: (1, 2, klength)
+# output size: (2, klength)
 ktraj = torch.tensor(ktraj, dtype=torch.float)
 
 nufft_ob = tkbn.KbNufft(im_size=im_size)
-# outputs a (1, 1, 2, klength) vector of k-space data
+# outputs a (1, 1, klength) vector of k-space data
 kdata = nufft_ob(x, ktraj)
 ```
 
@@ -140,10 +143,10 @@ usage is [here](notebooks/Sparse%20Matrix%20Example.ipynb).
 ### Toeplitz Embedding
 
 The package includes routines for calculating embedded Toeplitz kernels and
-using them as FFT filters for the forward/backward NUFFT operations [3]. This
-is very useful for gradient descent algorithms that must use the
-forward/backward ops in calculating the gradient. The following code shows an
-example:
+using them as FFT filters for the forward/backward NUFFT operations
+[[3](#references)]. This is very useful for gradient descent algorithms that
+must use the forward/backward ops in calculating the gradient. The following
+code shows an example:
 
 ```python
 toep_ob = tkbn.ToepNufft()
@@ -155,7 +158,7 @@ kernel = tkbn.calc_toeplitz_kernel(ktraj, im_size)
 image = toep_ob(image, kernel)
 ```
 
-A detailed example of Toeplitz embedding usage is included 
+A detailed example of Toeplitz embedding usage is included
 [here](notebooks/Toeplitz%20Example.ipynb).
 
 ### Running on the GPU
@@ -176,6 +179,18 @@ objects are not matching. Be sure to make sure your data and NUFFT objects are
 on the right device and in the right format to avoid these errors.
 
 ## Computation Speed
+
+The following computation times in seconds were observed on a workstation with
+a Xeon E5-2698 CPU and an Nvidia Quadro GP100 GPU for a 15-coil, 405-spoke 2D
+radial problem. CPU computations were done with 64-bit floats, whereas GPU
+computations were done with 32-bit floats (v1.0.0) in PyTorch 1.7.1.
+
+(n) = normal, (spm) = sparse matrix, (toep) = Toeplitz embedding, (f/b) = forward/backward combined
+
+| Operation      | CPU (n) | CPU (spm) | CPU (toep)  | GPU (n)  | GPU (spm) | GPU (toep)     |
+| -------------- | -------:| ---------:| -----------:| --------:| ---------:| --------------:|
+| Forward NUFFT  | 0.83    | 2.17      | 0.067 (f/b) | 2.65e-02 | 7.45e-02  | 2.93e-03 (f/b) |
+| Adjoint NUFFT  | 2.59    | 0.99      | N/A         | 3.54e-02 | 7.94e-02  | N/A            |
 
 Profiling for your machine can be done by running
 
