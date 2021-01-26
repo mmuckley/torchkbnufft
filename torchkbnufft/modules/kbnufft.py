@@ -401,10 +401,10 @@ class ToepNufft(torch.nn.Module):
     embedding, this module approximates the :math:`A'A` operation without
     interpolations, which is extremely fast.
 
-    The module is intended to be used in combination with an fft kernel
-    computed to be the frequency response of an embedded Toeplitz matrix. The
-    kernel is calculated using
-    :py:meth:`~torchkbnufft.calc_toeplitz_kernel`.
+    The module is intended to be used in combination with an FFT kernel
+    computed as frequency response of an embedded Toeplitz matrix.
+    You can use :py:meth:`~torchkbnufft.calc_toeplitz_kernel` to calculate the
+    kernel.
 
     The corresponding kernel is then passed to this module in its forward
     forward operation, which applies a (zero-padded) fft filter using the
