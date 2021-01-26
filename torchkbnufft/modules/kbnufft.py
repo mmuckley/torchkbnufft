@@ -422,6 +422,22 @@ class ToepNufft(torch.nn.Module):
     def __init__(self):
         super().__init__()
 
+    def toep_batch_loop(
+        self, image: Tensor, smaps: Tensor, kernel: Tensor, norm: Optional[str]
+    ) -> Tensor:
+        output = []
+        for (mini_image, smap) in zip(image, smaps):
+            mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
+            mini_image = tkbnF.fft_filter(image=mini_image, kernel=kernel, norm=norm)
+            mini_image = torch.sum(
+                mini_image * smap.unsqueeze(0).conj(),
+                dim=1,
+                keepdim=True,
+            )
+            output.append(mini_image.squeeze(0))
+
+        return torch.stack(output)
+
     def forward(
         self,
         image: Tensor,
@@ -461,22 +477,9 @@ class ToepNufft(torch.nn.Module):
         if smaps is None:
             output = tkbnF.fft_filter(image=image, kernel=kernel, norm=norm)
         else:
-            output = []
-
-            # do a batch loop to conserve memory
-            for (mini_image, smap) in zip(image, smaps):
-                mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
-                mini_image = tkbnF.fft_filter(
-                    image=mini_image, kernel=kernel, norm=norm
-                )
-                mini_image = torch.sum(
-                    mini_image * smap.unsqueeze(0).conj(),
-                    dim=1,
-                    keepdim=True,
-                )
-                output.append(mini_image.squeeze(0))
-
-            output = torch.stack(output)
+            output = self.toep_batch_loop(
+                image=image, smaps=smaps, kernel=kernel, norm=norm
+            )
 
         if not is_complex:
             output = torch.view_as_real(output)
