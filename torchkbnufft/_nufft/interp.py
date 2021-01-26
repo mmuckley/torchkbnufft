@@ -261,7 +261,7 @@ def table_interp_adjoint(
     int_type = torch.long
 
     # we fork processes for accumulation, so we need to do a bit of thread management
-    # to make sure we don't oversubscribe
+    # for OMP to make sure we don't oversubscribe (managment not necessary for non-OMP)
     num_threads = torch.get_num_threads()
     if (not device == torch.device("cpu")) or (not USING_OMP):
         threads_per_fork = 1
