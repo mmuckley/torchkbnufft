@@ -30,11 +30,11 @@ interpolation, sparse matrix-based NUFFT interpolation, and forward/backward
 operators with Toeplitz-embedded FFTs [[3](#references)]. Roughly, computation
 speed follows:
 
-| Type          | Speed                                                      |
-| ------------- | ---------------------------------------------------------- |
-| Toeplitz      | Fastest                                                    |
-| Sparse Matrix | Slow (CPU, small coil count), Fast (GPU, large coil count) |
-| Table         | Fast (CPU, small coil count), Slow (GPU, large coil count) |
+| Type          | Speed                                |
+| ------------- | ------------------------------------ |
+| Toeplitz      | Fastest                              |
+| Table         | Medium                               |
+| Sparse Matrix | Slow (Faster for many-coil problems) |
 
 It is generally best to start with Table interpolation and then experiment with
 the other modes for your problem.
