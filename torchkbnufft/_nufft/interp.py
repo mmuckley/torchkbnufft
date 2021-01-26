@@ -6,6 +6,9 @@ from torch import Tensor
 
 from .._math import imag_exp
 
+# a little hacky but we don't have a function for detecting OMP
+USING_OMP = "USE_OPENMP=ON" in torch.__config__.show()
+
 
 def spmat_interp(
     image: Tensor, interp_mats: Union[Tensor, Tuple[Tensor, Tensor]]
@@ -260,7 +263,7 @@ def table_interp_adjoint(
     # we fork processes for accumulation, so we need to do a bit of thread management
     # to make sure we don't oversubscribe
     num_threads = torch.get_num_threads()
-    if not device == torch.device("cpu"):
+    if (not device == torch.device("cpu")) or (not USING_OMP):
         threads_per_fork = 1
     else:
         threads_per_fork = max(num_threads // (data.shape[0] * data.shape[1]), 1)
@@ -320,9 +323,11 @@ def table_interp_adjoint(
             tmp = torch.view_as_real(tmp)
 
         # this is a much faster way of doing index accumulation
-        torch.set_num_threads(threads_per_fork)
+        if USING_OMP:
+            torch.set_num_threads(threads_per_fork)
         fork_and_acccum(image, arr_ind, tmp, num_forks)
-        torch.set_num_threads(num_threads)
+        if USING_OMP:
+            torch.set_num_threads(num_threads)
 
     if not device == torch.device("cpu"):
         image = torch.view_as_complex(image)
