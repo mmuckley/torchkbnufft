@@ -212,7 +212,7 @@ def accum_tensor_index_put(image: Tensor, arr_ind: Tensor, data: Tensor) -> Tens
 
 
 @torch.jit.script
-def fork_and_acccum(image: Tensor, arr_ind: Tensor, data: Tensor, num_forks: int):
+def fork_and_accum(image: Tensor, arr_ind: Tensor, data: Tensor, num_forks: int):
     device = image.device
 
     futures: List[torch.jit.Future[torch.Tensor]] = []
@@ -325,7 +325,7 @@ def table_interp_adjoint(
         # this is a much faster way of doing index accumulation
         if USING_OMP:
             torch.set_num_threads(threads_per_fork)
-        fork_and_acccum(image, arr_ind, tmp, num_forks)
+        fork_and_accum(image, arr_ind, tmp, num_forks)
         if USING_OMP:
             torch.set_num_threads(num_threads)
 
