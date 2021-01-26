@@ -182,15 +182,16 @@ on the right device and in the right format to avoid these errors.
 
 The following computation times in seconds were observed on a workstation with
 a Xeon E5-2698 CPU and an Nvidia Quadro GP100 GPU for a 15-coil, 405-spoke 2D
-radial problem. CPU computations were done with 64-bit floats, whereas GPU
-computations were done with 32-bit floats (v1.0.0) in PyTorch 1.7.1.
+radial problem. CPU computations were limited to 8 threads and done with 64-bit
+floats, whereas GPU computations were done with 32-bit floats. The benchmark
+used `torchkbnufft` version 1.0.0 and `torch` version 1.7.1.
 
 (n) = normal, (spm) = sparse matrix, (toep) = Toeplitz embedding, (f/b) = forward/backward combined
 
 | Operation      | CPU (n) | CPU (spm) | CPU (toep)  | GPU (n)  | GPU (spm) | GPU (toep)     |
 | -------------- | -------:| ---------:| -----------:| --------:| ---------:| --------------:|
-| Forward NUFFT  | 0.83    | 2.17      | 0.067 (f/b) | 2.65e-02 | 7.45e-02  | 2.93e-03 (f/b) |
-| Adjoint NUFFT  | 2.59    | 0.99      | N/A         | 3.54e-02 | 7.94e-02  | N/A            |
+| Forward NUFFT  | 1.02    | 2.08      | 0.056 (f/b) | 2.68e-02 | 7.48e-02  | 3.10e-03 (f/b) |
+| Adjoint NUFFT  | 1.06    | 0.89      | N/A         | 4.13e-02 | 7.99e-02  | N/A            |
 
 Profiling for your machine can be done by running
 

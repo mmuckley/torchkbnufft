@@ -122,7 +122,6 @@ def ifft_and_scale(
     )
 
 
-@torch.jit.script
 def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = "ortho") -> Tensor:
     r"""FFT-based filtering on an oversampled grid.
 

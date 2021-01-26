@@ -146,7 +146,6 @@ def calc_coef_and_indices(
     return coef, arr_ind
 
 
-@torch.jit.script
 def table_interp(
     image: Tensor,
     omega: Tensor,
@@ -210,6 +209,39 @@ def accum_tensor_index_put(image: Tensor, arr_ind: Tensor, data: Tensor) -> Tens
 
 
 @torch.jit.script
+def fork_and_acccum(image: Tensor, arr_ind: Tensor, data: Tensor, num_forks: int):
+    device = image.device
+
+    futures: List[torch.jit.Future[torch.Tensor]] = []
+    for batch_ind in range(image.shape[0]):
+        for coil_ind in range(image.shape[1]):
+            # if we've used all our forks, wait for one to finish and pop
+            if len(futures) == num_forks:
+                torch.jit.wait(futures[0])
+                futures.pop(0)
+
+            # one of these is faster on cpu, other is faster on gpu
+            if device == torch.device("cpu"):
+                futures.append(
+                    torch.jit.fork(
+                        accum_tensor_index_put,
+                        image[batch_ind, coil_ind],
+                        arr_ind,
+                        data[batch_ind, coil_ind],
+                    )
+                )
+            else:
+                futures.append(
+                    torch.jit.fork(
+                        accum_tensor_index_add,
+                        image[batch_ind, coil_ind],
+                        arr_ind,
+                        data[batch_ind, coil_ind],
+                    )
+                )
+    _ = [torch.jit.wait(future) for future in futures]
+
+
 def table_interp_adjoint(
     data: Tensor,
     omega: Tensor,
@@ -225,6 +257,16 @@ def table_interp_adjoint(
     device = data.device
     int_type = torch.long
 
+    # we fork processes for accumulation, so we need to do a bit of thread management
+    # to make sure we don't oversubscribe
+    num_threads = torch.get_num_threads()
+    if not device == torch.device("cpu"):
+        threads_per_fork = 1
+    else:
+        threads_per_fork = max(num_threads // (data.shape[0] * data.shape[1]), 1)
+    num_forks = num_threads // threads_per_fork
+
+    # calculate output size
     output_prod = int(torch.prod(grid_size))
     output_size = [data.shape[0], data.shape[1]]
     for el in grid_size:
@@ -273,32 +315,14 @@ def table_interp_adjoint(
             conjcoef=True,
         )
 
-        # this is a much faster way of doing index accumulation
         tmp = coef * data
         if not device == torch.device("cpu"):
             tmp = torch.view_as_real(tmp)
-        futures: List[torch.jit.Future[torch.Tensor]] = []
-        for batch_ind in range(image.shape[0]):
-            for coil_ind in range(image.shape[1]):
-                if device == torch.device("cpu"):
-                    futures.append(
-                        torch.jit.fork(
-                            accum_tensor_index_put,
-                            image[batch_ind, coil_ind],
-                            arr_ind,
-                            tmp[batch_ind, coil_ind],
-                        )
-                    )
-                else:
-                    futures.append(
-                        torch.jit.fork(
-                            accum_tensor_index_add,
-                            image[batch_ind, coil_ind],
-                            arr_ind,
-                            tmp[batch_ind, coil_ind],
-                        )
-                    )
-        _ = [torch.jit.wait(future) for future in futures]
+
+        # this is a much faster way of doing index accumulation
+        torch.set_num_threads(threads_per_fork)
+        fork_and_acccum(image, arr_ind, tmp, num_forks)
+        torch.set_num_threads(num_threads)
 
     if not device == torch.device("cpu"):
         image = torch.view_as_complex(image)
