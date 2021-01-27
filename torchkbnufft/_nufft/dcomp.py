@@ -21,7 +21,7 @@ def calc_density_compensation_function(
     """Numerical density compensation estimation.
 
     This function has optional parameters for initializing a NUFFT object. See
-    :py:meth:`~torchkbnufft.KbInterp` for details.
+    :py:class:`~torchkbnufft.KbInterp` for details.
 
     * :attr:`ktraj` should be of size ``(len(im_size), klength)``,
       where ``klength`` is the length of the k-space trajectory.
