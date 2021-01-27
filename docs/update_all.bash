@@ -1,4 +1,5 @@
 #/bin/bash
 
-sphinx-apidoc --templatedir=source/_templates -f -o source/ ../torchkbnufft/
+sphinx-build -b html source/ build/
+make clean
 make html

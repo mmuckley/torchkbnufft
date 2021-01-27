@@ -1,34 +1,55 @@
 torchkbnufft.functional
 =======================
 
+.. currentmodule:: torchkbnufft.functional
 
-torchkbnufft.functional.kbinterp
---------------------------------
+:hidden:`fft_filter`
+~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: torchkbnufft.functional.kbinterp
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. autofunction:: fft_filter
 
-torchkbnufft.functional.kbnufft
--------------------------------
+Interpolation Functions
+----------------------------------
 
-.. automodule:: torchkbnufft.functional.kbnufft
-   :members:
-   :undoc-members:
-   :show-inheritance:
+:hidden:`kb_spmat_interp`
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-torchkbnufft.functional.mrisensenufft
--------------------------------------
+.. autofunction:: kb_spmat_interp
 
-.. automodule:: torchkbnufft.functional.mrisensenufft
-   :members:
-   :undoc-members:
-   :show-inheritance:
+:hidden:`kb_spmat_interp_adjoint`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. autofunction:: kb_spmat_interp_adjoint
 
+:hidden:`kb_table_interp`
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: torchkbnufft.functional
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. autofunction:: kb_table_interp
+
+:hidden:`kb_table_interp_adjoint`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: kb_table_interp_adjoint
+
+NUFFT Functions
+----------------------------------
+
+:hidden:`kb_spmat_nufft`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: kb_spmat_nufft
+
+:hidden:`kb_spmat_nufft_adjoint`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: kb_spmat_nufft_adjoint
+
+:hidden:`kb_table_nufft`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: kb_table_nufft
+
+:hidden:`kb_table_nufft_adjoint`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: kb_table_nufft_adjoint
