@@ -190,8 +190,8 @@ used `torchkbnufft` version 1.0.0 and `torch` version 1.7.1.
 
 | Operation      | CPU (n) | CPU (spm) | CPU (toep)  | GPU (n)  | GPU (spm) | GPU (toep)     |
 | -------------- | -------:| ---------:| -----------:| --------:| ---------:| --------------:|
-| Forward NUFFT  | 0.44    | 0.99      | 0.053 (f/b) | 2.58e-02 | 7.44e-02  | 3.03e-03 (f/b) |
-| Adjoint NUFFT  | 0.74    | 0.89      | N/A         | 3.56e-02 | 7.93e-02  | N/A            |
+| Forward NUFFT  | 0.82    | 0.77      | 0.058 (f/b) | 2.58e-02 | 7.44e-02  | 3.03e-03 (f/b) |
+| Adjoint NUFFT  | 0.75    | 0.76      | N/A         | 3.56e-02 | 7.93e-02  | N/A            |
 
 Profiling for your machine can be done by running
 
