@@ -34,7 +34,12 @@ def calc_toeplitz_kernel(
     <https://link.springer.com/article/10.1007/s002110050101>`_.
 
     This function has optional parameters for initializing a NUFFT object. See
-    :py:meth:`~torchkbnufft.KbNufftAdjoint` for details.
+    :py:class:`~torchkbnufft.KbNufftAdjoint` for details.
+
+    Note:
+
+        This function is intended to be used in conjunction with
+        :py:class:`~torchkbnufft.ToepNufft` for forward operations.
 
     * :attr:`omega` should be of size ``(len(im_size), klength)``,
       where ``klength`` is the length of the k-space trajectory.
