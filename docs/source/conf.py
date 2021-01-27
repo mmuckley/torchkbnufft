@@ -14,16 +14,20 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
+os.environ["PYTORCH_JIT"] = "0"
+
+import torchkbnufft
+import torch
 
 
 # -- Project information -----------------------------------------------------
 
 project = "torchkbnufft"
-copyright = "2019, Matthew Muckley"
+copyright = "2021, Matthew Muckley"
 author = "Matthew Muckley"
 
 # The full version, including alpha/beta/rc tags
-release = "v0.3.2.post1"
+release = f"v{torchkbnufft.__version__}"
 
 
 # -- General configuration ---------------------------------------------------
@@ -40,22 +44,34 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinxcontrib.katex",
     "sphinx.ext.autosectionlabel",
-    "autoapi.extension",
+    "sphinx_autodoc_typehints",
 ]
-autoapi_dirs = ["../../torchkbnufft"]
-autoapi_generate_api_docs = False
-autodoc_mock_imports = ["torch"]
+# autodoc_mock_imports = ["torch"]
+
+# build the templated autosummary files
+autosummary_generate = True
+numpydoc_show_class_members = False
 
 # autosectionlabel throws warnings if section names are duplicated.
 # The following tells autosectionlabel to not throw a warning for
 # duplicated section names that are in different documents.
 autosectionlabel_prefix_document = True
 
+napoleon_use_ivar = True
+# napoleon_use_param = True
+
+napoleon_type_aliases = {
+    "Tensor": ":py:class:`torch.Tensor`",
+}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
 html_sidebars = {"**": ["globaltoc.html", "searchbox.html"]}
+
+source_suffix = ".rst"
 
 master_doc = "index"
 
@@ -72,9 +88,22 @@ add_module_names = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "classic"
+html_theme = "sphinx_rtd_theme"
+html_theme_options = {
+    "navigation_depth": 1,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+coverage_ignore_functions = ["torch.jit"]
+
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "torch": ("https://pytorch.org/docs/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+}

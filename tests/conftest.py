@@ -1,6 +1,6 @@
-import pytest
-import torch
 import numpy as np
+import torch
+import torchkbnufft as tkbn
 
 
 def test_params():
@@ -25,88 +25,67 @@ def test_params():
     )
 
 
-@pytest.fixture
-def device_list():
-    devices = [torch.device("cpu")]
-    if torch.cuda.is_available():
-        devices.append(torch.device("cuda"))
+def create_input_plus_noise(shape, is_complex):
+    x = np.arange(np.product(shape)).reshape(shape)
+    x = torch.tensor(x, dtype=torch.get_default_dtype())
 
-    return devices
+    if is_complex:
+        x = x + torch.randn(size=x.shape) + 1j * torch.randn(size=x.shape)
+    else:
+        x = x + torch.randn(size=x.shape)
 
-
-@pytest.fixture
-def testing_dtype():
-    return torch.double
+    return x
 
 
-@pytest.fixture
-def testing_tol():
-    return 5e-9
+def nufft_adjoint_test(image, kdata, ktraj, forw_ob, adj_ob, spmat):
+    image_forw = forw_ob(image, ktraj)
+    kdata_adj = adj_ob(kdata, ktraj)
 
-
-@pytest.fixture
-def params_2d():
-    batch_size, ncoil, klength, im_size, _, numpoints, _ = test_params()
-
-    x = np.random.normal(size=(batch_size, 1) + im_size) + 1j * np.random.normal(
-        size=(batch_size, 1) + im_size
+    assert torch.allclose(
+        tkbn.inner_product(image_forw, kdata), tkbn.inner_product(image, kdata_adj)
     )
-    x = torch.tensor(np.stack((np.real(x), np.imag(x)), axis=2))
 
-    y = np.random.normal(size=(batch_size, ncoil, klength)) + 1j * np.random.normal(
-        size=(batch_size, ncoil, klength)
+    image_forw = forw_ob(image, ktraj, spmat)
+    kdata_adj = adj_ob(kdata, ktraj, spmat)
+
+    assert torch.allclose(
+        tkbn.inner_product(image_forw, kdata), tkbn.inner_product(image, kdata_adj)
     )
-    y = torch.tensor(np.stack((np.real(y), np.imag(y)), axis=2))
-
-    ktraj = (torch.rand(*(batch_size, 2, klength)) - 0.5) * 2 * np.pi
-
-    smap_sz = (batch_size, ncoil, 2) + im_size
-    smap = torch.randn(*smap_sz)
-
-    return {
-        "batch_size": batch_size,
-        "ncoil": ncoil,
-        "klength": klength,
-        "im_size": im_size,
-        "grid_size": tuple(2 * np.array(im_size)),
-        "numpoints": numpoints,
-        "x": x,
-        "y": y,
-        "ktraj": ktraj,
-        "smap": smap,
-    }
 
 
-@pytest.fixture
-def params_3d():
-    batch_size, ncoil, klength, _, im_size, _, numpoints = test_params()
+def nufft_autograd_test(image, kdata, ktraj, forw_ob, adj_ob, spmat):
+    image.requires_grad = True
+    kdata.requires_grad = True
+    image_forw = forw_ob(image, ktraj)
+    kdata_adj = adj_ob(kdata, ktraj)
 
-    x = np.random.normal(size=(batch_size, 1) + im_size) + 1j * np.random.normal(
-        size=(batch_size, 1) + im_size
-    )
-    x = torch.tensor(np.stack((np.real(x), np.imag(x)), axis=2))
+    (torch.abs(image_forw) ** 2 / 2).sum().backward()
+    (torch.abs(kdata_adj) ** 2 / 2).sum().backward()
+    autograd_forw = image.grad.clone()
+    autograd_adj = kdata.grad.clone()
+    grad_forw_est = adj_ob(image_forw.detach(), ktraj)
+    grad_adj_est = forw_ob(kdata_adj.detach(), ktraj)
 
-    y = np.random.normal(size=(batch_size, ncoil, klength)) + 1j * np.random.normal(
-        size=(batch_size, ncoil, klength)
-    )
-    y = torch.tensor(np.stack((np.real(y), np.imag(y)), axis=2))
+    assert torch.allclose(autograd_forw, grad_forw_est)
+    assert torch.allclose(autograd_adj, grad_adj_est)
 
-    ktraj = (torch.rand(*(batch_size, 3, klength)) - 0.5) * 2 * np.pi
-    coilpack_ktraj = (torch.rand(*(1, 2, klength)) - 0.5) * 2 * np.pi
+    image.grad = torch.zeros_like(image.grad)
+    kdata.grad = torch.zeros_like(kdata.grad)
+    image.requires_grad = True
+    kdata.requires_grad = True
+    image_forw = forw_ob(image, ktraj, spmat)
+    kdata_adj = adj_ob(kdata, ktraj, spmat)
 
-    smap_sz = (batch_size, ncoil, 2) + im_size
-    smap = torch.randn(*smap_sz)
+    (torch.abs(image_forw) ** 2 / 2).sum().backward()
+    (torch.abs(kdata_adj) ** 2 / 2).sum().backward()
+    autograd_forw = image.grad.clone()
+    autograd_adj = kdata.grad.clone()
+    grad_forw_est = adj_ob(image_forw.detach(), ktraj, spmat)
+    grad_adj_est = forw_ob(kdata_adj.detach(), ktraj, spmat)
 
-    return {
-        "batch_size": batch_size,
-        "ncoil": ncoil,
-        "klength": klength,
-        "im_size": im_size,
-        "grid_size": tuple(2 * np.array(im_size)),
-        "numpoints": numpoints,
-        "x": x,
-        "y": y,
-        "ktraj": ktraj,
-        "coilpack_ktraj": coilpack_ktraj,
-        "smap": smap,
-    }
+    assert torch.allclose(autograd_forw, grad_forw_est)
+    assert torch.allclose(autograd_adj, grad_adj_est)
+
+
+def create_ktraj(ndims, klength):
+    return torch.rand(size=(ndims, klength)) * 2 * np.pi - np.pi

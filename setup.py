@@ -19,7 +19,7 @@ builtins.__TORCHKBNUFFT_SETUP__ = True
 
 import torchkbnufft  # noqa: E402
 
-install_requires = ["torch", "numpy", "scipy"]
+install_requires = ["torch>=1.7", "numpy", "scipy"]
 
 # https://packaging.python.org/discussions/install-requires-vs-requirements
 setup(
@@ -31,12 +31,12 @@ setup(
     url=torchkbnufft.__homepage__,
     download_url="https://github.com/mmuckley/torchkbnufft",
     license=torchkbnufft.__license__,
-    packages=find_packages(exclude=["tests", "notebooks", "speedtests"]),
+    packages=find_packages(exclude=["tests", "notebooks", "docs"]),
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     include_package_data=True,
     zip_safe=False,
-    keywords=["MRI", "pytorch"],
+    keywords=["MRI", "pytorch", "nufft", "deep-learning"],
     python_requires=">=3.5",
     setup_requires=[],
     install_requires=install_requires,
