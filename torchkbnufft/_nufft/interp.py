@@ -1,8 +1,10 @@
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 from torch import Tensor
+
+import time
 
 from .._math import imag_exp
 
@@ -149,7 +151,71 @@ def calc_coef_and_indices(
     return coef, arr_ind
 
 
-def table_interp(
+def calc_batched_coef_and_indices(
+    tm: Tensor,
+    base_offset: Tensor,
+    offsets: Tensor,
+    tables: List[Tensor],
+    centers: Tensor,
+    table_oversamp: Tensor,
+    grid_size: Tensor,
+    conjcoef: bool = False,
+) -> Tuple[Tensor, Tensor]:
+    """Calculates interpolation coefficients and on-grid indices.
+
+    Args:
+        tm: Normalized frequency locations.
+        base_offset: A tensor with offset locations to first elements in list
+            of nearest neighbors.
+        offset_increments: A tensor for how much to increment offsets.
+        tables: A list of tensors tabulating a Kaiser-Bessel interpolation
+            kernel.
+        centers: A tensor with the center locations of the table for each
+            dimension.
+        table_oversamp: A tensor with the table size in each dimension.
+        grid_size: A tensor with image dimensions.
+        conjcoef: A boolean for whether to compute normal or complex conjugate
+            interpolation coefficients (conjugate needed for adjoint).
+
+    Returns:
+        A tuple with interpolation coefficients and indices.
+    """
+    assert len(tables) == len(offsets)
+    assert len(tables) == len(centers)
+
+    # type values
+    dtype = tables[0].dtype
+    device = tm.device
+    int_type = torch.long
+
+    ktraj_len = tm.shape[1]
+
+    # indexing locations
+    gridind = base_offset.unsqueeze(1) + offsets.unsqueeze(-1)
+    distind = torch.round(
+        (tm.unsqueeze(1) - gridind.to(tm)) * table_oversamp.unsqueeze(-1).unsqueeze(-1)
+    ).to(dtype=int_type)
+    arr_ind = torch.zeros(offsets.shape[1], ktraj_len, dtype=int_type, device=device)
+
+    # give complex numbers if requested
+    coef = torch.ones(offsets.shape[1], ktraj_len, dtype=dtype, device=device)
+
+    for d, (table, it_distind, center, it_gridind, it_grid_size) in enumerate(
+        zip(tables, distind, centers, gridind, grid_size)
+    ):  # spatial dimension
+        if conjcoef:
+            coef = coef * table[it_distind + center].conj()
+        else:
+            coef = coef * table[it_distind + center]
+
+        arr_ind = arr_ind + torch.remainder(it_gridind, it_grid_size) * torch.prod(
+            grid_size[d + 1 :]
+        )
+
+    return coef, arr_ind
+
+
+def table_interp_one_batch(
     image: Tensor,
     omega: Tensor,
     tables: List[Tensor],
@@ -157,6 +223,7 @@ def table_interp(
     numpoints: Tensor,
     table_oversamp: Tensor,
     offsets: Tensor,
+    offset_batch_size: int = 6,
 ) -> Tensor:
     """Table interpolation backend."""
     dtype = image.dtype
@@ -201,6 +268,73 @@ def table_interp(
     )
 
 
+@torch.jit.script
+def table_interp_over_batches(
+    image: Tensor,
+    omega: Tensor,
+    tables: List[Tensor],
+    n_shift: Tensor,
+    numpoints: Tensor,
+    table_oversamp: Tensor,
+    offsets: Tensor,
+    num_forks: int,
+) -> Tensor:
+    """Table interpolation backend."""
+
+    # indexing is worst when we have repeated indices - let's spread them out
+    klength = omega.shape[1]
+    omega_chunks = [omega[:, ind:klength:num_forks] for ind in range(num_forks)]
+
+    futures: List[torch.jit.Future[torch.Tensor]] = []
+    for omega_chunk in omega_chunks:
+        futures.append(
+            torch.jit.fork(
+                table_interp_one_batch,
+                image,
+                omega_chunk,
+                tables,
+                n_shift,
+                numpoints,
+                table_oversamp,
+                offsets,
+            )
+        )
+
+    return torch.cat([torch.jit.wait(future) for future in futures], dim=-1)
+
+
+def table_interp(
+    image: Tensor,
+    omega: Tensor,
+    tables: List[Tensor],
+    n_shift: Tensor,
+    numpoints: Tensor,
+    table_oversamp: Tensor,
+    offsets: Tensor,
+) -> Tensor:
+    if image.device == torch.device("cpu"):
+        # we fork processes for indexing, so we need to do a bit of thread management
+        # for OMP to make sure we don't oversubscribe (managment not necessary for non-OMP)
+        num_threads = torch.get_num_threads()
+        # minimum 1024 k-space points per fork
+        num_forks = min(max(omega.shape[1] // 1024, 1), num_threads)
+        threads_per_fork = num_threads // num_forks
+
+        if USING_OMP:
+            torch.set_num_threads(threads_per_fork)
+        kdat = table_interp_over_batches(
+            image, omega, tables, n_shift, numpoints, table_oversamp, offsets, num_forks
+        )
+        if USING_OMP:
+            torch.set_num_threads(num_threads)
+    else:
+        kdat = table_interp_one_batch(
+            image, omega, tables, n_shift, numpoints, table_oversamp, offsets
+        )
+
+    return kdat
+
+
 def accum_tensor_index_add(image: Tensor, arr_ind: Tensor, data: Tensor) -> Tensor:
     """We fork this function for the adjoint accumulation."""
     return image.index_add_(0, arr_ind, data)
@@ -231,7 +365,7 @@ def fork_and_accum(image: Tensor, arr_ind: Tensor, data: Tensor, num_forks: int)
                         image[batch_ind, coil_ind],
                         arr_ind,
                         data[batch_ind, coil_ind],
-                    )
+                    ),
                 )
             else:
                 futures.append(
@@ -240,9 +374,20 @@ def fork_and_accum(image: Tensor, arr_ind: Tensor, data: Tensor, num_forks: int)
                         image[batch_ind, coil_ind],
                         arr_ind,
                         data[batch_ind, coil_ind],
-                    )
+                    ),
                 )
     _ = [torch.jit.wait(future) for future in futures]
+
+
+def sort_data(omega: Tensor, data: Tensor) -> Tuple[Tensor, Tensor]:
+    ndims = omega.shape[0]
+    tmp = torch.zeros(omega.shape[1], dtype=omega.dtype, device=omega.device)
+    for ind in range(ndims):
+        tmp += (omega[ind] + np.pi) * 2 * (ndims - ind) * np.pi
+
+    _, indices = torch.sort(tmp)
+
+    return omega[:, indices], data[:, :, indices]
 
 
 def table_interp_adjoint(
@@ -254,6 +399,7 @@ def table_interp_adjoint(
     table_oversamp: Tensor,
     offsets: Tensor,
     grid_size: Tensor,
+    offset_chunk_size: int = 6,
 ) -> Tensor:
     """Table interpolation adjoint backend."""
     dtype = data.dtype
@@ -263,10 +409,7 @@ def table_interp_adjoint(
     # we fork processes for accumulation, so we need to do a bit of thread management
     # for OMP to make sure we don't oversubscribe (managment not necessary for non-OMP)
     num_threads = torch.get_num_threads()
-    if (not device == torch.device("cpu")) or (not USING_OMP):
-        threads_per_fork = 1
-    else:
-        threads_per_fork = max(num_threads // (data.shape[0] * data.shape[1]), 1)
+    threads_per_fork = max(num_threads // (data.shape[0] * data.shape[1]), 1)
     num_forks = num_threads // threads_per_fork
 
     # calculate output size
@@ -305,29 +448,55 @@ def table_interp_adjoint(
     if not device == torch.device("cpu"):
         image = torch.view_as_real(image)
 
-    # loop over offsets and take advantage of broadcasting
-    for offset in offsets:
-        coef, arr_ind = calc_coef_and_indices(
-            tm=tm,
-            base_offset=base_offset,
-            offset_increments=offset,
-            tables=tables,
-            centers=centers,
-            table_oversamp=table_oversamp,
-            grid_size=grid_size,
-            conjcoef=True,
-        )
+    ind_time = 0
+    mult_time = 0
+    accum_time = 0
 
-        tmp = coef * data
+    # loop over offsets and take advantage of broadcasting
+    for offset_chunk in offsets.split(offset_chunk_size):
+        start_time = time.perf_counter()
+        coef = []
+        arr_ind = []
+        for offset in offset_chunk:
+            coef_it, arr_ind_it = calc_coef_and_indices(
+                tm=tm,
+                base_offset=base_offset,
+                offset_increments=offset,
+                tables=tables,
+                centers=centers,
+                table_oversamp=table_oversamp,
+                grid_size=grid_size,
+                conjcoef=True,
+            )
+            coef.append(coef_it)
+            arr_ind.append(arr_ind_it)
+
+        coef = torch.stack(coef)
+        arr_ind = torch.stack(arr_ind)
+
+        end_ind = time.perf_counter()
+
+        tmp = (coef * data.unsqueeze(2)).view(data.shape[0], data.shape[1], -1)
+        arr_ind = arr_ind.view(-1)
         if not device == torch.device("cpu"):
             tmp = torch.view_as_real(tmp)
 
+        end_mult = time.perf_counter()
+
         # this is a much faster way of doing index accumulation
-        if USING_OMP:
+        if USING_OMP and device == torch.device("cpu"):
             torch.set_num_threads(threads_per_fork)
         fork_and_accum(image, arr_ind, tmp, num_forks)
-        if USING_OMP:
+        if USING_OMP and device == torch.device("cpu"):
             torch.set_num_threads(num_threads)
+
+        end_accum = time.perf_counter()
+
+        ind_time += end_ind - start_time
+        mult_time += end_mult - end_ind
+        accum_time += end_accum - end_mult
+
+    print(f"ind_time: {ind_time}, mult_time: {mult_time}, accum_time: {accum_time}")
 
     if not device == torch.device("cpu"):
         image = torch.view_as_complex(image)
