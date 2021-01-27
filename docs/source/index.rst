@@ -15,8 +15,8 @@ About
 [`1 <https://doi.org/10.1109/TSP.2002.807005>`_,
 `2 <https://doi.org/10.1109/TMI.2005.848376>`_] with
 Kaiser-Bessel gridding in PyTorch. The implementation is completely in Python,
-facilitating flexible deployment in human-readable code with no compilation.
-NUFFT functions are each wrapped as a :py:class:`torch.autograd.Function`, allowing
+facilitating flexible deployment in readable code with no compilation. NUFFT
+functions are each wrapped as a :py:class:`torch.autograd.Function`, allowing
 backpropagation through NUFFT operators for training neural networks.
 
 This package was inspired in large part by the NUFFT implementation in the
@@ -41,11 +41,11 @@ Operation Modes and Stages
 The package has three major classes of NUFFT operation mode: table-based NUFFT
 interpolation, sparse matrix-based NUFFT interpolation, and forward/backward
 operators with Toeplitz-embedded FFTs
-[`3 <https://doi.org/10.1007/s002110050101>`_]. The Toeplitz method is always the
-fastest for forward/backward NUFFTs. Depending on the problem, either the table
-or sparse matrix NUFFTs can be faster in other cases. It is generally best to
-start with Table interpolation and then experiment with the other modes for
-your problem.
+[`3 <https://doi.org/10.1007/s002110050101>`_]. Table interpolation is the
+standard operation mode, whereas the Toeplitz method is always the
+fastest for forward/backward NUFFTs. For some problems, sparse matrices may be
+fast. It is generally best to start with Table interpolation and then experiment
+with the other modes for your problem.
 
 Sensitivity maps can be incorporated by passing them into a
 :py:class:`~torchkbnufft.KbNufft` or :py:class:`~torchkbnufft.KbNufftAdjoint`

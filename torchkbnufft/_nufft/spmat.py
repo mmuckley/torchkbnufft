@@ -24,7 +24,7 @@ def calc_tensor_spmatrix(
     table interpolation.
 
     This function has optional parameters for initializing a NUFFT object. See
-    :py:meth:`~torchkbnufft.KbNufft` for details.
+    :py:class:`~torchkbnufft.KbNufft` for details.
 
     * :attr:`omega` should be of size ``(len(im_size), klength)``,
       where ``klength`` is the length of the k-space trajectory.
