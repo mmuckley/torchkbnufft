@@ -103,6 +103,7 @@ def profile_torchkbnufft(
         end_time = time.perf_counter()
         avg_time = (end_time - start_time) / num_nuffts
         res += "forward average time: {}, ".format(avg_time)
+        print(res)
 
         # warm-up computation
         for _ in range(num_nuffts):
@@ -140,12 +141,13 @@ def run_all_profiles():
     devices = [torch.device("cpu")]
     sparse_mat_flags = [False, True]
     toep_flags = [False, True]
+    sizes_3d = [5]
 
     if torch.cuda.is_available():
         devices.append(torch.device("cuda"))
 
     params = [
-        (sl, ns, nc, ims, bs, dev, smf, tf)
+        (sl, ns, nc, ims, bs, dev, smf, tf, s3)
         for sl in spokelengths
         for ns in nspokes
         for nc in ncoils
@@ -154,6 +156,7 @@ def run_all_profiles():
         for dev in devices
         for smf in sparse_mat_flags
         for tf in toep_flags
+        for s3 in sizes_3d
     ]
 
     for (
@@ -165,14 +168,10 @@ def run_all_profiles():
         device,
         sparse_mat_flag,
         toep_flag,
+        size_3d,
     ) in params:
         if sparse_mat_flag and toep_flag:
             continue
-        print(
-            f"spokelength: {spokelength}, num spokes: {nspoke}, ncoil: {ncoil}, "
-            f"batch_size: {batch_size}, device: {device}, "
-            f"sparse_mats: {sparse_mat_flag}, toep_mat: {toep_flag}"
-        )
 
         # create an example to run on
         image = np.array(Image.fromarray(camera()).resize((256, 256)))
@@ -185,6 +184,9 @@ def run_all_profiles():
             .unsqueeze(0)
             .repeat(batch_size, 1, 1, 1)
         )
+        if size_3d is not None:
+            image = image.unsqueeze(2).repeat(1, 1, size_3d, 1, 1)
+            im_size = (size_3d,) + im_size
 
         # create k-space trajectory
         ga = np.deg2rad(180 / ((1 + np.sqrt(5)) / 2))
@@ -200,18 +202,34 @@ def run_all_profiles():
 
         ktraj = torch.tensor(np.stack((ky.flatten(), kx.flatten()), axis=0))
 
+        if size_3d is not None:
+            zlocs = np.linspace(-np.pi, np.pi, size_3d)
+            kz = []
+            for zloc in zlocs:
+                kz.append(torch.ones(ktraj.shape[1]) * zloc)
+            ktraj = torch.cat((ktraj.repeat(1, size_3d), torch.cat(kz).unsqueeze(0)))
+
         smap_sz = (batch_size, ncoil) + im_size
         smap = torch.ones(*smap_sz, dtype=torch.complex128)
 
-        profile_torchkbnufft(
-            image,
-            ktraj,
-            smap,
-            im_size,
-            device=device,
-            sparse_mats_flag=sparse_mat_flag,
-            toep_flag=toep_flag,
+        print(
+            f"im_size: {im_size}, "
+            f"spokelength: {spokelength}, num spokes: {nspoke}, ncoil: {ncoil}, "
+            f"batch_size: {batch_size}, device: {device}, "
+            f"sparse_mats: {sparse_mat_flag}, toep_mat: {toep_flag}, "
+            f"size_3d: {size_3d}"
         )
+
+        with torch.no_grad():
+            profile_torchkbnufft(
+                image,
+                ktraj,
+                smap,
+                im_size,
+                device=device,
+                sparse_mats_flag=sparse_mat_flag,
+                toep_flag=toep_flag,
+            )
 
 
 if __name__ == "__main__":
