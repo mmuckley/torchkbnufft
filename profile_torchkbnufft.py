@@ -9,7 +9,14 @@ import torchkbnufft as tkbn
 
 
 def profile_torchkbnufft(
-    image, ktraj, smap, im_size, device, sparse_mats_flag=False, toep_flag=False
+    image,
+    ktraj,
+    smap,
+    im_size,
+    grid_size,
+    device,
+    sparse_mats_flag=False,
+    toep_flag=False,
 ):
     # run double precision for CPU, float for GPU
     # these seem to be present in reference implementations
@@ -35,20 +42,21 @@ def profile_torchkbnufft(
     smap = smap.to(dtype=complex_dtype)
     interp_mats = None
 
-    forw_ob = tkbn.KbNufft(im_size=im_size, dtype=complex_dtype, device=device)
-    adj_ob = tkbn.KbNufftAdjoint(im_size=im_size, dtype=complex_dtype, device=device)
+    forw_ob = tkbn.KbNufft(
+        im_size=im_size, grid_size=grid_size, dtype=complex_dtype, device=device
+    )
+    adj_ob = tkbn.KbNufftAdjoint(
+        im_size=im_size, grid_size=grid_size, dtype=complex_dtype, device=device
+    )
 
     # precompute toeplitz kernel if using toeplitz
     if toep_flag:
-        kernel = tkbn.calc_toeplitz_kernel(ktraj, im_size)
+        kernel = tkbn.calc_toeplitz_kernel(ktraj, im_size, grid_size=grid_size)
         toep_ob = tkbn.ToepNufft()
 
     # precompute the sparse interpolation matrices
     if sparse_mats_flag:
-        interp_mats = tkbn.calc_tensor_spmatrix(
-            ktraj,
-            im_size,
-        )
+        interp_mats = tkbn.calc_tensor_spmatrix(ktraj, im_size, grid_size=grid_size)
         interp_mats = tuple([t.to(device) for t in interp_mats])
     if toep_flag:
         # warm-up computation
@@ -60,7 +68,7 @@ def profile_torchkbnufft(
             ).to(cpudevice)
         # run the speed tests
         if device == torch.device("cuda"):
-            torch.cuda.reset_max_memory_allocated()
+            torch.cuda.reset_peak_memory_stats()
             torch.cuda.synchronize()
         start_time = time.perf_counter()
         for _ in range(num_nuffts):
@@ -86,7 +94,7 @@ def profile_torchkbnufft(
 
         # run the forward speed tests
         if device == torch.device("cuda"):
-            torch.cuda.reset_max_memory_allocated()
+            torch.cuda.reset_peak_memory_stats()
             torch.cuda.synchronize()
         start_time = time.perf_counter()
         for _ in range(num_nuffts):
@@ -103,7 +111,6 @@ def profile_torchkbnufft(
         end_time = time.perf_counter()
         avg_time = (end_time - start_time) / num_nuffts
         res += "forward average time: {}, ".format(avg_time)
-        print(res)
 
         # warm-up computation
         for _ in range(num_nuffts):
@@ -113,7 +120,7 @@ def profile_torchkbnufft(
 
         # run the adjoint speed tests
         if device == torch.device("cuda"):
-            torch.cuda.reset_max_memory_allocated()
+            torch.cuda.reset_peak_memory_stats()
             torch.cuda.synchronize()
         start_time = time.perf_counter()
         for _ in range(num_nuffts):
@@ -141,13 +148,14 @@ def run_all_profiles():
     devices = [torch.device("cpu")]
     sparse_mat_flags = [False, True]
     toep_flags = [False, True]
-    sizes_3d = [5]
+    oversamp_factors = [2]
+    sizes_3d = [None]
 
     if torch.cuda.is_available():
         devices.append(torch.device("cuda"))
 
     params = [
-        (sl, ns, nc, ims, bs, dev, smf, tf, s3)
+        (sl, ns, nc, ims, bs, dev, smf, tf, s3, of)
         for sl in spokelengths
         for ns in nspokes
         for nc in ncoils
@@ -157,6 +165,7 @@ def run_all_profiles():
         for smf in sparse_mat_flags
         for tf in toep_flags
         for s3 in sizes_3d
+        for of in oversamp_factors
     ]
 
     for (
@@ -169,6 +178,7 @@ def run_all_profiles():
         sparse_mat_flag,
         toep_flag,
         size_3d,
+        oversamp_factor,
     ) in params:
         if sparse_mat_flag and toep_flag:
             continue
@@ -220,16 +230,18 @@ def run_all_profiles():
             f"size_3d: {size_3d}"
         )
 
-        with torch.no_grad():
-            profile_torchkbnufft(
-                image,
-                ktraj,
-                smap,
-                im_size,
-                device=device,
-                sparse_mats_flag=sparse_mat_flag,
-                toep_flag=toep_flag,
-            )
+        grid_size = tuple([int(ims * oversamp_factor) for ims in im_size])
+
+        profile_torchkbnufft(
+            image,
+            ktraj,
+            smap,
+            im_size,
+            grid_size,
+            device=device,
+            sparse_mats_flag=sparse_mat_flag,
+            toep_flag=toep_flag,
+        )
 
 
 if __name__ == "__main__":
