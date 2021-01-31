@@ -78,7 +78,6 @@ the gradient. The following code shows an example:
 
 .. code-block:: python
 
-   adjnufft_ob = tkbn.KbNufftAdjoint(im_size=im_size)
    toep_ob = tkbn.ToepNufft()
 
    # precompute the embedded Toeplitz FFT kernel
