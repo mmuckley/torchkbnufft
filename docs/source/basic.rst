@@ -56,8 +56,6 @@ radial spoke of k-space data:
 
 .. code-block:: python
 
-   adjnufft_ob = tkbn.KbNufftAdjoint(im_size=im_size)
-
    # precompute the sparse interpolation matrices
    interp_mats = tkbn.calc_tensor_spmatrix(
       ktraj,
