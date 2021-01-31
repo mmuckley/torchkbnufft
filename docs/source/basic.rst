@@ -56,6 +56,8 @@ radial spoke of k-space data:
 
 .. code-block:: python
 
+   adjnufft_ob = tkbn.KbNufftAdjoint(im_size=im_size)
+
    # precompute the sparse interpolation matrices
    interp_mats = tkbn.calc_tensor_spmatrix(
       ktraj,
@@ -76,7 +78,6 @@ the gradient. The following code shows an example:
 
 .. code-block:: python
 
-   adjnufft_ob = tkbn.KbNufftAdjoint(im_size=im_size)
    toep_ob = tkbn.ToepNufft()
 
    # precompute the embedded Toeplitz FFT kernel
