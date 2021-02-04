@@ -68,8 +68,6 @@ def fft_and_scale(
         pad_sizes.append(0)
         pad_sizes.append(int(gd - im))
 
-    scaling_coef = scaling_coef.unsqueeze(0).unsqueeze(0)
-
     # multiply by scaling_coef, pad, then fft
     return fft_fn(
         F.pad(image * scaling_coef, pad_sizes),
@@ -110,8 +108,6 @@ def ifft_and_scale(
 
     # calculate crops
     dims = torch.arange(len(im_size), device=image.device) + 2
-
-    scaling_coef = scaling_coef.unsqueeze(0).unsqueeze(0)
 
     # ifft, crop, then multiply by scaling_coef conjugate
     return (
