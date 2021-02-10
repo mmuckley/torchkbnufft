@@ -6,7 +6,7 @@ the PyTorch framework. There are a few dimensions on which parallelsim scales we
 such as:
 
 1. Scaling the batch dimension.
-1. Scaling the coil dimension.
+2. Scaling the coil dimension.
 
 Generally, you can just add to these dimensions and the package will perform well. Here
 we also mention some other strategies.
@@ -105,7 +105,7 @@ scale well. As mentioned earlier, batches and coils scale pretty well. Where we 
 scale well are:
 
 1. Longer k-space trajecotries.
-1. More imaging dimensions (e.g., 3D)
+2. More imaging dimensions (e.g., 3D)
 
 For these settings, you can try to use some of the strategies here (lowering precision,
 fewer neighbors, smaller grid). If you're still waiting too long for compute after
