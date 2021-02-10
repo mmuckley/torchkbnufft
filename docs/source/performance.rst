@@ -27,29 +27,29 @@ might occur in dynamic imaging settings. The following shows an example:
     import numpy as np
     from skimage.data import shepp_logan_phantom
 
-    batch_size = 128
+    batch_size = 12
 
     x = shepp_logan_phantom().astype(np.complex)
     im_size = x.shape
     # convert to tensor, unsqueeze batch and coil dimension
-    # output size: (1, 1, ny, nx)
+    # output size: (batch_size, 1, ny, nx)
     x = torch.tensor(x).unsqueeze(0).unsqueeze(0).to(torch.complex64)
-    x = torch.repeat(batch_size, 1, 1, 1)
+    x = x.repeat(batch_size, 1, 1, 1)
 
     klength = 64
     ktraj = np.stack(
         (np.zeros(64), np.linspace(-np.pi, np.pi, klength))
     )
     # convert to tensor, unsqueeze batch dimension
-    # output size: (2, klength)
+    # output size: (batch_size, 2, klength)
     ktraj = torch.tensor(ktraj).to(torch.float)
     ktraj = ktraj.unsqueeze(0).repeat(batch_size, 1, 1)
 
     nufft_ob = tkbn.KbNufft(im_size=im_size)
-    # outputs a (1, 1, klength) vector of k-space data
+    # outputs a (batch_size, 1, klength) vector of k-space data
     kdata = nufft_ob(x, ktraj)
 
-This code will then compute the 128 different radial spokes while parallelizing as much
+This code will then compute the 12 different radial spokes while parallelizing as much
 as possible.
 
 Lowering the Precision
@@ -104,7 +104,7 @@ As a high-level NUFFT implementation, we are constrained by PyTorch on areas whe
 scale well. As mentioned earlier, batches and coils scale pretty well. Where we don't
 scale well are:
 
-1. Longer k-space trajecotries.
+1. Longer k-space trajectories.
 2. More imaging dimensions (e.g., 3D)
 
 For these settings, you can try to use some of the strategies here (lowering precision,
