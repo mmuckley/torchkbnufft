@@ -1,5 +1,5 @@
-Performance Considerations
-==========================
+Performance Tips
+================
 
 :py:mod:`torchkbnufft` is primarily written for the goal of scaling parallelism within
 the PyTorch framework. There are a few dimensions on which parallelsim scales well,
