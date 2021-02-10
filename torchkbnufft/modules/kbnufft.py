@@ -473,6 +473,9 @@ class ToepNufft(torch.nn.Module):
         Returns:
             ``image`` after applying the Toeplitz forward/backward NUFFT.
         """
+        if not kernel.dtype == image.dtype:
+            raise TypeError("kernel and image must have same dtype.")
+
         if smaps is not None:
             if not smaps.dtype == image.dtype:
                 raise TypeError("image dtype does not match smaps dtype.")
@@ -480,6 +483,8 @@ class ToepNufft(torch.nn.Module):
         is_complex = True
         if not image.is_complex():
             if not image.shape[-1] == 2:
+                raise ValueError("For real inputs, last dimension must be size 2.")
+            if not kernel.shape[-1] == 2:
                 raise ValueError("For real inputs, last dimension must be size 2.")
             if smaps is not None:
                 if not smaps.shape[-1] == 2:
@@ -489,6 +494,7 @@ class ToepNufft(torch.nn.Module):
 
             is_complex = False
             image = torch.view_as_complex(image)
+            kernel = torch.view_as_complex(kernel)
 
         if len(kernel.shape) > len(image.shape[2:]):
             if kernel.shape[0] == 1:

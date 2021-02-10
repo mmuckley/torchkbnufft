@@ -71,6 +71,69 @@ def calc_toeplitz_kernel(
         >>> kernel = tkbn.calc_toeplitz_kernel(omega, im_size=(8, 8))
         >>> image = toep_ob(image, kernel)
     """
+    if omega.ndim not in (2, 3):
+        raise ValueError("Unrecognized k-space shape.")
+
+    if weights is None:
+        if omega.ndim == 3:
+            weights = [None] * omega.shape[0]
+    else:
+        if weights.ndim not in (2, 3):
+            raise ValueError("Unrecognized weights dimension.")
+        if omega.ndim == 3 and weights.ndim == 2:
+            if weights.shape[0] == 1:
+                weights = weights.repeat(omega.shape[0], 1)
+            if not weights.shape[0] == omega.shape[0]:
+                raise ValueError("weights and omega do not have same batch size")
+
+    if omega.ndim == 2:
+        kernel = calc_one_batch_toeplitz_kernel(
+            omega=omega,
+            im_size=im_size,
+            weights=weights,
+            norm=norm,
+            grid_size=grid_size,
+            numpoints=numpoints,
+            n_shift=n_shift,
+            table_oversamp=table_oversamp,
+            kbwidth=kbwidth,
+            order=order,
+        )
+    else:
+        kernel_list = []
+        for omega_it, weights_it in zip(omega, weights):
+            kernel_list.append(
+                calc_one_batch_toeplitz_kernel(
+                    omega=omega_it,
+                    im_size=im_size,
+                    weights=weights_it,
+                    norm=norm,
+                    grid_size=grid_size,
+                    numpoints=numpoints,
+                    n_shift=n_shift,
+                    table_oversamp=table_oversamp,
+                    kbwidth=kbwidth,
+                    order=order,
+                )
+            )
+        kernel = torch.stack(kernel_list)
+
+    return kernel
+
+
+def calc_one_batch_toeplitz_kernel(
+    omega: Tensor,
+    im_size: Sequence[int],
+    weights: Optional[Tensor] = None,
+    norm: Optional[str] = None,
+    grid_size: Optional[Sequence[int]] = None,
+    numpoints: Union[int, Sequence[int]] = 6,
+    n_shift: Optional[Sequence[int]] = None,
+    table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+    kbwidth: float = 2.34,
+    order: Union[float, Sequence[float]] = 0.0,
+) -> Tensor:
+    """See calc_toeplitz_kernel()."""
     device = omega.device
     normalized = True if norm == "ortho" else False
 
@@ -108,7 +171,7 @@ def calc_toeplitz_kernel(
     kernel = hermitify(kernel, 2)
 
     # put the kernel in fft space
-    return fft_fn(kernel, omega.shape[0], normalized=normalized)
+    return fft_fn(kernel, omega.shape[0], normalized=normalized)[0, 0]
 
 
 def adjoint_flip_and_concat(
