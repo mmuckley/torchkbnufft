@@ -10,7 +10,7 @@ from .utils import init_fn
 def calc_density_compensation_function(
     ktraj: Tensor,
     im_size: Sequence[int],
-    num_iterations: int = 10,
+    num_iterations: int = 1,
     grid_size: Optional[Sequence[int]] = None,
     numpoints: Union[int, Sequence[int]] = 6,
     n_shift: Optional[Sequence[int]] = None,
@@ -23,8 +23,9 @@ def calc_density_compensation_function(
     This function has optional parameters for initializing a NUFFT object. See
     :py:class:`~torchkbnufft.KbInterp` for details.
 
-    * :attr:`ktraj` should be of size ``(len(im_size), klength)``,
-      where ``klength`` is the length of the k-space trajectory.
+    * :attr:`ktraj` should be of size ``(len(grid_size), klength)`` or
+      ``(N, len(grid_size), klength)``, where ``klength`` is the length of the
+      k-space trajectory.
 
     Based on the `method of Pipe
     <https://doi.org/10.1002/(SICI)1522-2594(199901)41:1%3C179::AID-MRM25%3E3.0.CO;2-V>`_.
@@ -56,6 +57,16 @@ def calc_density_compensation_function(
         >>> image = adjkb_ob(data * dcomp, omega)
     """
     device = ktraj.device
+    batch_size = 1
+
+    if ktraj.ndim not in (2, 3):
+        raise ValueError("ktraj must have 2 or 3 dimensions")
+
+    if ktraj.ndim == 3:
+        if ktraj.shape[0] == 1:
+            ktraj = ktraj[0]
+        else:
+            batch_size = ktraj.shape[0]
 
     # init nufft variables
     (
@@ -80,10 +91,12 @@ def calc_density_compensation_function(
         device=device,
     )
 
-    test_sig = torch.ones([1, 1, ktraj.shape[-1]], dtype=tables[0].dtype, device=device)
-    for _ in range(num_iterations):
+    test_sig = torch.ones(
+        [batch_size, 1, ktraj.shape[-1]], dtype=tables[0].dtype, device=device
+    )
+    for i in range(num_iterations):
         new_sig = tkbnF.kb_table_interp(
-            tkbnF.kb_table_interp_adjoint(
+            image=tkbnF.kb_table_interp_adjoint(
                 data=test_sig,
                 omega=ktraj,
                 tables=tables,
@@ -101,7 +114,6 @@ def calc_density_compensation_function(
             offsets=offsets_t,
         )
 
-        norm_new_sig = torch.abs(new_sig)
-        test_sig = test_sig / norm_new_sig
+        test_sig = test_sig / torch.abs(new_sig)
 
     return test_sig

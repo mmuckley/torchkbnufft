@@ -1,4 +1,3 @@
-import math
 from typing import List, Tuple, Union
 
 import numpy as np
@@ -91,6 +90,8 @@ def calc_split_sizes(
     length: int,
     num_splits: int,
 ) -> List[int]:
+    """Same as np.array_split for PyTorch."""
+    # TODO: replace all calls of this function with split_tensor in PyTorch 1.8
     size1 = length // num_splits + 1
     num_size1 = length % num_splits
     size2 = length // num_splits
@@ -218,7 +219,7 @@ def table_interp_one_batch(
 
     # phase for fftshift
     return kdat * imag_exp(
-        torch.mv(torch.transpose(omega, 1, 0), n_shift),
+        torch.sum(omega * n_shift.unsqueeze(-1), dim=-2, keepdim=True),
         return_complex=True,
     )
 
@@ -249,6 +250,42 @@ def table_interp_multiple_batches(
         )
 
     return torch.cat(kdat)
+
+
+@torch.jit.script
+def table_interp_fork_over_batchdim(
+    image: Tensor,
+    omega: Tensor,
+    tables: List[Tensor],
+    n_shift: Tensor,
+    numpoints: Tensor,
+    table_oversamp: Tensor,
+    offsets: Tensor,
+    num_forks: int,
+) -> Tensor:
+    """Table interpolation backend (see table_interp())."""
+
+    # indexing is worst when we have repeated indices - let's spread them out
+    split_sizes = calc_split_sizes(omega.shape[0], num_forks)
+
+    futures: List[torch.jit.Future[torch.Tensor]] = []
+    for (image_chunk, omega_chunk) in zip(
+        image.split(split_sizes), omega.split(split_sizes)
+    ):
+        futures.append(
+            torch.jit.fork(
+                table_interp_multiple_batches,
+                image_chunk,
+                omega_chunk,
+                tables,
+                n_shift,
+                numpoints,
+                table_oversamp,
+                offsets,
+            )
+        )
+
+    return torch.cat([torch.jit.wait(future) for future in futures])
 
 
 @torch.jit.script
@@ -297,42 +334,6 @@ def table_interp_fork_over_kspace(
     return kdat
 
 
-@torch.jit.script
-def table_interp_fork_over_batchdim(
-    image: Tensor,
-    omega: Tensor,
-    tables: List[Tensor],
-    n_shift: Tensor,
-    numpoints: Tensor,
-    table_oversamp: Tensor,
-    offsets: Tensor,
-    num_forks: int,
-) -> Tensor:
-    """Table interpolation backend (see table_interp())."""
-
-    # indexing is worst when we have repeated indices - let's spread them out
-    split_sizes = calc_split_sizes(omega.shape[0], num_forks)
-
-    futures: List[torch.jit.Future[torch.Tensor]] = []
-    for (image_chunk, omega_chunk) in zip(
-        image.split(split_sizes), omega.split(split_sizes)
-    ):
-        futures.append(
-            torch.jit.fork(
-                table_interp_multiple_batches,
-                image_chunk,
-                omega_chunk,
-                tables,
-                n_shift,
-                numpoints,
-                table_oversamp,
-                offsets,
-            )
-        )
-
-    return torch.cat([torch.jit.wait(future) for future in futures])
-
-
 def table_interp(
     image: Tensor,
     omega: Tensor,
@@ -363,6 +364,9 @@ def table_interp(
     Returns:
         ``image`` interpolated to k-space locations at ``omega``.
     """
+    if omega.ndim not in (2, 3):
+        raise ValueError("omega must have 2 or 3 dimensions.")
+
     if omega.ndim == 3:
         if omega.shape[0] == 1:
             omega = omega[0]  # broadcast a single traj
@@ -375,20 +379,14 @@ def table_interp(
 
     # thread management parameters
     num_threads = torch.get_num_threads()
-    factors = torch.arange(1, math.sqrt(num_threads))
-    factors = torch.cat(
-        (
-            factors[torch.remainder(torch.tensor(num_threads), factors) == 0],
-            torch.tensor([num_threads]),
-        )
-    )
+    factors = torch.arange(1, num_threads + 1)
+    factors = factors[torch.remainder(torch.tensor(num_threads), factors) == 0]
 
     if omega.ndim == 3:
         for factor in factors.flip(0):
             # increase number of forks as long as it's not greater than batch size
             if num_threads / factor <= omega.shape[0]:
                 threads_per_fork = int(factor)
-                break
         num_forks = num_threads // threads_per_fork
 
         if USING_OMP and image.device == torch.device("cpu"):
@@ -400,7 +398,8 @@ def table_interp(
             torch.set_num_threads(num_threads)
     elif image.device == torch.device("cpu"):
         # we fork processes for indexing, so we need to do a bit of thread management
-        # for OMP to make sure we don't oversubscribe (managment not necessary for non-OMP)
+        # for OMP to make sure we don't oversubscribe (managment not necessary for
+        # non-OMP)
         threads_per_fork = 1
         for factor in factors:
             # minimum k-space points per fork
@@ -516,20 +515,6 @@ def fork_and_accum(
 
 
 @torch.jit.script
-def sort_data(
-    tm: Tensor, omega: Tensor, data: Tensor, grid_size: Tensor
-) -> Tuple[Tensor, Tensor, Tensor]:
-    """Sort input tensors by ordered values of tm."""
-    tmp = torch.zeros(omega.shape[1], dtype=omega.dtype, device=omega.device)
-    for d, dim in enumerate(grid_size):
-        tmp = tmp + torch.remainder(tm[d], dim) * torch.prod(grid_size[d + 1 :])
-
-    _, indices = torch.sort(tmp)
-
-    return tm[:, indices], omega[:, indices], data[:, :, indices]
-
-
-@torch.jit.script
 def calc_coef_and_indices_batch(
     tm: Tensor,
     base_offset: Tensor,
@@ -540,6 +525,7 @@ def calc_coef_and_indices_batch(
     grid_size: Tensor,
     conjcoef: bool,
 ) -> Tuple[Tensor, Tensor]:
+    """For loop coef calculation over batch dim."""
     coef = []
     arr_ind = []
     for (tm_it, base_offset_it) in zip(tm, base_offset):
@@ -572,6 +558,7 @@ def calc_coef_and_indices_fork_over_batches(
     conjcoef: bool,
     num_forks: int,
 ) -> Tuple[Tensor, Tensor]:
+    """Split work across batchdim, fork processes."""
     if tm.ndim == 3:
         if tm.shape[0] == 1:
             tm = tm[0]
@@ -618,6 +605,42 @@ def calc_coef_and_indices_fork_over_batches(
     return coef, arr_ind
 
 
+@torch.jit.script
+def sort_one_batch(
+    tm: Tensor, omega: Tensor, data: Tensor, grid_size: Tensor
+) -> Tuple[Tensor, Tensor, Tensor]:
+    """Sort input tensors by ordered values of tm."""
+    tmp = torch.zeros(omega.shape[1], dtype=omega.dtype, device=omega.device)
+    for d, dim in enumerate(grid_size):
+        tmp = tmp + torch.remainder(tm[d], dim) * torch.prod(grid_size[d + 1 :])
+
+    _, indices = torch.sort(tmp)
+
+    return tm[:, indices], omega[:, indices], data[:, :, indices]
+
+
+@torch.jit.script
+def sort_data(
+    tm: Tensor, omega: Tensor, data: Tensor, grid_size: Tensor
+) -> Tuple[Tensor, Tensor, Tensor]:
+    """Sort input tensors by ordered values of tm."""
+    if omega.ndim == 3:
+        results: List[Tuple[Tensor, Tensor, Tensor]] = []
+
+        for (tm_it, omega_it, data_it) in zip(tm, omega, data):
+            results.append(
+                sort_one_batch(tm_it, omega_it, data_it.unsqueeze(0), grid_size)
+            )
+
+        tm_ret = torch.stack([result[0] for result in results])
+        omega_ret = torch.stack([result[1] for result in results])
+        data_ret = torch.cat([result[2] for result in results])
+    else:
+        tm_ret, omega_ret, data_ret = sort_one_batch(tm, omega, data, grid_size)
+
+    return tm_ret, omega_ret, data_ret
+
+
 def table_interp_adjoint(
     data: Tensor,
     omega: Tensor,
@@ -647,6 +670,9 @@ def table_interp_adjoint(
     Returns:
         ``data`` interpolated to gridded locations.
     """
+    if omega.ndim not in (2, 3):
+        raise ValueError("omega must have 2 or 3 dimensions.")
+
     if omega.ndim == 3:
         if omega.shape[0] == 1:
             omega = omega[0]  # broadcast a single traj
@@ -664,23 +690,17 @@ def table_interp_adjoint(
     # we fork processes for accumulation, so we need to do a bit of thread management
     # for OMP to make sure we don't oversubscribe (managment not necessary for non-OMP)
     num_threads = torch.get_num_threads()
-    factors = torch.arange(1, math.sqrt(num_threads)).flip(0)
-    factors = torch.cat(
-        (
-            factors[torch.remainder(torch.tensor(num_threads), factors) == 0],
-            torch.tensor([num_threads]),
-        )
-    )
+    factors = torch.arange(1, num_threads + 1)
+    factors = factors[torch.remainder(torch.tensor(num_threads), factors) == 0]
     if omega.ndim == 3:
         for factor in factors.flip(0):
             # increase number of forks as long as it's not greater than batch size
             if num_threads / factor <= omega.shape[0]:
                 threads_per_fork = int(factor)
-                break
         num_forks = num_threads // threads_per_fork
     else:
         threads_per_fork = 1
-        for factor in factors:
+        for factor in factors.flip(0):
             if factor <= num_threads / (data.shape[0] * data.shape[1]):
                 threads_per_fork = int(factor)
                 break
@@ -695,13 +715,7 @@ def table_interp_adjoint(
 
     # convert to normalized freq locs and sort
     tm = omega / (2 * np.pi / grid_size.to(omega).unsqueeze(-1))
-    if tm.ndim == 3:
-        for i in range(tm.shape[0]):
-            tm[i], omega[i], data[i] = sort_data(
-                tm[i], omega[i], data[i : i + 1], grid_size
-            )
-    else:
-        tm, omega, data = sort_data(tm, omega, data, grid_size)
+    tm, omega, data = sort_data(tm, omega, data, grid_size)
 
     # compute interpolation centers
     centers = torch.floor(numpoints * table_oversamp / 2).to(dtype=int_type)

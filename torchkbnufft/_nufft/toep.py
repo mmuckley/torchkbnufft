@@ -41,8 +41,9 @@ def calc_toeplitz_kernel(
         This function is intended to be used in conjunction with
         :py:class:`~torchkbnufft.ToepNufft` for forward operations.
 
-    * :attr:`omega` should be of size ``(len(im_size), klength)``,
-      where ``klength`` is the length of the k-space trajectory.
+    * :attr:`omega` should be of size ``(len(im_size), klength)`` or
+      ``(N, len(im_size), klength)``, where ``klength`` is the length of the
+      k-space trajectory.
 
     Args:
         omega: k-space trajectory (in radians/voxel).

@@ -134,8 +134,9 @@ class KbNufft(KbNufftModule):
 
         Input tensors should be of shape ``(N, C) + im_size``, where ``N`` is
         the batch size and ``C`` is the number of sensitivity coils. ``omega``,
-        the k-space trajectory, should be of size ``(len(im_size), klength)``,
-        where ``klength`` is the length of the k-space trajectory.
+        the k-space trajectory, should be of size ``(len(grid_size), klength)``
+        or ``(N, len(grid_size), klength)``, where ``klength`` is the length of
+        the k-space trajectory.
 
         If your tensors are real, ensure that 2 is the size of the last
         dimension.
@@ -308,8 +309,9 @@ class KbNufftAdjoint(KbNufftModule):
 
         Input tensors should be of shape ``(N, C) + klength``, where ``N`` is
         the batch size and ``C`` is the number of sensitivity coils. ``omega``,
-        the k-space trajectory, should be of size ``(len(im_size), klength)``,
-        where ``klength`` is the length of the k-space trajectory.
+        the k-space trajectory, should be of size ``(len(grid_size), klength)``
+        or ``(N, len(grid_size), klength)``, where ``klength`` is the length of
+        the k-space trajectory.
 
         If your tensors are real, ensure that 2 is the size of the last
         dimension.

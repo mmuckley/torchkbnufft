@@ -111,8 +111,8 @@ class KbInterp(KbInterpModule):
         Input tensors should be of shape ``(N, C) + grid_size``, where ``N`` is
         the batch size and ``C`` is the number of sensitivity coils. ``omega``,
         the k-space trajectory, should be of size
-        ``(len(grid_size), klength)``, where ``klength`` is the length of the
-        k-space trajectory.
+        ``(len(grid_size), klength)`` or ``(N, len(grid_size), klength)``,
+        where ``klength`` is the length of the k-space trajectory.
 
         If your tensors are real-valued, ensure that 2 is the size of the last
         dimension.
@@ -127,14 +127,6 @@ class KbInterp(KbInterpModule):
         Returns:
             ``image`` calculated at Fourier frequencies specified by ``omega``.
         """
-        is_complex = True
-        if not image.is_complex():
-            if not image.shape[-1] == 2:
-                raise ValueError("For real inputs, last dimension must be size 2.")
-
-            is_complex = False
-            image = torch.view_as_complex(image)
-
         if interp_mats is not None:
             output = tkbnF.kb_spmat_interp(image=image, interp_mats=interp_mats)
         else:
@@ -156,9 +148,6 @@ class KbInterp(KbInterpModule):
                 table_oversamp=self.table_oversamp,
                 offsets=self.offsets.to(torch.long),
             )
-
-        if not is_complex:
-            output = torch.view_as_real(output)
 
         return output
 
@@ -243,7 +232,8 @@ class KbInterpAdjoint(KbInterpModule):
 
         Input tensors should be of shape ``(N, C) + klength``, where ``N`` is
         the batch size and ``C`` is the number of sensitivity coils. ``omega``,
-        the k-space trajectory, should be of size ``(len(im_size), klength)``,
+        the k-space trajectory, should be of size
+        ``(len(grid_size), klength)`` or ``(N, len(grid_size), klength)``,
         where ``klength`` is the length of the k-space trajectory.
 
         If your tensors are real-valued, ensure that 2 is the size of the last
@@ -259,14 +249,6 @@ class KbInterpAdjoint(KbInterpModule):
         Returns:
             ``data`` interpolated to the grid.
         """
-        is_complex = True
-        if not data.is_complex():
-            if not data.shape[-1] == 2:
-                raise ValueError("For real inputs, last dimension must be size 2.")
-
-            is_complex = False
-            data = torch.view_as_complex(data)
-
         if grid_size is None:
             assert isinstance(self.grid_size, Tensor)
             grid_size = self.grid_size
@@ -294,8 +276,5 @@ class KbInterpAdjoint(KbInterpModule):
                 offsets=self.offsets,
                 grid_size=grid_size,
             )
-
-        if not is_complex:
-            output = torch.view_as_real(output)
 
         return output
