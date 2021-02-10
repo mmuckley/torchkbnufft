@@ -138,6 +138,13 @@ class KbNufft(KbNufftModule):
         or ``(N, len(grid_size), klength)``, where ``klength`` is the length of
         the k-space trajectory.
 
+        Note:
+
+            If the batch dimension is included in ``omega``, the interpolator
+            will parallelize over the batch dimension. This is efficient for
+            many small trajectories that might occur in dynamic imaging
+            settings.
+
         If your tensors are real, ensure that 2 is the size of the last
         dimension.
 
@@ -312,6 +319,13 @@ class KbNufftAdjoint(KbNufftModule):
         the k-space trajectory, should be of size ``(len(grid_size), klength)``
         or ``(N, len(grid_size), klength)``, where ``klength`` is the length of
         the k-space trajectory.
+
+        Note:
+
+            If the batch dimension is included in ``omega``, the interpolator
+            will parallelize over the batch dimension. This is efficient for
+            many small trajectories that might occur in dynamic imaging
+            settings.
 
         If your tensors are real, ensure that 2 is the size of the last
         dimension.
