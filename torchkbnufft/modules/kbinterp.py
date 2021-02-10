@@ -135,6 +135,12 @@ class KbInterp(KbInterpModule):
             is_complex = False
             image = torch.view_as_complex(image)
 
+        if omega.ndim == 3:
+            if not (omega.shape[0] == image.shape[0] or omega.shape[0] == 1):
+                raise ValueError(
+                    "If omega has batch dim, omega batch dimension must match image."
+                )
+
         if interp_mats is not None:
             output = tkbnF.kb_spmat_interp(image=image, interp_mats=interp_mats)
         else:
@@ -266,6 +272,12 @@ class KbInterpAdjoint(KbInterpModule):
 
             is_complex = False
             data = torch.view_as_complex(data)
+
+        if omega.ndim == 3:
+            if not (omega.shape[0] == data.shape[0] or omega.shape[0] == 1):
+                raise ValueError(
+                    "If omega has batch dim, omega batch dimension must match data."
+                )
 
         if grid_size is None:
             assert isinstance(self.grid_size, Tensor)
