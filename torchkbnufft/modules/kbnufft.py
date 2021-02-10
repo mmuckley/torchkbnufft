@@ -171,12 +171,6 @@ class KbNufft(KbNufftModule):
             is_complex = False
             image = torch.view_as_complex(image)
 
-        if omega.ndim == 3:
-            if not (omega.shape[0] == image.shape[0] or omega.shape[0] == 1):
-                raise ValueError(
-                    "If omega has batch dim, omega batch dimension must match image."
-                )
-
         if smaps is not None:
             image = image * smaps
 
@@ -351,12 +345,6 @@ class KbNufftAdjoint(KbNufftModule):
             is_complex = False
             data = torch.view_as_complex(data)
 
-        if omega.ndim == 3:
-            if not (omega.shape[0] == data.shape[0] or omega.shape[0] == 1):
-                raise ValueError(
-                    "If omega has batch dim, omega batch dimension must match data."
-                )
-
         if interp_mats is not None:
             assert isinstance(self.scaling_coef, Tensor)
             assert isinstance(self.im_size, Tensor)
@@ -438,15 +426,31 @@ class ToepNufft(torch.nn.Module):
         self, image: Tensor, smaps: Tensor, kernel: Tensor, norm: Optional[str]
     ) -> Tensor:
         output = []
-        for (mini_image, smap) in zip(image, smaps):
-            mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
-            mini_image = tkbnF.fft_filter(image=mini_image, kernel=kernel, norm=norm)
-            mini_image = torch.sum(
-                mini_image * smap.unsqueeze(0).conj(),
-                dim=1,
-                keepdim=True,
-            )
-            output.append(mini_image.squeeze(0))
+        if len(kernel.shape) > len(image.shape[2:]):
+            # run with batching for kernel
+            for (mini_image, smap, mini_kernel) in zip(image, smaps, kernel):
+                mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
+                mini_image = tkbnF.fft_filter(
+                    image=mini_image, kernel=mini_kernel, norm=norm
+                )
+                mini_image = torch.sum(
+                    mini_image * smap.unsqueeze(0).conj(),
+                    dim=1,
+                    keepdim=True,
+                )
+                output.append(mini_image.squeeze(0))
+        else:
+            for (mini_image, smap) in zip(image, smaps):
+                mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
+                mini_image = tkbnF.fft_filter(
+                    image=mini_image, kernel=kernel, norm=norm
+                )
+                mini_image = torch.sum(
+                    mini_image * smap.unsqueeze(0).conj(),
+                    dim=1,
+                    keepdim=True,
+                )
+                output.append(mini_image.squeeze(0))
 
         return torch.stack(output)
 
@@ -485,6 +489,15 @@ class ToepNufft(torch.nn.Module):
 
             is_complex = False
             image = torch.view_as_complex(image)
+
+        if len(kernel.shape) > len(image.shape[2:]):
+            if kernel.shape[0] == 1:
+                kernel = kernel[0]
+            elif not kernel.shape[0] == image.shape[0]:
+                raise ValueError(
+                    "If using batch dimension, "
+                    "kernel must have same batch size as image"
+                )
 
         if smaps is None:
             output = tkbnF.fft_filter(image=image, kernel=kernel, norm=norm)

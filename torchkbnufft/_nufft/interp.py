@@ -87,6 +87,25 @@ def spmat_interp_adjoint(
 
 
 @torch.jit.script
+def calc_split_sizes(
+    length: int,
+    num_splits: int,
+) -> List[int]:
+    size1 = length // num_splits + 1
+    num_size1 = length % num_splits
+    size2 = length // num_splits
+
+    split_sizes: List[int] = []
+    for i in range(num_splits):
+        if i < num_size1:
+            split_sizes.append(size1)
+        else:
+            split_sizes.append(size2)
+
+    return split_sizes
+
+
+@torch.jit.script
 def calc_coef_and_indices(
     tm: Tensor,
     base_offset: Tensor,
@@ -292,12 +311,11 @@ def table_interp_fork_over_batchdim(
     """Table interpolation backend (see table_interp())."""
 
     # indexing is worst when we have repeated indices - let's spread them out
-    num_batches = omega.shape[0]
-    fork_size = int(torch.ceil(num_batches / num_forks))
+    split_sizes = calc_split_sizes(omega.shape[0], num_forks)
 
     futures: List[torch.jit.Future[torch.Tensor]] = []
     for (image_chunk, omega_chunk) in zip(
-        image.split(fork_size), omega.split(fork_size)
+        image.split(split_sizes), omega.split(split_sizes)
     ):
         futures.append(
             torch.jit.fork(
@@ -348,6 +366,12 @@ def table_interp(
     if omega.ndim == 3:
         if omega.shape[0] == 1:
             omega = omega[0]  # broadcast a single traj
+
+    if omega.ndim == 3:
+        if not omega.shape[0] == image.shape[0]:
+            raise ValueError(
+                "If omega has batch dim, omega batch dimension must match image."
+            )
 
     # thread management parameters
     num_threads = torch.get_num_threads()
@@ -436,13 +460,14 @@ def fork_and_accum(
     device = image.device
 
     # divide the work
-    num_batches = image.shape[0]
-    fork_size = int(torch.ceil(num_batches / num_forks))
+    split_sizes = calc_split_sizes(image.shape[0], num_forks)
 
     futures: List[torch.jit.Future[torch.Tensor]] = []
     if arr_ind.ndim == 2:
         for (image_chunk, arr_ind_chunk, data_chunk) in zip(
-            image.split(fork_size), arr_ind.split(fork_size), data.split(fork_size)
+            image.split(split_sizes),
+            arr_ind.split(split_sizes),
+            data.split(split_sizes),
         ):
             if device == torch.device("cpu"):
                 futures.append(
@@ -464,7 +489,7 @@ def fork_and_accum(
                 )
     else:
         for (image_chunk, data_chunk) in zip(
-            image.split(fork_size), data.split(fork_size)
+            image.split(split_sizes), data.split(split_sizes)
         ):
             if device == torch.device("cpu"):
                 futures.append(
@@ -564,13 +589,13 @@ def calc_coef_and_indices_fork_over_batches(
         )
     else:
         # divide the work
-        num_batches = tm.shape[0]
-        fork_size = int(torch.ceil(num_batches / num_forks))
+        split_sizes = calc_split_sizes(tm.shape[0], num_forks)
 
         # have the workers calculate the k-space indices
         futures: List[torch.jit.Future[Tuple[Tensor, Tensor]]] = []
         for (tm_chunk, base_offset_chunk) in zip(
-            tm.split(fork_size), base_offset.split(fork_size)
+            tm.split(split_sizes),
+            base_offset.split(split_sizes),
         ):
             futures.append(
                 torch.jit.fork(
@@ -625,6 +650,12 @@ def table_interp_adjoint(
     if omega.ndim == 3:
         if omega.shape[0] == 1:
             omega = omega[0]  # broadcast a single traj
+
+    if omega.ndim == 3:
+        if not omega.shape[0] == data.shape[0]:
+            raise ValueError(
+                "If omega has batch dim, omega batch dimension must match data."
+            )
 
     dtype = data.dtype
     device = data.device

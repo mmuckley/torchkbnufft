@@ -10,6 +10,7 @@ def run_batched_test():
     # create an example to run on
     spokelength = 512
     nspoke = 100
+    ncoil = 2
     batch_size = 1
 
     image = np.array(Image.fromarray(camera()).resize((256, 256)))
@@ -36,13 +37,15 @@ def run_batched_test():
     kx = np.transpose(kx)
 
     ktraj = torch.tensor(np.stack((ky, kx), axis=1))
-    image = image.repeat(100, 1, 1, 1)
+    image = image.repeat(nspoke, 1, 1, 1)
 
-    smap_sz = (100, 15) + im_size
+    smap_sz = (nspoke, ncoil) + im_size
     smap = torch.ones(*smap_sz, dtype=torch.complex128)
 
     forw_ob = tkbn.KbNufft(im_size=im_size).to(image)
     adj_ob = tkbn.KbNufftAdjoint(im_size=im_size).to(image)
+
+    data = forw_ob(image, ktraj, smaps=smap)
 
     num_nuffts = 5
 
@@ -89,60 +92,62 @@ def run_batched_test():
         f"cpu batch time: {(batch_time_end-forloop_time_end) / num_nuffts}"
     )
 
-    print("switching to GPU")
-    num_nuffts = 15
-    image = image.to(device=torch.device("cuda"), dtype=torch.complex64)
-    data = data.to(image)
-    forw_ob = forw_ob.to(image)
-    adj_ob = adj_ob.to(image)
-    ktraj = ktraj.to(device=torch.device("cuda"), dtype=torch.float32)
+    if torch.cuda.is_available():
+        print("switching to GPU")
+        num_nuffts = 15
+        image = image.to(device=torch.device("cuda"), dtype=torch.complex64)
+        data = data.to(image)
+        smap = smap.to(image)
+        forw_ob = forw_ob.to(image)
+        adj_ob = adj_ob.to(image)
+        ktraj = ktraj.to(device=torch.device("cuda"), dtype=torch.float32)
 
-    # warmup
-    for _ in range(num_nuffts):
-        for i in range(len(ktraj)):
-            data = forw_ob(image[i].unsqueeze(0), ktraj[i], smaps=smap)
+        # warmup
+        for _ in range(num_nuffts):
+            for i in range(len(ktraj)):
+                data = forw_ob(image[i].unsqueeze(0), ktraj[i], smaps=smap)
 
-    # speed tests
-    forloop_time_start = time.perf_counter()
-    torch.cuda.synchronize()
-    for _ in range(num_nuffts):
-        for i in range(len(ktraj)):
-            data = forw_ob(image[i].unsqueeze(0), ktraj[i], smaps=smap)
-    torch.cuda.synchronize()
-    forloop_time_end = time.perf_counter()
-    for _ in range(num_nuffts):
-        data = forw_ob(image, ktraj, smaps=smap)
-    torch.cuda.synchronize()
-    batch_time_end = time.perf_counter()
+        # speed tests
+        forloop_time_start = time.perf_counter()
+        torch.cuda.synchronize()
+        for _ in range(num_nuffts):
+            for i in range(len(ktraj)):
+                data = forw_ob(image[i].unsqueeze(0), ktraj[i], smaps=smap)
+        torch.cuda.synchronize()
+        forloop_time_end = time.perf_counter()
+        for _ in range(num_nuffts):
+            data = forw_ob(image, ktraj, smaps=smap)
+        torch.cuda.synchronize()
+        batch_time_end = time.perf_counter()
 
-    print(
-        f"gpu forloop time: {(forloop_time_end-forloop_time_start) / num_nuffts}, "
-        f"gpu batch time: {(batch_time_end-forloop_time_end) / num_nuffts}"
-    )
+        print(
+            f"gpu forloop time: {(forloop_time_end-forloop_time_start) / num_nuffts}, "
+            f"gpu batch time: {(batch_time_end-forloop_time_end) / num_nuffts}"
+        )
 
-    print("adjoint runs...")
-    # warmup
-    for _ in range(num_nuffts):
-        for i in range(len(ktraj)):
-            image = adj_ob(data[i].unsqueeze(0), ktraj[i], smaps=smap)
+        print("adjoint runs...")
+        # warmup
+        for _ in range(num_nuffts):
+            for i in range(len(ktraj)):
+                image = adj_ob(data[i].unsqueeze(0), ktraj[i], smaps=smap)
 
-    # speed tests
-    forloop_time_start = time.perf_counter()
-    torch.cuda.synchronize()
-    for _ in range(num_nuffts):
-        for i in range(len(ktraj)):
-            image = adj_ob(data[i].unsqueeze(0), ktraj[i], smaps=smap)
-    torch.cuda.synchronize()
-    forloop_time_end = time.perf_counter()
-    for _ in range(num_nuffts):
-        image = adj_ob(data, ktraj, smaps=smap)
-    torch.cuda.synchronize()
-    batch_time_end = time.perf_counter()
+        # speed tests
+        forloop_time_start = time.perf_counter()
+        torch.cuda.synchronize()
+        for _ in range(num_nuffts):
+            for i in range(len(ktraj)):
+                image = adj_ob(data[i].unsqueeze(0), ktraj[i], smaps=smap)
+        torch.cuda.synchronize()
+        forloop_time_end = time.perf_counter()
+        for _ in range(num_nuffts):
+            image = adj_ob(data, ktraj, smaps=smap)
+        torch.cuda.synchronize()
+        batch_time_end = time.perf_counter()
 
-    print(
-        f"gpu forloop time: {(forloop_time_end-forloop_time_start) / num_nuffts}, "
-        f"gpu batch time: {(batch_time_end-forloop_time_end) / num_nuffts}"
-    )
+        print(
+            f"gpu forloop time: {(forloop_time_end-forloop_time_start) / num_nuffts}, "
+            f"gpu batch time: {(batch_time_end-forloop_time_end) / num_nuffts}"
+        )
 
 
 if __name__ == "__main__":
