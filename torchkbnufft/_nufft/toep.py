@@ -74,10 +74,7 @@ def calc_toeplitz_kernel(
     if omega.ndim not in (2, 3):
         raise ValueError("Unrecognized k-space shape.")
 
-    if weights is None:
-        if omega.ndim == 3:
-            weights = [None] * omega.shape[0]
-    else:
+    if weights is not None:
         if weights.ndim not in (2, 3):
             raise ValueError("Unrecognized weights dimension.")
         if omega.ndim == 3 and weights.ndim == 2:
@@ -101,7 +98,11 @@ def calc_toeplitz_kernel(
         )
     else:
         kernel_list = []
-        for omega_it, weights_it in zip(omega, weights):
+        for i, omega_it in enumerate(omega):
+            if weights is None:
+                weights_it = None
+            else:
+                weights_it = weights[i]
             kernel_list.append(
                 calc_one_batch_toeplitz_kernel(
                     omega=omega_it,
