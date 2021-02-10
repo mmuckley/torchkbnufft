@@ -10,7 +10,7 @@ from .utils import init_fn
 def calc_density_compensation_function(
     ktraj: Tensor,
     im_size: Sequence[int],
-    num_iterations: int = 1,
+    num_iterations: int = 10,
     grid_size: Optional[Sequence[int]] = None,
     numpoints: Union[int, Sequence[int]] = 6,
     n_shift: Optional[Sequence[int]] = None,
