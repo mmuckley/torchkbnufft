@@ -5,7 +5,7 @@ Performance Tips
 the PyTorch framework. The performance bottleneck of the package comes from two sources:
 1) advanced indexing and 2) multiplications. Multiplications are handled in a way that
 scales well, but advanced indexing is not due to
-`fundmental limitations with PyTorch <https://github.com/pytorch/pytorch/issues/29973>`_.
+`limitations with PyTorch <https://github.com/pytorch/pytorch/issues/29973>`_.
 As a result, growth in problem size that is independent of the indexing bottleneck is
 handled very well by the package, such as:
 
