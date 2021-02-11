@@ -94,7 +94,7 @@ def calc_density_compensation_function(
     test_sig = torch.ones(
         [batch_size, 1, ktraj.shape[-1]], dtype=tables[0].dtype, device=device
     )
-    for i in range(num_iterations):
+    for _ in range(num_iterations):
         new_sig = tkbnF.kb_table_interp(
             image=tkbnF.kb_table_interp_adjoint(
                 data=test_sig,

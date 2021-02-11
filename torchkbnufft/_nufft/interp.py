@@ -234,7 +234,7 @@ def table_interp_multiple_batches(
     table_oversamp: Tensor,
     offsets: Tensor,
 ) -> Tensor:
-    """Table interpolation backend (see ``table_interp()``)."""
+    """Table interpolation with for loop over batch dimension."""
     kdat = []
     for (it_image, it_omega) in zip(image, omega):
         kdat.append(
@@ -263,11 +263,12 @@ def table_interp_fork_over_batchdim(
     offsets: Tensor,
     num_forks: int,
 ) -> Tensor:
-    """Table interpolation backend (see table_interp())."""
+    """Table interpolation with forking over k-space."""
 
     # indexing is worst when we have repeated indices - let's spread them out
     split_sizes = calc_split_sizes(omega.shape[0], num_forks)
 
+    # initialize the fork processes
     futures: List[torch.jit.Future[torch.Tensor]] = []
     for (image_chunk, omega_chunk) in zip(
         image.split(split_sizes), omega.split(split_sizes)
@@ -285,6 +286,7 @@ def table_interp_fork_over_batchdim(
             )
         )
 
+    # collect the results
     return torch.cat([torch.jit.wait(future) for future in futures])
 
 
@@ -305,6 +307,7 @@ def table_interp_fork_over_kspace(
     klength = omega.shape[1]
     omega_chunks = [omega[:, ind:klength:num_forks] for ind in range(num_forks)]
 
+    # initialize the fork processes
     futures: List[torch.jit.Future[torch.Tensor]] = []
     for omega_chunk in omega_chunks:
         futures.append(
@@ -328,6 +331,7 @@ def table_interp_fork_over_kspace(
         device=image.device,
     )
 
+    # collect the results
     for ind, future in enumerate(futures):
         kdat[:, :, ind:klength:num_forks] = torch.jit.wait(future)
 
@@ -377,16 +381,20 @@ def table_interp(
                 "If omega has batch dim, omega batch dimension must match image."
             )
 
-    # thread management parameters
+    # we fork processes for accumulation, so we need to do a bit of thread
+    # management for OMP to make sure we don't oversubscribe (managment not
+    # necessary for non-OMP)
     num_threads = torch.get_num_threads()
     factors = torch.arange(1, num_threads + 1)
     factors = factors[torch.remainder(torch.tensor(num_threads), factors) == 0]
+    threads_per_fork = num_threads  # default fallback
 
     if omega.ndim == 3:
+        # increase number of forks as long as it's not greater than batch size
         for factor in factors.flip(0):
-            # increase number of forks as long as it's not greater than batch size
-            if num_threads / factor <= omega.shape[0]:
+            if num_threads // factor <= omega.shape[0]:
                 threads_per_fork = int(factor)
+
         num_forks = num_threads // threads_per_fork
 
         if USING_OMP and image.device == torch.device("cpu"):
@@ -397,15 +405,12 @@ def table_interp(
         if USING_OMP and image.device == torch.device("cpu"):
             torch.set_num_threads(num_threads)
     elif image.device == torch.device("cpu"):
-        # we fork processes for indexing, so we need to do a bit of thread management
-        # for OMP to make sure we don't oversubscribe (managment not necessary for
-        # non-OMP)
-        threads_per_fork = 1
-        for factor in factors:
-            # minimum k-space points per fork
-            if num_threads / factor <= omega.shape[1] / min_kspace_per_fork:
+        # determine number of process forks while keeping a minimum amount of
+        # k-space per fork
+        for factor in factors.flip(0):
+            if omega.shape[1] / (num_threads // factor) >= min_kspace_per_fork:
                 threads_per_fork = int(factor)
-                break
+
         num_forks = num_threads // threads_per_fork
 
         if USING_OMP:
@@ -416,6 +421,7 @@ def table_interp(
         if USING_OMP:
             torch.set_num_threads(num_threads)
     else:
+        # no forking for batchless omega on GPU
         kdat = table_interp_one_batch(
             image, omega, tables, n_shift, numpoints, table_oversamp, offsets
         )
@@ -461,6 +467,7 @@ def fork_and_accum(
     # divide the work
     split_sizes = calc_split_sizes(image.shape[0], num_forks)
 
+    # initialize the fork processes
     futures: List[torch.jit.Future[torch.Tensor]] = []
     if arr_ind.ndim == 2:
         for (image_chunk, arr_ind_chunk, data_chunk) in zip(
@@ -509,6 +516,8 @@ def fork_and_accum(
                     )
                 )
 
+    # wait for processes to finish
+    # results in-place
     _ = [torch.jit.wait(future) for future in futures]
 
     return image
@@ -578,7 +587,7 @@ def calc_coef_and_indices_fork_over_batches(
         # divide the work
         split_sizes = calc_split_sizes(tm.shape[0], num_forks)
 
-        # have the workers calculate the k-space indices
+        # initialize the fork processes
         futures: List[torch.jit.Future[Tuple[Tensor, Tensor]]] = []
         for (tm_chunk, base_offset_chunk) in zip(
             tm.split(split_sizes),
@@ -598,6 +607,7 @@ def calc_coef_and_indices_fork_over_batches(
                 )
             )
 
+        # collect the results
         results = [torch.jit.wait(future) for future in futures]
         coef = torch.cat([result[0] for result in results])
         arr_ind = torch.cat([result[1] for result in results])
@@ -625,8 +635,8 @@ def sort_data(
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """Sort input tensors by ordered values of tm."""
     if omega.ndim == 3:
+        # loop over batch dimension to get sorted k-space
         results: List[Tuple[Tensor, Tensor, Tensor]] = []
-
         for (tm_it, omega_it, data_it) in zip(tm, omega, data):
             results.append(
                 sort_one_batch(tm_it, omega_it, data_it.unsqueeze(0), grid_size)
@@ -687,23 +697,24 @@ def table_interp_adjoint(
     device = data.device
     int_type = torch.long
 
-    # we fork processes for accumulation, so we need to do a bit of thread management
-    # for OMP to make sure we don't oversubscribe (managment not necessary for non-OMP)
+    # we fork processes for accumulation, so we need to do a bit of thread
+    # management for OMP to make sure we don't oversubscribe (managment not
+    # necessary for non-OMP)
     num_threads = torch.get_num_threads()
     factors = torch.arange(1, num_threads + 1)
     factors = factors[torch.remainder(torch.tensor(num_threads), factors) == 0]
+    threads_per_fork = num_threads  # default fallback
+
     if omega.ndim == 3:
+        # increase number of forks as long as it's not greater than batch size
         for factor in factors.flip(0):
-            # increase number of forks as long as it's not greater than batch size
-            if num_threads / factor <= omega.shape[0]:
+            if num_threads // factor <= omega.shape[0]:
                 threads_per_fork = int(factor)
-        num_forks = num_threads // threads_per_fork
     else:
-        threads_per_fork = 1
+        # increase forks as long as it's less/eq than batch * coildim
         for factor in factors.flip(0):
-            if factor <= num_threads / (data.shape[0] * data.shape[1]):
+            if num_threads // factor <= data.shape[0] * data.shape[1]:
                 threads_per_fork = int(factor)
-                break
 
     num_forks = num_threads // threads_per_fork
 
