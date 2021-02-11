@@ -22,8 +22,8 @@ Using Batched K-space Trajectories
 As of version ``1.1.0``, :py:mod:`torchkbnufft` can use batched k-space trajectories.
 If you pass in a variable for ``omega`` with dimensions
 ``(N, length(im_size), klength)``, the package will parallelize the execution of all
-trajectories in the ``N`` dimension. This is very useful when ``N`` is very large, as
-might occur in dynamic imaging settings. The following shows an example:
+trajectories in the ``N`` dimension. This is useful when ``N`` is very large, as might
+occur in dynamic imaging settings. The following shows an example:
 
 .. code-block:: python
 
@@ -60,10 +60,10 @@ as possible.
 Lowering the Precision
 ----------------------
 
-A very simple way to save both memory and compute time is to decrease the precision.
-PyTorch normally operates at a default 32-bit floating point precision, but if you're
-converting data from NumPy then you might have some data at 64-bit floating precision.
-To use 32-bit precision, simply do the following:
+A simple way to save both memory and compute time is to decrease the precision. PyTorch
+normally operates at a default 32-bit floating point precision, but if you're converting
+data from NumPy then you might have some data at 64-bit floating precision. To use
+32-bit precision, simply do the following:
 
 .. code-block:: python
 
@@ -126,10 +126,9 @@ don't impact the bottlenecks of the package around advanced indexing. Where
 :py:mod:`torchkbnufft` does not scale well is:
 
 1. Very long k-space trajectories.
-2. More imaging dimensions (e.g., 3D)
+2. More imaging dimensions (e.g., 3D).
 
 For these settings, you can first try to use some of the strategies here (lowering
 precision, fewer neighbors, smaller grid). In some cases, lowering the precision a bit
-and using a GPU can still give powerful performance. If you're still waiting too long
-for compute after trying all of these, you may be running into the limits of the
-package.
+and using a GPU can still give strong performance. If you're still waiting too long for
+compute after trying all of these, you may be running into the limits of the package.
