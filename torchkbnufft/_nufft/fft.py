@@ -146,7 +146,9 @@ def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = "ortho") -> 
             raise ValueError("Only option for norm is 'ortho'.")
 
     im_size = torch.tensor(image.shape[2:], dtype=torch.long, device=image.device)
-    grid_size = torch.tensor(kernel.shape[2:], dtype=torch.long, device=image.device)
+    grid_size = torch.tensor(
+        kernel.shape[-len(image.shape[2:]) :], dtype=torch.long, device=image.device
+    )
 
     # set up n-dimensional zero pad
     # zero pad for oversampled nufft

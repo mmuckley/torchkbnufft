@@ -69,6 +69,7 @@ References
    :caption: User Guide
 
    basic
+   performance
 
 .. toctree::
    :hidden:

@@ -1,5 +1,6 @@
 from typing import List, Optional, Tuple
 
+import torch
 from torch import Tensor
 
 from .._nufft.fft import fft_and_scale, ifft_and_scale
@@ -42,18 +43,29 @@ def kb_spmat_nufft(
     Returns:
         ``image`` calculated at scattered Fourier locations.
     """
-    image = fft_and_scale(
-        image=image,
-        scaling_coef=scaling_coef,
-        im_size=im_size,
-        grid_size=grid_size,
-        norm=norm,
-    )
+    is_complex = True
+    if not image.is_complex():
+        if not image.shape[-1] == 2:
+            raise ValueError("For real inputs, last dimension must be size 2.")
 
-    return kb_spmat_interp(
-        image=image,
+        is_complex = False
+        image = torch.view_as_complex(image)
+
+    data = kb_spmat_interp(
+        image=fft_and_scale(
+            image=image,
+            scaling_coef=scaling_coef,
+            im_size=im_size,
+            grid_size=grid_size,
+            norm=norm,
+        ),
         interp_mats=interp_mats,
     )
+
+    if is_complex is False:
+        data = torch.view_as_real(data)
+
+    return data
 
 
 def kb_spmat_nufft_adjoint(
@@ -87,17 +99,28 @@ def kb_spmat_nufft_adjoint(
     Returns:
         ``data`` transformed to an image.
     """
-    data = kb_spmat_interp_adjoint(
-        data=data, interp_mats=interp_mats, grid_size=grid_size
-    )
+    is_complex = True
+    if not data.is_complex():
+        if not data.shape[-1] == 2:
+            raise ValueError("For real inputs, last dimension must be size 2.")
 
-    return ifft_and_scale(
-        image=data,
+        is_complex = False
+        data = torch.view_as_complex(data)
+
+    image = ifft_and_scale(
+        image=kb_spmat_interp_adjoint(
+            data=data, interp_mats=interp_mats, grid_size=grid_size
+        ),
         scaling_coef=scaling_coef,
         im_size=im_size,
         grid_size=grid_size,
         norm=norm,
     )
+
+    if is_complex is False:
+        image = torch.view_as_real(image)
+
+    return image
 
 
 def kb_table_nufft(
@@ -138,16 +161,22 @@ def kb_table_nufft(
     Returns:
         ``image`` calculated at scattered Fourier locations.
     """
-    image = fft_and_scale(
-        image=image,
-        scaling_coef=scaling_coef,
-        im_size=im_size,
-        grid_size=grid_size,
-        norm=norm,
-    )
+    is_complex = True
+    if not image.is_complex():
+        if not image.shape[-1] == 2:
+            raise ValueError("For real inputs, last dimension must be size 2.")
 
-    return kb_table_interp(
-        image=image,
+        is_complex = False
+        image = torch.view_as_complex(image)
+
+    data = kb_table_interp(
+        image=fft_and_scale(
+            image=image,
+            scaling_coef=scaling_coef,
+            im_size=im_size,
+            grid_size=grid_size,
+            norm=norm,
+        ),
         omega=omega,
         tables=tables,
         n_shift=n_shift,
@@ -155,6 +184,11 @@ def kb_table_nufft(
         table_oversamp=table_oversamp,
         offsets=offsets,
     )
+
+    if is_complex is False:
+        data = torch.view_as_real(data)
+
+    return data
 
 
 def kb_table_nufft_adjoint(
@@ -195,21 +229,32 @@ def kb_table_nufft_adjoint(
     Returns:
         ``data`` transformed to an image.
     """
-    data = kb_table_interp_adjoint(
-        data=data,
-        omega=omega,
-        tables=tables,
-        n_shift=n_shift,
-        numpoints=numpoints,
-        table_oversamp=table_oversamp,
-        offsets=offsets,
-        grid_size=grid_size,
-    )
+    is_complex = True
+    if not data.is_complex():
+        if not data.shape[-1] == 2:
+            raise ValueError("For real inputs, last dimension must be size 2.")
 
-    return ifft_and_scale(
-        image=data,
+        is_complex = False
+        data = torch.view_as_complex(data)
+
+    image = ifft_and_scale(
+        image=kb_table_interp_adjoint(
+            data=data,
+            omega=omega,
+            tables=tables,
+            n_shift=n_shift,
+            numpoints=numpoints,
+            table_oversamp=table_oversamp,
+            offsets=offsets,
+            grid_size=grid_size,
+        ),
         scaling_coef=scaling_coef,
         im_size=im_size,
         grid_size=grid_size,
         norm=norm,
     )
+
+    if is_complex is False:
+        image = torch.view_as_real(image)
+
+    return image
