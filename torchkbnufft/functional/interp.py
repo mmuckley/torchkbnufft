@@ -1,5 +1,6 @@
 from typing import List, Tuple
 
+import torch
 from torch import Tensor
 
 from .._autograd.interp import (
@@ -27,7 +28,20 @@ def kb_spmat_interp(image: Tensor, interp_mats: Tuple[Tensor, Tensor]) -> Tensor
     Returns:
         ``image`` calculated at scattered locations.
     """
-    return KbSpmatInterpForward.apply(image, interp_mats)
+    is_complex = True
+    if not image.is_complex():
+        if not image.shape[-1] == 2:
+            raise ValueError("For real inputs, last dimension must be size 2.")
+
+        is_complex = False
+        image = torch.view_as_complex(image)
+
+    data = KbSpmatInterpForward.apply(image, interp_mats)
+
+    if is_complex is False:
+        data = torch.view_as_real(data)
+
+    return data
 
 
 def kb_spmat_interp_adjoint(
@@ -49,7 +63,20 @@ def kb_spmat_interp_adjoint(
     Returns:
         ``data`` calculated at gridded locations.
     """
-    return KbSpmatInterpAdjoint.apply(data, interp_mats, grid_size)
+    is_complex = True
+    if not data.is_complex():
+        if not data.shape[-1] == 2:
+            raise ValueError("For real inputs, last dimension must be size 2.")
+
+        is_complex = False
+        data = torch.view_as_complex(data)
+
+    image = KbSpmatInterpAdjoint.apply(data, interp_mats, grid_size)
+
+    if is_complex is False:
+        image = torch.view_as_real(image)
+
+    return image
 
 
 def kb_table_interp(
@@ -79,9 +106,22 @@ def kb_table_interp(
     Returns:
         ``image`` calculated at scattered locations.
     """
-    return KbTableInterpForward.apply(
+    is_complex = True
+    if not image.is_complex():
+        if not image.shape[-1] == 2:
+            raise ValueError("For real inputs, last dimension must be size 2.")
+
+        is_complex = False
+        image = torch.view_as_complex(image)
+
+    data = KbTableInterpForward.apply(
         image, omega, tables, n_shift, numpoints, table_oversamp, offsets
     )
+
+    if is_complex is False:
+        data = torch.view_as_real(data)
+
+    return data
 
 
 def kb_table_interp_adjoint(
@@ -114,6 +154,19 @@ def kb_table_interp_adjoint(
     Returns:
         ``data`` calculated at gridded locations.
     """
-    return KbTableInterpAdjoint.apply(
+    is_complex = True
+    if not data.is_complex():
+        if not data.shape[-1] == 2:
+            raise ValueError("For real inputs, last dimension must be size 2.")
+
+        is_complex = False
+        data = torch.view_as_complex(data)
+
+    image = KbTableInterpAdjoint.apply(
         data, omega, tables, n_shift, numpoints, table_oversamp, offsets, grid_size
     )
+
+    if is_complex is False:
+        image = torch.view_as_real(image)
+
+    return image

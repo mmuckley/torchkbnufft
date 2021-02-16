@@ -1,5 +1,6 @@
 import pickle
 
+import numpy as np
 import pytest
 import torch
 import torchkbnufft as tkbn
@@ -275,5 +276,53 @@ def test_interp_autograd_gpu(shape, kdata_shape, is_complex):
     )
 
     nufft_autograd_test(image, kdata, ktraj, forw_ob, adj_ob, spmat)
+
+    torch.set_default_dtype(default_dtype)
+
+
+@pytest.mark.parametrize(
+    "shape, kdata_shape, is_complex",
+    [
+        ([3, 1, 19], [3, 1, 25], True),
+        ([3, 1, 13, 2], [3, 1, 18, 2], False),
+        ([4, 1, 32, 16], [4, 1, 83], True),
+        ([5, 1, 15, 12, 2], [5, 1, 83, 2], False),
+        ([3, 2, 13, 18, 12], [3, 2, 112], True),
+        ([2, 2, 17, 19, 12, 2], [2, 2, 112, 2], False),
+    ],
+)
+def test_interp_batches(shape, kdata_shape, is_complex):
+    default_dtype = torch.get_default_dtype()
+    torch.set_default_dtype(torch.double)
+    torch.manual_seed(123)
+    if is_complex:
+        im_size = shape[2:]
+    else:
+        im_size = shape[2:-1]
+
+    image = create_input_plus_noise(shape, is_complex)
+    kdata = create_input_plus_noise(kdata_shape, is_complex)
+    ktraj = (
+        torch.rand(size=(shape[0], len(im_size), kdata_shape[2])) * 2 * np.pi - np.pi
+    )
+
+    forw_ob = tkbn.KbInterp(im_size=im_size, grid_size=im_size)
+    adj_ob = tkbn.KbInterpAdjoint(im_size=im_size, grid_size=im_size)
+
+    forloop_test_forw = []
+    for image_it, ktraj_it in zip(image, ktraj):
+        forloop_test_forw.append(forw_ob(image_it.unsqueeze(0), ktraj_it))
+
+    batched_test_forw = forw_ob(image, ktraj)
+
+    assert torch.allclose(torch.cat(forloop_test_forw), batched_test_forw)
+
+    forloop_test_adj = []
+    for data_it, ktraj_it in zip(kdata, ktraj):
+        forloop_test_adj.append(adj_ob(data_it.unsqueeze(0), ktraj_it))
+
+    batched_test_adj = adj_ob(kdata, ktraj)
+
+    assert torch.allclose(torch.cat(forloop_test_adj), batched_test_adj)
 
     torch.set_default_dtype(default_dtype)

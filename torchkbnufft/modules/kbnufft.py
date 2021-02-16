@@ -134,8 +134,16 @@ class KbNufft(KbNufftModule):
 
         Input tensors should be of shape ``(N, C) + im_size``, where ``N`` is
         the batch size and ``C`` is the number of sensitivity coils. ``omega``,
-        the k-space trajectory, should be of size ``(len(im_size), klength)``,
-        where ``klength`` is the length of the k-space trajectory.
+        the k-space trajectory, should be of size ``(len(grid_size), klength)``
+        or ``(N, len(grid_size), klength)``, where ``klength`` is the length of
+        the k-space trajectory.
+
+        Note:
+
+            If the batch dimension is included in ``omega``, the interpolator
+            will parallelize over the batch dimension. This is efficient for
+            many small trajectories that might occur in dynamic imaging
+            settings.
 
         If your tensors are real, ensure that 2 is the size of the last
         dimension.
@@ -308,8 +316,16 @@ class KbNufftAdjoint(KbNufftModule):
 
         Input tensors should be of shape ``(N, C) + klength``, where ``N`` is
         the batch size and ``C`` is the number of sensitivity coils. ``omega``,
-        the k-space trajectory, should be of size ``(len(im_size), klength)``,
-        where ``klength`` is the length of the k-space trajectory.
+        the k-space trajectory, should be of size ``(len(grid_size), klength)``
+        or ``(N, len(grid_size), klength)``, where ``klength`` is the length of
+        the k-space trajectory.
+
+        Note:
+
+            If the batch dimension is included in ``omega``, the interpolator
+            will parallelize over the batch dimension. This is efficient for
+            many small trajectories that might occur in dynamic imaging
+            settings.
 
         If your tensors are real, ensure that 2 is the size of the last
         dimension.
@@ -426,15 +442,31 @@ class ToepNufft(torch.nn.Module):
         self, image: Tensor, smaps: Tensor, kernel: Tensor, norm: Optional[str]
     ) -> Tensor:
         output = []
-        for (mini_image, smap) in zip(image, smaps):
-            mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
-            mini_image = tkbnF.fft_filter(image=mini_image, kernel=kernel, norm=norm)
-            mini_image = torch.sum(
-                mini_image * smap.unsqueeze(0).conj(),
-                dim=1,
-                keepdim=True,
-            )
-            output.append(mini_image.squeeze(0))
+        if len(kernel.shape) > len(image.shape[2:]):
+            # run with batching for kernel
+            for (mini_image, smap, mini_kernel) in zip(image, smaps, kernel):
+                mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
+                mini_image = tkbnF.fft_filter(
+                    image=mini_image, kernel=mini_kernel, norm=norm
+                )
+                mini_image = torch.sum(
+                    mini_image * smap.unsqueeze(0).conj(),
+                    dim=1,
+                    keepdim=True,
+                )
+                output.append(mini_image.squeeze(0))
+        else:
+            for (mini_image, smap) in zip(image, smaps):
+                mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
+                mini_image = tkbnF.fft_filter(
+                    image=mini_image, kernel=kernel, norm=norm
+                )
+                mini_image = torch.sum(
+                    mini_image * smap.unsqueeze(0).conj(),
+                    dim=1,
+                    keepdim=True,
+                )
+                output.append(mini_image.squeeze(0))
 
         return torch.stack(output)
 
@@ -457,6 +489,9 @@ class ToepNufft(torch.nn.Module):
         Returns:
             ``image`` after applying the Toeplitz forward/backward NUFFT.
         """
+        if not kernel.dtype == image.dtype:
+            raise TypeError("kernel and image must have same dtype.")
+
         if smaps is not None:
             if not smaps.dtype == image.dtype:
                 raise TypeError("image dtype does not match smaps dtype.")
@@ -464,6 +499,8 @@ class ToepNufft(torch.nn.Module):
         is_complex = True
         if not image.is_complex():
             if not image.shape[-1] == 2:
+                raise ValueError("For real inputs, last dimension must be size 2.")
+            if not kernel.shape[-1] == 2:
                 raise ValueError("For real inputs, last dimension must be size 2.")
             if smaps is not None:
                 if not smaps.shape[-1] == 2:
@@ -473,6 +510,16 @@ class ToepNufft(torch.nn.Module):
 
             is_complex = False
             image = torch.view_as_complex(image)
+            kernel = torch.view_as_complex(kernel)
+
+        if len(kernel.shape) > len(image.shape[2:]):
+            if kernel.shape[0] == 1:
+                kernel = kernel[0]
+            elif not kernel.shape[0] == image.shape[0]:
+                raise ValueError(
+                    "If using batch dimension, "
+                    "kernel must have same batch size as image"
+                )
 
         if smaps is None:
             output = tkbnF.fft_filter(image=image, kernel=kernel, norm=norm)

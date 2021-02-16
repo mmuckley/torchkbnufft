@@ -56,6 +56,8 @@ def calc_tensor_spmatrix(
         >>> adjkb_ob = tkbn.KbNufftAdjoint(im_size=(8, 8))
         >>> image = adjkb_ob(data, omega, spmats)
     """
+    if not omega.ndim == 2:
+        raise ValueError("Sparse matrix calculation not implemented for batched omega.")
     (
         im_size,
         grid_size,
