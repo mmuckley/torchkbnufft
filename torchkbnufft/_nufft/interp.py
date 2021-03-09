@@ -444,26 +444,10 @@ def accum_tensor_index_add(image: Tensor, arr_ind: Tensor, data: Tensor) -> Tens
 
 
 @torch.jit.script
-def accum_tensor_index_put(image: Tensor, arr_ind: Tensor, data: Tensor) -> Tensor:
-    """We fork this function for the adjoint accumulation."""
-    if arr_ind.ndim == 2:
-        for (image_batch, arr_ind_batch, data_batch) in zip(image, arr_ind, data):
-            for (image_coil, data_coil) in zip(image_batch, data_batch):
-                image_coil.index_put_((arr_ind_batch,), data_coil, accumulate=True)
-    else:
-        for (image_it, data_it) in zip(image, data):
-            image_it.index_put_((arr_ind,), data_it, accumulate=True)
-
-    return image
-
-
-@torch.jit.script
 def fork_and_accum(
     image: Tensor, arr_ind: Tensor, data: Tensor, num_forks: int
 ) -> Tensor:
     """Process forking and per batch/coil accumulation function."""
-    device = image.device
-
     # divide the work
     split_sizes = calc_split_sizes(image.shape[0], num_forks)
 
@@ -475,46 +459,26 @@ def fork_and_accum(
             arr_ind.split(split_sizes),
             data.split(split_sizes),
         ):
-            if device == torch.device("cpu"):
-                futures.append(
-                    torch.jit.fork(
-                        accum_tensor_index_put,
-                        image_chunk,
-                        arr_ind_chunk,
-                        data_chunk,
-                    )
+            futures.append(
+                torch.jit.fork(
+                    accum_tensor_index_add,
+                    image_chunk,
+                    arr_ind_chunk,
+                    data_chunk,
                 )
-            else:
-                futures.append(
-                    torch.jit.fork(
-                        accum_tensor_index_add,
-                        image_chunk,
-                        arr_ind_chunk,
-                        data_chunk,
-                    )
-                )
+            )
     else:
         for (image_chunk, data_chunk) in zip(
             image.split(split_sizes), data.split(split_sizes)
         ):
-            if device == torch.device("cpu"):
-                futures.append(
-                    torch.jit.fork(
-                        accum_tensor_index_put,
-                        image_chunk,
-                        arr_ind,
-                        data_chunk,
-                    )
+            futures.append(
+                torch.jit.fork(
+                    accum_tensor_index_add,
+                    image_chunk,
+                    arr_ind,
+                    data_chunk,
                 )
-            else:
-                futures.append(
-                    torch.jit.fork(
-                        accum_tensor_index_add,
-                        image_chunk,
-                        arr_ind,
-                        data_chunk,
-                    )
-                )
+            )
 
     # wait for processes to finish
     # results in-place
@@ -750,11 +714,6 @@ def table_interp_adjoint(
         ).conj()
     )
 
-    # necessary for index_add_
-    # TODO: change when PyTorch supports complex numbers for index_add_, index_put_
-    if not device == torch.device("cpu"):
-        image = torch.view_as_real(image)
-
     # loop over offsets and take advantage of broadcasting
     for offset in offsets:
         if USING_OMP and device == torch.device("cpu") and tm.ndim == 3:
@@ -778,37 +737,22 @@ def table_interp_adjoint(
             coef = coef.unsqueeze(1)
             assert coef.ndim == data.ndim
 
-        tmp = coef * data
-
-        if not device == torch.device("cpu"):
-            tmp = torch.view_as_real(tmp)
-
         if USING_OMP and device == torch.device("cpu"):
             torch.set_num_threads(threads_per_fork)
         # this is a much faster way of doing index accumulation
         if arr_ind.ndim == 1:
             # fork over coils and batches
-            if device == torch.device("cpu"):
-                image = fork_and_accum(
-                    image.view(data.shape[0] * data.shape[1], output_prod),
-                    arr_ind,
-                    tmp.view(data.shape[0] * data.shape[1], -1),
-                    num_forks,
-                ).view(data.shape[0], data.shape[1], output_prod)
-            else:
-                image = fork_and_accum(
-                    image.view(data.shape[0] * data.shape[1], output_prod, 2),
-                    arr_ind,
-                    tmp.view(data.shape[0] * data.shape[1], -1, 2),
-                    num_forks,
-                ).view(data.shape[0], data.shape[1], output_prod, 2)
+            image = fork_and_accum(
+                image.view(data.shape[0] * data.shape[1], output_prod),
+                arr_ind,
+                (coef * data).view(data.shape[0] * data.shape[1], -1),
+                num_forks,
+            ).view(data.shape[0], data.shape[1], output_prod)
         else:
             # fork just over batches
-            image = fork_and_accum(image, arr_ind, tmp, num_forks)
+            image = fork_and_accum(image, arr_ind, coef * data, num_forks)
+
         if USING_OMP and device == torch.device("cpu"):
             torch.set_num_threads(num_threads)
-
-    if not device == torch.device("cpu"):
-        image = torch.view_as_complex(image)
 
     return image.view(output_size)
