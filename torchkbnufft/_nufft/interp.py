@@ -86,27 +86,6 @@ def spmat_interp_adjoint(
 
 
 @torch.jit.script
-def calc_split_sizes(
-    length: int,
-    num_splits: int,
-) -> List[int]:
-    """Same as np.array_split for PyTorch."""
-    # TODO: replace all calls of this function with split_tensor in PyTorch 1.8
-    size1 = length // num_splits + 1
-    num_size1 = length % num_splits
-    size2 = length // num_splits
-
-    split_sizes: List[int] = []
-    for i in range(num_splits):
-        if i < num_size1:
-            split_sizes.append(size1)
-        else:
-            split_sizes.append(size2)
-
-    return split_sizes
-
-
-@torch.jit.script
 def calc_coef_and_indices(
     tm: Tensor,
     base_offset: Tensor,
@@ -264,14 +243,10 @@ def table_interp_fork_over_batchdim(
     num_forks: int,
 ) -> Tensor:
     """Table interpolation with forking over k-space."""
-
-    # indexing is worst when we have repeated indices - let's spread them out
-    split_sizes = calc_split_sizes(omega.shape[0], num_forks)
-
     # initialize the fork processes
     futures: List[torch.jit.Future[torch.Tensor]] = []
     for (image_chunk, omega_chunk) in zip(
-        image.split(split_sizes), omega.split(split_sizes)
+        image.tensor_split(num_forks), omega.tensor_split(num_forks)
     ):
         futures.append(
             torch.jit.fork(
@@ -448,16 +423,13 @@ def fork_and_accum(
     image: Tensor, arr_ind: Tensor, data: Tensor, num_forks: int
 ) -> Tensor:
     """Process forking and per batch/coil accumulation function."""
-    # divide the work
-    split_sizes = calc_split_sizes(image.shape[0], num_forks)
-
     # initialize the fork processes
     futures: List[torch.jit.Future[torch.Tensor]] = []
     if arr_ind.ndim == 2:
         for (image_chunk, arr_ind_chunk, data_chunk) in zip(
-            image.split(split_sizes),
-            arr_ind.split(split_sizes),
-            data.split(split_sizes),
+            image.tensor_split(num_forks),
+            arr_ind.tensor_split(num_forks),
+            data.tensor_split(num_forks),
         ):
             futures.append(
                 torch.jit.fork(
@@ -469,7 +441,7 @@ def fork_and_accum(
             )
     else:
         for (image_chunk, data_chunk) in zip(
-            image.split(split_sizes), data.split(split_sizes)
+            image.tensor_split(num_forks), data.tensor_split(num_forks)
         ):
             futures.append(
                 torch.jit.fork(
@@ -548,14 +520,11 @@ def calc_coef_and_indices_fork_over_batches(
             conjcoef=conjcoef,
         )
     else:
-        # divide the work
-        split_sizes = calc_split_sizes(tm.shape[0], num_forks)
-
         # initialize the fork processes
         futures: List[torch.jit.Future[Tuple[Tensor, Tensor]]] = []
         for (tm_chunk, base_offset_chunk) in zip(
-            tm.split(split_sizes),
-            base_offset.split(split_sizes),
+            tm.tensor_split(num_forks),
+            base_offset.tensor_split(num_forks),
         ):
             futures.append(
                 torch.jit.fork(
@@ -714,7 +683,7 @@ def table_interp_adjoint(
         ).conj()
     )
 
-    # loop over offsets and take advantage of broadcasting
+    # loop over offsets
     for offset in offsets:
         if USING_OMP and device == torch.device("cpu") and tm.ndim == 3:
             torch.set_num_threads(threads_per_fork)
