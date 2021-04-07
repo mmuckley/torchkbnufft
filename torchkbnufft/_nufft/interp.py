@@ -404,9 +404,11 @@ def table_interp(
 
 
 @torch.jit.script
-def accum_tensor_index_add(image: Tensor, arr_ind: Tensor, data: Tensor) -> Tensor:
+def accum_tensor_index_add(
+    image: Tensor, arr_ind: Tensor, data: Tensor, batched_nufft: bool
+) -> Tensor:
     """We fork this function for the adjoint accumulation."""
-    if arr_ind.ndim == 2:
+    if batched_nufft:
         for (image_batch, arr_ind_batch, data_batch) in zip(image, arr_ind, data):
             for (image_coil, data_coil) in zip(image_batch, data_batch):
                 image_coil.index_add_(0, arr_ind_batch, data_coil)
@@ -419,12 +421,12 @@ def accum_tensor_index_add(image: Tensor, arr_ind: Tensor, data: Tensor) -> Tens
 
 @torch.jit.script
 def fork_and_accum(
-    image: Tensor, arr_ind: Tensor, data: Tensor, num_forks: int
+    image: Tensor, arr_ind: Tensor, data: Tensor, num_forks: int, batched_nufft: bool
 ) -> Tensor:
     """Process forking and per batch/coil accumulation function."""
     # initialize the fork processes
     futures: List[torch.jit.Future[torch.Tensor]] = []
-    if arr_ind.ndim == 2:
+    if batched_nufft:
         for (image_chunk, arr_ind_chunk, data_chunk) in zip(
             image.tensor_split(num_forks),
             arr_ind.tensor_split(num_forks),
@@ -436,6 +438,7 @@ def fork_and_accum(
                     image_chunk,
                     arr_ind_chunk,
                     data_chunk,
+                    batched_nufft,
                 )
             )
     else:
@@ -448,6 +451,7 @@ def fork_and_accum(
                     image_chunk,
                     arr_ind,
                     data_chunk,
+                    batched_nufft,
                 )
             )
 
@@ -474,14 +478,14 @@ def calc_coef_and_indices_batch(
     arr_ind = []
     for (tm_it, base_offset_it) in zip(tm, base_offset):
         coef_it, arr_ind_it = calc_coef_and_indices(
-            tm=tm_it,
-            base_offset=base_offset_it,
-            offset_increments=offset_increments,
-            tables=tables,
-            centers=centers,
-            table_oversamp=table_oversamp,
-            grid_size=grid_size,
-            conjcoef=conjcoef,
+            tm_it,
+            base_offset_it,
+            offset_increments,
+            tables,
+            centers,
+            table_oversamp,
+            grid_size,
+            conjcoef,
         )
 
         coef.append(coef_it)
@@ -501,24 +505,10 @@ def calc_coef_and_indices_fork_over_batches(
     grid_size: Tensor,
     conjcoef: bool,
     num_forks: int,
+    batched_nufft: bool,
 ) -> Tuple[Tensor, Tensor]:
     """Split work across batchdim, fork processes."""
-    if tm.ndim == 3:
-        if tm.shape[0] == 1:
-            tm = tm[0]
-
-    if tm.ndim == 2:
-        coef, arr_ind = calc_coef_and_indices(
-            tm=tm,
-            base_offset=base_offset,
-            offset_increments=offset_increments,
-            tables=tables,
-            centers=centers,
-            table_oversamp=table_oversamp,
-            grid_size=grid_size,
-            conjcoef=conjcoef,
-        )
-    else:
+    if batched_nufft:
         # initialize the fork processes
         futures: List[torch.jit.Future[Tuple[Tensor, Tensor]]] = []
         for (tm_chunk, base_offset_chunk) in zip(
@@ -543,6 +533,17 @@ def calc_coef_and_indices_fork_over_batches(
         results = [torch.jit.wait(future) for future in futures]
         coef = torch.cat([result[0] for result in results])
         arr_ind = torch.cat([result[1] for result in results])
+    else:
+        coef, arr_ind = calc_coef_and_indices(
+            tm,
+            base_offset,
+            offset_increments,
+            tables,
+            centers,
+            table_oversamp,
+            grid_size,
+            conjcoef,
+        )
 
     return coef, arr_ind
 
@@ -563,10 +564,10 @@ def sort_one_batch(
 
 @torch.jit.script
 def sort_data(
-    tm: Tensor, omega: Tensor, data: Tensor, grid_size: Tensor
+    tm: Tensor, omega: Tensor, data: Tensor, grid_size: Tensor, batched_nufft: bool
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """Sort input tensors by ordered values of tm."""
-    if omega.ndim == 3:
+    if batched_nufft:
         # loop over batch dimension to get sorted k-space
         results: List[Tuple[Tensor, Tensor, Tensor]] = []
         for (tm_it, omega_it, data_it) in zip(tm, omega, data):
@@ -612,6 +613,12 @@ def table_interp_adjoint(
     Returns:
         ``data`` interpolated to gridded locations.
     """
+    dtype = data.dtype
+    device = data.device
+    int_type = torch.long
+    cpu_device = device == torch.device("cpu")
+    batched_nufft = False
+
     if omega.ndim not in (2, 3):
         raise ValueError("omega must have 2 or 3 dimensions.")
 
@@ -620,14 +627,11 @@ def table_interp_adjoint(
             omega = omega[0]  # broadcast a single traj
 
     if omega.ndim == 3:
+        batched_nufft = True
         if not omega.shape[0] == data.shape[0]:
             raise ValueError(
                 "If omega has batch dim, omega batch dimension must match data."
             )
-
-    dtype = data.dtype
-    device = data.device
-    int_type = torch.long
 
     # we fork processes for accumulation, so we need to do a bit of thread
     # management for OMP to make sure we don't oversubscribe (managment not
@@ -637,7 +641,7 @@ def table_interp_adjoint(
     factors = factors[torch.remainder(torch.tensor(num_threads), factors) == 0]
     threads_per_fork = num_threads  # default fallback
 
-    if omega.ndim == 3:
+    if batched_nufft:
         # increase number of forks as long as it's not greater than batch size
         for factor in factors.flip(0):
             if num_threads // factor <= omega.shape[0]:
@@ -658,7 +662,7 @@ def table_interp_adjoint(
 
     # convert to normalized freq locs and sort
     tm = omega / (2 * np.pi / grid_size.to(omega).unsqueeze(-1))
-    tm, omega, data = sort_data(tm, omega, data, grid_size)
+    tm, omega, data = sort_data(tm, omega, data, grid_size, batched_nufft)
 
     # compute interpolation centers
     centers = torch.floor(numpoints * table_oversamp / 2).to(dtype=int_type)
@@ -684,20 +688,21 @@ def table_interp_adjoint(
 
     # loop over offsets
     for offset in offsets:
-        if USING_OMP and device == torch.device("cpu") and tm.ndim == 3:
+        if USING_OMP and cpu_device and batched_nufft:
             torch.set_num_threads(threads_per_fork)
         coef, arr_ind = calc_coef_and_indices_fork_over_batches(
-            tm=tm,
-            base_offset=base_offset,
-            offset_increments=offset,
-            tables=tables,
-            centers=centers,
-            table_oversamp=table_oversamp,
-            grid_size=grid_size,
-            conjcoef=True,
-            num_forks=num_forks,
+            tm,
+            base_offset,
+            offset,
+            tables,
+            centers,
+            table_oversamp,
+            grid_size,
+            True,
+            num_forks,
+            batched_nufft,
         )
-        if USING_OMP and device == torch.device("cpu") and tm.ndim == 3:
+        if USING_OMP and cpu_device and batched_nufft:
             torch.set_num_threads(num_threads)
 
         # multiply coefs to data
@@ -705,22 +710,26 @@ def table_interp_adjoint(
             coef = coef.unsqueeze(1)
             assert coef.ndim == data.ndim
 
-        if USING_OMP and device == torch.device("cpu"):
+        if USING_OMP and cpu_device:
             torch.set_num_threads(threads_per_fork)
+
         # this is a much faster way of doing index accumulation
-        if arr_ind.ndim == 1:
+        if batched_nufft:
+            # fork just over batches
+            image = fork_and_accum(
+                image, arr_ind, coef * data, num_forks, batched_nufft
+            )
+        else:
             # fork over coils and batches
             image = fork_and_accum(
                 image.view(data.shape[0] * data.shape[1], output_prod),
                 arr_ind,
                 (coef * data).view(data.shape[0] * data.shape[1], -1),
                 num_forks,
+                batched_nufft,
             ).view(data.shape[0], data.shape[1], output_prod)
-        else:
-            # fork just over batches
-            image = fork_and_accum(image, arr_ind, coef * data, num_forks)
 
-        if USING_OMP and device == torch.device("cpu"):
+        if USING_OMP and cpu_device:
             torch.set_num_threads(num_threads)
 
     return image.view(output_size)
