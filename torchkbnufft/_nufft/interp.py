@@ -277,7 +277,6 @@ def table_interp_fork_over_kspace(
     num_forks: int,
 ) -> Tensor:
     """Table interpolation backend (see table_interp())."""
-
     # indexing is worst when we have repeated indices - let's spread them out
     klength = omega.shape[1]
     omega_chunks = [omega[:, ind:klength:num_forks] for ind in range(num_forks)]
