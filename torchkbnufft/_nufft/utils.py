@@ -92,7 +92,7 @@ def build_numpy_spmatrix(
     kk = kd[0]
     spmat_coef = full_coef[0]
     for i in range(1, ndims):
-        Jprod = np.prod(numpoints[: i + 1])
+        Jprod = int(np.prod(numpoints[: i + 1]))
         # block outer sum
         kk = np.reshape(
             np.expand_dims(kk, 1) + np.expand_dims(kd[i], 2), (klength, Jprod)
@@ -109,7 +109,7 @@ def build_numpy_spmatrix(
 
     # get coordinates in sparse matrix
     trajind = np.expand_dims(np.arange(klength), 1)
-    trajind = np.repeat(trajind, np.prod(numpoints), axis=1)
+    trajind = np.repeat(trajind, int(np.prod(numpoints)), axis=1)
 
     # build the sparse matrix
     spmat = coo_matrix(

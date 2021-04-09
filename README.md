@@ -217,7 +217,7 @@ the following is a partial list of other projects:
 
 2. Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). [Rapid gridding reconstruction with a minimal oversampling ratio](https://doi.org/10.1109/TMI.2005.848376). *IEEE Transactions on Medical Imaging*, 24(6), 799-808.
 
-3. Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). [Efficient numerical methods in non-uniform sampling theory](https://doi.org/10.1007/s002110050101). Numerische Mathematik, 69(4), 423-440.
+3. Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). [Efficient numerical methods in non-uniform sampling theory](https://doi.org/10.1007/s002110050101). *Numerische Mathematik*, 69(4), 423-440.
 
 ## Citation
 
@@ -226,7 +226,7 @@ If you use the package, please cite:
 ```bibtex
 @conference{muckley:20:tah,
   author = {M. J. Muckley and R. Stern and T. Murrell and F. Knoll},
-  title = {{TorchKbNufft}: A High-Level, Hardware-Agnostic Non-Uniform Fast Fourier Transform},
+  title = {{TorchKbNufft}: A High-Level, Hardware-Agnostic Non-Uniform Fast {Fourier} Transform},
   booktitle = {ISMRM Workshop on Data Sampling \& Image Reconstruction},
   year = 2020
 }
