@@ -616,7 +616,7 @@ def table_interp_adjoint(
     dtype = data.dtype
     device = data.device
     int_type = torch.long
-    cpu_device = device == torch.device("cpu")
+    # cpu_device = device == torch.device("cpu")
     batched_nufft = False
 
     if omega.ndim not in (2, 3):
@@ -688,8 +688,9 @@ def table_interp_adjoint(
 
     # loop over offsets
     for offset in offsets:
-        if USING_OMP and cpu_device and batched_nufft:
-            torch.set_num_threads(threads_per_fork)
+        # TODO: Figure out if we are still doing thread management properly here
+        # if USING_OMP and cpu_device and batched_nufft:
+        #     torch.set_num_threads(threads_per_fork)
         coef, arr_ind = calc_coef_and_indices_fork_over_batches(
             tm,
             base_offset,
@@ -702,16 +703,16 @@ def table_interp_adjoint(
             num_forks,
             batched_nufft,
         )
-        if USING_OMP and cpu_device and batched_nufft:
-            torch.set_num_threads(num_threads)
+        # if USING_OMP and cpu_device and batched_nufft:
+        #     torch.set_num_threads(num_threads)
 
         # multiply coefs to data
         if coef.ndim == 2:
             coef = coef.unsqueeze(1)
             assert coef.ndim == data.ndim
 
-        if USING_OMP and cpu_device:
-            torch.set_num_threads(threads_per_fork)
+        # if USING_OMP and cpu_device:
+        #     torch.set_num_threads(threads_per_fork)
 
         # this is a much faster way of doing index accumulation
         if batched_nufft:
@@ -721,15 +722,16 @@ def table_interp_adjoint(
             )
         else:
             # fork over coils and batches
+            image = image.view(data.shape[0] * data.shape[1], output_prod)
             image = fork_and_accum(
-                image.view(data.shape[0] * data.shape[1], output_prod),
+                image,
                 arr_ind,
                 (coef * data).view(data.shape[0] * data.shape[1], -1),
                 num_forks,
                 batched_nufft,
             ).view(data.shape[0], data.shape[1], output_prod)
 
-        if USING_OMP and cpu_device:
-            torch.set_num_threads(num_threads)
+        # if USING_OMP and cpu_device:
+        #     torch.set_num_threads(num_threads)
 
     return image.view(output_size)
