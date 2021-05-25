@@ -65,7 +65,6 @@ References
 
 .. toctree::
    :hidden:
-   :maxdepth: 1
    :caption: User Guide
 
    basic
@@ -73,8 +72,6 @@ References
 
 .. toctree::
    :hidden:
-   :maxdepth: 1
-   :titlesonly:
    :caption: API
 
    torchkbnufft
@@ -82,7 +79,6 @@ References
 
 .. toctree::
    :hidden:
-   :maxdepth: 1
    :caption: Core Modules
 
    generated/torchkbnufft.KbInterp
@@ -93,7 +89,6 @@ References
 
 .. toctree::
    :hidden:
-   :maxdepth: 1
    :caption: Utility Functions
 
    generated/torchkbnufft.calc_density_compensation_function
