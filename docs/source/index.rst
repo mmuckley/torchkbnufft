@@ -61,7 +61,7 @@ References
 
 2. Beatty, P. J., Nishimura, D. G., & Pauly, J. M. (2005). `Rapid gridding reconstruction with a minimal oversampling ratio <https://doi.org/10.1109/TMI.2005.848376>`_. *IEEE Transactions on Medical Imaging*, 24(6), 799-808.
 
-3. Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). `Efficient numerical methods in non-uniform sampling theory <https://doi.org/10.1007/s002110050101>`_. Numerische Mathematik, 69(4), 423-440.
+3. Feichtinger, H. G., Gr, K., & Strohmer, T. (1995). `Efficient numerical methods in non-uniform sampling theory <https://doi.org/10.1007/s002110050101>`_. *Numerische Mathematik*, 69(4), 423-440.
 
 .. toctree::
    :hidden:
