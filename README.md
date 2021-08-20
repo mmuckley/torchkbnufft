@@ -228,6 +228,7 @@ If you use the package, please cite:
   author = {M. J. Muckley and R. Stern and T. Murrell and F. Knoll},
   title = {{TorchKbNufft}: A High-Level, Hardware-Agnostic Non-Uniform Fast {Fourier} Transform},
   booktitle = {ISMRM Workshop on Data Sampling \& Image Reconstruction},
-  year = 2020
+  year = 2020,
+  note = {Source code available at https://github.com/mmuckley/torchkbnufft}.
 }
 ```
