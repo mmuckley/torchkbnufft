@@ -229,6 +229,6 @@ If you use the package, please cite:
   title = {{TorchKbNufft}: A High-Level, Hardware-Agnostic Non-Uniform Fast {Fourier} Transform},
   booktitle = {ISMRM Workshop on Data Sampling \& Image Reconstruction},
   year = 2020,
-  url = {https://github.com/mmuckley/torchkbnufft}
+  note = {Source code available at https://github.com/mmuckley/torchkbnufft}.
 }
 ```
