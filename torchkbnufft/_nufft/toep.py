@@ -184,20 +184,6 @@ def calc_one_batch_toeplitz_kernel(
     # make sure kernel is Hermitian symmetric
     kernel = hermitify(kernel, 2)
 
-    # crop kernel to target shape
-    for i in range(1, omega.shape[0] + 1):
-        start = torch.max(
-            (kernel.shape[-i] - adj_ob.grid_size[-i]) // 2,
-            torch.tensor(
-                0, dtype=adj_ob.grid_size.dtype, device=adj_ob.grid_size.device
-            ),
-        )
-        length = adj_ob.grid_size[-i]
-        if start + length < kernel.shape[-i]:
-            kernel = torch.narrow(kernel, kernel.ndim - i, start, length)
-        elif length > kernel.shape[-i]:
-            kernel = pad_dim(kernel, kernel.ndim - i, (0, length))
-
     # put the kernel in fft space
     return fft_fn(kernel, omega.shape[0], normalized=normalized)[0, 0]
 
