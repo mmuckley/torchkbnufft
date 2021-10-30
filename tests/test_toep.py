@@ -42,7 +42,10 @@ def test_toeplitz_nufft_accuracy(shape, grid_size, kdata_shape, is_complex, norm
         kernel = torch.view_as_real(kernel)
 
     fbn = adj_ob(
-        forw_ob(image, ktraj, smaps=smaps, norm=norm), ktraj, smaps=smaps, norm=norm,
+        forw_ob(image, ktraj, smaps=smaps, norm=norm),
+        ktraj,
+        smaps=smaps,
+        norm=norm,
     )
     fbt = toep_ob(image, kernel, smaps=smaps, norm=norm)
 
