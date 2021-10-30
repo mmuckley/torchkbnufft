@@ -1,7 +1,6 @@
 from typing import Optional, Sequence, Union
 
 import torch
-import torch.nn.functional as F
 import torchkbnufft as tkbn
 from torch import Tensor
 
