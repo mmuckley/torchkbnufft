@@ -7,27 +7,25 @@ from .conftest import create_input_plus_noise, create_ktraj
 
 
 @pytest.mark.parametrize(
-    "shape, oversamp, kdata_shape, is_complex, norm",
+    "shape, grid_size, kdata_shape, is_complex, norm",
     [
-        ([1, 3, 19], 3, [1, 3, 25], True, "ortho"),
-        ([3, 5, 13, 2], 1.5, [3, 5, 18, 2], False, "ortho"),
-        ([1, 4, 32, 16], 2, [1, 4, 83], True, "ortho"),
-        ([5, 8, 15, 12, 2], 1, [5, 8, 83, 2], False, "ortho"),
-        ([3, 10, 13, 18, 12], 2, [3, 10, 112], True, "ortho"),
-        ([1, 12, 17, 19, 12, 2], 1.5, [1, 12, 112, 2], False, "ortho"),
+        ([1, 3, 19], [57], [1, 3, 25], True, "ortho"),
+        ([3, 5, 13, 2], [19], [3, 5, 18, 2], False, None),
+        ([1, 4, 32, 16], [64, 24], [1, 4, 83], True, None),
+        ([5, 8, 15, 12, 2], [30, 24], [5, 8, 83, 2], False, "ortho"),
+        ([3, 10, 13, 18, 12], [20, 26, 37], [3, 10, 112], True, None),
+        ([1, 12, 17, 19, 12, 2], [25, 28, 24], [1, 12, 112, 2], False, "ortho"),
     ],
 )
-def test_toeplitz_nufft_accuracy(shape, oversamp, kdata_shape, is_complex, norm):
-    norm_diff_tol = 1e-4  # toeplitz is only approximate
+def test_toeplitz_nufft_accuracy(shape, grid_size, kdata_shape, is_complex, norm):
+    norm_diff_tol = 1e-2  # toeplitz is only approximate
     default_dtype = torch.get_default_dtype()
     torch.set_default_dtype(torch.double)
     torch.manual_seed(123)
     if is_complex:
         im_size = shape[2:]
-        grid_size = [int(s * oversamp) for s in im_size]
     else:
         im_size = shape[2:-1]
-        grid_size = [int(s * oversamp) for s in im_size]
     im_shape = [s for s in shape]
     im_shape[1] = 1
 
