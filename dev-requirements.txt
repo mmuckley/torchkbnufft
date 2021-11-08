@@ -1,5 +1,5 @@
 -r requirements.txt
-black==21.0b0
+black==21.10b0
 pytest==6.2.5
 flake8==4.0.1
 mypy==0.910
