@@ -15,7 +15,6 @@ def calc_toeplitz_kernel(
     norm: Optional[str] = None,
     grid_size: Optional[Sequence[int]] = None,
     numpoints: Union[int, Sequence[int]] = 6,
-    n_shift: Optional[Sequence[int]] = None,
     table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
@@ -92,7 +91,6 @@ def calc_toeplitz_kernel(
             norm=norm,
             grid_size=grid_size,
             numpoints=numpoints,
-            n_shift=n_shift,
             table_oversamp=table_oversamp,
             kbwidth=kbwidth,
             order=order,
@@ -112,7 +110,6 @@ def calc_toeplitz_kernel(
                     norm=norm,
                     grid_size=grid_size,
                     numpoints=numpoints,
-                    n_shift=n_shift,
                     table_oversamp=table_oversamp,
                     kbwidth=kbwidth,
                     order=order,
@@ -130,7 +127,6 @@ def calc_one_batch_toeplitz_kernel(
     norm: Optional[str] = None,
     grid_size: Optional[Sequence[int]] = None,
     numpoints: Union[int, Sequence[int]] = 6,
-    n_shift: Optional[Sequence[int]] = None,
     table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
@@ -172,8 +168,17 @@ def calc_one_batch_toeplitz_kernel(
     # make sure kernel is Hermitian symmetric
     kernel = hermitify(kernel, 2)
 
+    # for cases where grid_size does not equal 2, we can have some weird scaling effects
+    # here we invert the scaling term from the final fft to match the nufft op
+    if normalized:
+        scale_factor = torch.sqrt(
+            torch.prod(2 * adj_ob.im_size) / torch.prod(adj_ob.grid_size)  # type: ignore
+        )
+    else:
+        scale_factor = 1 / torch.prod(2 * adj_ob.im_size)  # type: ignore
+
     # put the kernel in fft space
-    return fft_fn(kernel, omega.shape[0], normalized=normalized)[0, 0]
+    return fft_fn(kernel, omega.shape[0], normalized=normalized)[0, 0] * scale_factor
 
 
 def adjoint_flip_and_concat(
