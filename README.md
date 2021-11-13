@@ -67,6 +67,8 @@ Colab links to Jupyter notebooks:
 
 ### Simple Forward NUFFT
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb)
+
 The following code loads a Shepp-Logan phantom and computes a single radial
 spoke of k-space data:
 
@@ -100,6 +102,8 @@ A detailed example of basic NUFFT usage is
 
 ### SENSE-NUFFT
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb)
+
 The package also includes utilities for working with SENSE-NUFFT operators. The
 above code can be modified to include sensitivity maps.
 
@@ -117,6 +121,8 @@ A detailed example of SENSE-NUFFT usage is
 [here](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb).
 
 ### Sparse Matrix Precomputation
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb)
 
 Sparse matrices are an alternative to table interpolation. Their speed can
 vary, but they are a bit more accurate than standard table mode. The following
@@ -141,6 +147,8 @@ which can limit their speed. A detailed example of sparse matrix precomputation
 usage is [here](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb).
 
 ### Toeplitz Embedding
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Toeplitz%20Example.ipynb)
 
 The package includes routines for calculating embedded Toeplitz kernels and
 using them as FFT filters for the forward/backward NUFFT operations
