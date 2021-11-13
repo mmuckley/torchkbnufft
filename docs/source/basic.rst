@@ -102,6 +102,10 @@ underlying ``dtype`` and ``device`` of all objects are not matching. Be
 sure to make sure your data and NUFFT objects are on the right device and in
 the right format to avoid these errors.
 
-For more details, please examine the API in :doc:`torchkbnufft` or the `notebooks
-<https://github.com/mmuckley/torchkbnufft/tree/master/notebooks>`_
-in the GitHub repository.
+For more details, please examine the API in :doc:`torchkbnufft` or check out
+the notebooks below on Google Colab.
+
+- `Basic Example <https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb>`_
+- `SENSE-NUFFT Example <https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb>`_
+- `Sparse Matrix Example <https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb>`_
+- `Toeplitz Example <https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Toeplitz%20Example.ipynb>`_

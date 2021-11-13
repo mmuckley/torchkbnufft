@@ -1,9 +1,9 @@
 # torchkbnufft
 
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![CI Badge](https://github.com/mmuckley/torchkbnufft/workflows/Build%20and%20test/badge.svg?branch=master) [![Documentation Status](https://readthedocs.org/projects/torchkbnufft/badge/?version=stable)](https://torchkbnufft.readthedocs.io/en/stable/?badge=latest)
+![CI Badge](https://github.com/mmuckley/torchkbnufft/workflows/Build%20and%20test/badge.svg?branch=master) [![Documentation Status](https://readthedocs.org/projects/torchkbnufft/badge/?version=stable)](https://torchkbnufft.readthedocs.io/en/stable/?badge=latest) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb)
 
-[Documentation](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](notebooks)
+[Documentation](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](#examples)
 
 Simple installation from PyPI:
 
@@ -58,12 +58,12 @@ help(KbNufft)
 
 ## Examples
 
-Jupyter notebook examples are in the ```notebooks/``` folder.
+Colab links to Jupyter notebooks:
 
-- [Basic Example](notebooks/SENSE%20Example.ipynb)
-- [SENSE-NUFFT Example](notebooks/SENSE%20Example.ipynb)
-- [Sparse Matrix Example](notebooks/Sparse%20Matrix%20Example.ipynb)
-- [Toeplitz Example](notebooks/Toeplitz%20Example.ipynb)
+- [Basic Example](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb)
+- [SENSE-NUFFT Example](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb)
+- [Sparse Matrix Example](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb)
+- [Toeplitz Example](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Toeplitz%20Example.ipynb)
 
 ### Simple Forward NUFFT
 
@@ -96,7 +96,7 @@ kdata = nufft_ob(x, ktraj)
 ```
 
 A detailed example of basic NUFFT usage is
-[here](notebooks/Basic%20Example.ipynb).
+[here](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb).
 
 ### SENSE-NUFFT
 
@@ -114,7 +114,7 @@ across coils, which minimizes interaction with the Python interpreter, helping
 computation speed.
 
 A detailed example of SENSE-NUFFT usage is
-[here](notebooks/SENSE%20Example.ipynb).
+[here](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb).
 
 ### Sparse Matrix Precomputation
 
@@ -138,7 +138,7 @@ image = adjnufft_ob(kdata, ktraj, interp_mats)
 
 Sparse matrix multiplication is only implemented for real numbers in PyTorch,
 which can limit their speed. A detailed example of sparse matrix precomputation
-usage is [here](notebooks/Sparse%20Matrix%20Example.ipynb).
+usage is [here](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb).
 
 ### Toeplitz Embedding
 
@@ -159,7 +159,7 @@ image = toep_ob(image, kernel)
 ```
 
 A detailed example of Toeplitz embedding usage is included
-[here](notebooks/Toeplitz%20Example.ipynb).
+[here](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Toeplitz%20Example.ipynb).
 
 ### Running on the GPU
 
