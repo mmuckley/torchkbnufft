@@ -1,7 +1,7 @@
 # torchkbnufft
 
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![CI Badge](https://github.com/mmuckley/torchkbnufft/workflows/Build%20and%20test/badge.svg?branch=master) [![Documentation Status](https://readthedocs.org/projects/torchkbnufft/badge/?version=stable)](https://torchkbnufft.readthedocs.io/en/stable/?badge=latest) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb)
+![CI Badge](https://github.com/mmuckley/torchkbnufft/workflows/Build%20and%20test/badge.svg?branch=master) [![Documentation Status](https://readthedocs.org/projects/torchkbnufft/badge/?version=stable)](https://torchkbnufft.readthedocs.io/en/stable/?badge=latest) [![Basic Example On Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb)
 
 [Documentation](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](#examples)
 
