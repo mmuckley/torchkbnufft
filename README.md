@@ -3,7 +3,7 @@
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![CI Badge](https://github.com/mmuckley/torchkbnufft/workflows/Build%20and%20test/badge.svg?branch=master) [![Documentation Status](https://readthedocs.org/projects/torchkbnufft/badge/?version=stable)](https://torchkbnufft.readthedocs.io/en/stable/?badge=latest)
 
-[Documentation](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](notebooks)
+[Documentation](https://torchkbnufft.readthedocs.io) | [GitHub](https://github.com/mmuckley/torchkbnufft) | [Notebook Examples](#examples)
 
 Simple installation from PyPI:
 
