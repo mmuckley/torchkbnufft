@@ -475,7 +475,7 @@ class ToepNufft(torch.nn.Module):
         image: Tensor,
         kernel: Tensor,
         smaps: Optional[Tensor] = None,
-        norm: Optional[str] = "ortho",
+        norm: Optional[str] = None,
     ) -> Tensor:
         """Toeplitz NUFFT forward function.
 
