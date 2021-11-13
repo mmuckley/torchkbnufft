@@ -450,7 +450,9 @@ class ToepNufft(torch.nn.Module):
                     image=mini_image, kernel=mini_kernel, norm=norm
                 )
                 mini_image = torch.sum(
-                    mini_image * smap.unsqueeze(0).conj(), dim=1, keepdim=True,
+                    mini_image * smap.unsqueeze(0).conj(),
+                    dim=1,
+                    keepdim=True,
                 )
                 output.append(mini_image.squeeze(0))
         else:
@@ -460,7 +462,9 @@ class ToepNufft(torch.nn.Module):
                     image=mini_image, kernel=kernel, norm=norm
                 )
                 mini_image = torch.sum(
-                    mini_image * smap.unsqueeze(0).conj(), dim=1, keepdim=True,
+                    mini_image * smap.unsqueeze(0).conj(),
+                    dim=1,
+                    keepdim=True,
                 )
                 output.append(mini_image.squeeze(0))
 
