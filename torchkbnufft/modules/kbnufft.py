@@ -450,9 +450,7 @@ class ToepNufft(torch.nn.Module):
                     image=mini_image, kernel=mini_kernel, norm=norm
                 )
                 mini_image = torch.sum(
-                    mini_image * smap.unsqueeze(0).conj(),
-                    dim=1,
-                    keepdim=True,
+                    mini_image * smap.unsqueeze(0).conj(), dim=1, keepdim=True,
                 )
                 output.append(mini_image.squeeze(0))
         else:
@@ -462,9 +460,7 @@ class ToepNufft(torch.nn.Module):
                     image=mini_image, kernel=kernel, norm=norm
                 )
                 mini_image = torch.sum(
-                    mini_image * smap.unsqueeze(0).conj(),
-                    dim=1,
-                    keepdim=True,
+                    mini_image * smap.unsqueeze(0).conj(), dim=1, keepdim=True,
                 )
                 output.append(mini_image.squeeze(0))
 
@@ -475,7 +471,7 @@ class ToepNufft(torch.nn.Module):
         image: Tensor,
         kernel: Tensor,
         smaps: Optional[Tensor] = None,
-        norm: Optional[str] = "ortho",
+        norm: Optional[str] = None,
     ) -> Tensor:
         """Toeplitz NUFFT forward function.
 
