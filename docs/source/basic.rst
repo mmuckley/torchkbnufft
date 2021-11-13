@@ -105,7 +105,7 @@ the right format to avoid these errors.
 For more details, please examine the API in :doc:`torchkbnufft` or check out
 the notebooks below on Google Colab.
 
-- `Basic Example<https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb>`_
-- `SENSE-NUFFT Example<https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb>`_
-- `Sparse Matrix Example<https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb>`_
-- `Toeplitz Example<https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Toeplitz%20Example.ipynb>`_
+- `Basic Example <https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb>`_
+- `SENSE-NUFFT Example <https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb>`_
+- `Sparse Matrix Example <https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb>`_
+- `Toeplitz Example <https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Toeplitz%20Example.ipynb>`_
