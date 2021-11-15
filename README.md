@@ -67,7 +67,7 @@ Colab links to Jupyter notebooks:
 
 ### Simple Forward NUFFT
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb)
+[Basic NUFFT Example in Colab](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb)
 
 The following code loads a Shepp-Logan phantom and computes a single radial
 spoke of k-space data:
@@ -97,12 +97,9 @@ nufft_ob = tkbn.KbNufft(im_size=im_size)
 kdata = nufft_ob(x, ktraj)
 ```
 
-A detailed example of basic NUFFT usage is
-[here](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb).
-
 ### SENSE-NUFFT
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb)
+[SENSE-NUFFT Example in Colab](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb)
 
 The package also includes utilities for working with SENSE-NUFFT operators. The
 above code can be modified to include sensitivity maps.
@@ -117,12 +114,9 @@ computes a 64-length radial spoke for each coil. All operations are broadcast
 across coils, which minimizes interaction with the Python interpreter, helping
 computation speed.
 
-A detailed example of SENSE-NUFFT usage is
-[here](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb).
-
 ### Sparse Matrix Precomputation
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb)
+[Sparse Matrix Example in Colab](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb)
 
 Sparse matrices are an alternative to table interpolation. Their speed can
 vary, but they are a bit more accurate than standard table mode. The following
@@ -143,12 +137,11 @@ image = adjnufft_ob(kdata, ktraj, interp_mats)
 ```
 
 Sparse matrix multiplication is only implemented for real numbers in PyTorch,
-which can limit their speed. A detailed example of sparse matrix precomputation
-usage is [here](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb).
+which can limit their speed.
 
 ### Toeplitz Embedding
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Toeplitz%20Example.ipynb)
+[Toeplitz Example in Colab](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Toeplitz%20Example.ipynb)
 
 The package includes routines for calculating embedded Toeplitz kernels and
 using them as FFT filters for the forward/backward NUFFT operations
@@ -165,9 +158,6 @@ kernel = tkbn.calc_toeplitz_kernel(ktraj, im_size)
 # use FFT kernel from embedded Toeplitz matrix
 image = toep_ob(image, kernel)
 ```
-
-A detailed example of Toeplitz embedding usage is included
-[here](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Toeplitz%20Example.ipynb).
 
 ### Running on the GPU
 
