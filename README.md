@@ -58,12 +58,20 @@ help(KbNufft)
 
 ## Examples
 
-Colab links to Jupyter notebooks:
+`torchkbnufft` can be used for N-D NUFFT transformations. The examples here
+start with a simple 2D NUFFT, then expand it to SENSE (a task with multiple,
+parallel 2D NUFFTs).
 
-- [Basic Example](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb)
-- [SENSE-NUFFT Example](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb)
-- [Sparse Matrix Example](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb)
-- [Toeplitz Example](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Toeplitz%20Example.ipynb)
+The last two examples demonstrate NUFFTs based on sparse matrix multiplications
+(which can be useful for high-dimensional cases) and Toeplitz NUFFTs (which are
+an extremely fast forward-backward NUFFT technique).
+
+All examples have associated notebooks that you can run in Google Colab:
+
+- [Basic Example in Colab](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Basic%20Example.ipynb)
+- [SENSE-NUFFT Example in Colab](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/SENSE%20Example.ipynb)
+- [Sparse Matrix Example in Colab](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Sparse%20Matrix%20Example.ipynb)
+- [Toeplitz Example in Colab](https://colab.research.google.com/github/mmuckley/torchkbnufft/blob/main/notebooks/Toeplitz%20Example.ipynb)
 
 ### Simple Forward NUFFT
 
