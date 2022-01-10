@@ -154,6 +154,7 @@ def calc_one_batch_toeplitz_kernel(
         weights = weights.unsqueeze(0).unsqueeze(0)
     else:
         weights = weights.to(adj_ob.table_0)
+        weights = weights.unsqueeze(0)
 
     # apply adjoints to n-1 dimensions
     if omega.shape[0] > 1:
