@@ -444,17 +444,30 @@ class ToepNufft(torch.nn.Module):
         output = []
         if len(kernel.shape) > len(image.shape[2:]):
             # run with batching for kernel
-            for (mini_image, smap, mini_kernel) in zip(image, smaps, kernel):
-                mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
-                mini_image = tkbnF.fft_filter(
-                    image=mini_image, kernel=mini_kernel, norm=norm
-                )
-                mini_image = torch.sum(
-                    mini_image * smap.unsqueeze(0).conj(),
-                    dim=1,
-                    keepdim=True,
-                )
-                output.append(mini_image.squeeze(0))
+            if smaps.shape[0] == 1:
+                for (mini_image, mini_kernel) in zip(image, kernel):
+                    mini_image = mini_image.unsqueeze(0) * smaps
+                    mini_image = tkbnF.fft_filter(
+                        image=mini_image, kernel=mini_kernel, norm=norm
+                    )
+                    mini_image = torch.sum(
+                        mini_image * smaps.conj(),
+                        dim=1,
+                        keepdim=True,
+                    )
+                    output.append(mini_image.squeeze(0))
+            else:
+                for (mini_image, smap, mini_kernel) in zip(image, smaps, kernel):
+                    mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
+                    mini_image = tkbnF.fft_filter(
+                        image=mini_image, kernel=mini_kernel, norm=norm
+                    )
+                    mini_image = torch.sum(
+                        mini_image * smap.unsqueeze(0).conj(),
+                        dim=1,
+                        keepdim=True,
+                    )
+                    output.append(mini_image.squeeze(0))
         else:
             for (mini_image, smap) in zip(image, smaps):
                 mini_image = mini_image.unsqueeze(0) * smap.unsqueeze(0)
