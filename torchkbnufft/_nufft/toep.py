@@ -173,8 +173,8 @@ def calc_one_batch_toeplitz_kernel(
     # here we invert the scaling term from the final fft to match the nufft op
     if normalized:
         scale_factor = torch.sqrt(
-            torch.prod(2 * adj_ob.im_size) / torch.prod(adj_ob.grid_size)  # type: ignore
-        )
+            torch.prod(2 * adj_ob.im_size) / torch.prod(adj_ob.grid_size)) \
+                       / torch.prod(2 * adj_ob.im_size)  # type: ignore
     else:
         scale_factor = 1 / torch.prod(2 * adj_ob.im_size)  # type: ignore
 
