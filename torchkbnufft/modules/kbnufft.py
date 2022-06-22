@@ -20,7 +20,7 @@ class KbNufftModule(KbModule):
         grid_size: Optional[Sequence[int]] = None,
         numpoints: Union[int, Sequence[int]] = 6,
         n_shift: Optional[Sequence[int]] = None,
-        table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+        table_oversamp: Union[int, Sequence[int]] = 2**10,
         kbwidth: float = 2.34,
         order: Union[float, Sequence[float]] = 0.0,
         dtype: torch.dtype = None,
