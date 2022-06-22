@@ -195,15 +195,15 @@ def kaiser_bessel_ft(
     Returns:
         The scaling coefficients.
     """
-    z = np.sqrt((2 * np.pi * (numpoints / 2) * omega) ** 2 - alpha ** 2 + 0j)
+    z = np.sqrt((2 * np.pi * (numpoints / 2) * omega) ** 2 - alpha**2 + 0j)
     nu = d / 2 + order
     scaling_coef = (
         (2 * np.pi) ** (d / 2)
         * ((numpoints / 2) ** d)
-        * (alpha ** order)
+        * (alpha**order)
         / special.iv(order, alpha)
         * special.jv(nu, z)
-        / (z ** nu)
+        / (z**nu)
     )
     scaling_coef = np.real(scaling_coef)
 
@@ -260,7 +260,7 @@ def init_fn(
     grid_size: Optional[Sequence[int]] = None,
     numpoints: Union[int, Sequence[int]] = 6,
     n_shift: Optional[Sequence[int]] = None,
-    table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+    table_oversamp: Union[int, Sequence[int]] = 2**10,
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
     dtype: torch.dtype = None,
@@ -364,7 +364,7 @@ def validate_args(
     grid_size: Optional[Sequence[int]] = None,
     numpoints: Union[int, Sequence[int]] = 6,
     n_shift: Optional[Sequence[int]] = None,
-    table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+    table_oversamp: Union[int, Sequence[int]] = 2**10,
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
     dtype: torch.dtype = None,

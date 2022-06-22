@@ -15,7 +15,7 @@ def calc_toeplitz_kernel(
     norm: Optional[str] = None,
     grid_size: Optional[Sequence[int]] = None,
     numpoints: Union[int, Sequence[int]] = 6,
-    table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+    table_oversamp: Union[int, Sequence[int]] = 2**10,
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
 ) -> Tensor:
@@ -127,7 +127,7 @@ def calc_one_batch_toeplitz_kernel(
     norm: Optional[str] = None,
     grid_size: Optional[Sequence[int]] = None,
     numpoints: Union[int, Sequence[int]] = 6,
-    table_oversamp: Union[int, Sequence[int]] = 2 ** 10,
+    table_oversamp: Union[int, Sequence[int]] = 2**10,
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
 ) -> Tensor:
