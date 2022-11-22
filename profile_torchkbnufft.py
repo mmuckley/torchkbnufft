@@ -2,6 +2,9 @@ import time
 
 import numpy as np
 import torch
+
+# NOTE: pillow and scikit-image are not project dependencies and need to be
+# installed sepearately to run this script
 from PIL import Image
 from skimage.data import camera
 
