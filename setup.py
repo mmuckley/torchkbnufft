@@ -1,13 +1,10 @@
+import builtins
 import pathlib
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 # https://github.com/williamFalcon/pytorch-lightning/blob/master/setup.py
 
-try:
-    import builtins
-except ImportError:
-    import __builtin__ as builtins
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
@@ -19,7 +16,7 @@ builtins.__TORCHKBNUFFT_SETUP__ = True
 
 import torchkbnufft  # noqa: E402
 
-install_requires = ["torch>=1.10,<1.11", "numpy", "scipy"]
+install_requires = ["torch>=1.12", "numpy", "scipy"]
 
 # https://packaging.python.org/discussions/install-requires-vs-requirements
 setup(
@@ -37,7 +34,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     keywords=["MRI", "pytorch", "nufft", "deep-learning"],
-    python_requires=">=3.5",
+    python_requires=">=3.7",
     setup_requires=[],
     install_requires=install_requires,
     classifiers=[

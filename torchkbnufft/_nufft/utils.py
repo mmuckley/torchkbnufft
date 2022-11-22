@@ -10,7 +10,6 @@ from torch import Tensor
 DTYPE_MAP = [
     (torch.complex128, torch.float64),
     (torch.complex64, torch.float32),
-    (torch.complex32, torch.float16),
 ]
 
 
@@ -49,7 +48,7 @@ def build_numpy_spmatrix(
         Jvec = np.reshape(np.array(range(1, npts + 1)), (1, npts))
         kern_in = -1 * Jvec + np.expand_dims(interp_dist, 1)
 
-        cur_coeff = np.zeros(shape=kern_in.shape, dtype=np.complex)
+        cur_coeff = np.zeros(shape=kern_in.shape, dtype=np.complex128)
         indices = np.absolute(kern_in) < npts / 2
         bess_arg = np.sqrt(1 - (kern_in[indices] / (npts / 2)) ** 2)
         denom = special.iv(order, alpha)
