@@ -3,12 +3,12 @@
 from importlib.metadata import PackageNotFoundError, version
 
 try:
-    __version__ = version("fastmri")
+    __version__ = version("torchkbnufft")
 except PackageNotFoundError:
     # package is not installed
     import warnings
 
-    warnings.warn("Could not retrieve fastmri version!")
+    warnings.warn("Could not retrieve torchkbnufft version!")
 
 import torchkbnufft.functional
 import torchkbnufft.modules
