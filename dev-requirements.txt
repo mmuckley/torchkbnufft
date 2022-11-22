@@ -3,4 +3,4 @@ black==22.3.0
 pytest==7.1.2
 flake8==4.0.1
 mypy==0.961
-pillow==9.1.1
+pillow==9.3.0
