@@ -10,7 +10,6 @@ from torch import Tensor
 DTYPE_MAP = [
     (torch.complex128, torch.float64),
     (torch.complex64, torch.float32),
-    (torch.complex32, torch.float16),
 ]
 
 
