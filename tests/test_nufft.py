@@ -142,3 +142,36 @@ def test_nufft_complex_real_match(shape, kdata_shape, is_complex):
     assert torch.allclose(kdata_complex, kdata_real)
 
     torch.set_default_dtype(default_dtype)
+
+@pytest.mark.parametrize(
+    "shape, kdata_shape, is_complex, dtype",
+    [
+        ([1, 1, 19], [1, 1, 25], True, torch.complex64),
+        ([3, 1, 13, 2], [3, 1, 18, 2], False, torch.float32),
+        ([1, 1, 19], [1, 1, 25], True, torch.complex128),
+        ([3, 1, 13, 2], [3, 1, 18, 2], False, torch.float64),
+    ],
+)
+def test_nufft_dtype_transfer(shape, kdata_shape, is_complex, dtype):
+    torch.manual_seed(123)
+    if is_complex:
+        im_size = shape[2:]
+    else:
+        im_size = shape[2:-1]
+
+    if dtype == torch.complex64:
+        real_dtype = torch.float32
+    elif dtype == torch.complex128:
+        real_dtype = torch.float64
+    else:
+        real_dtype = dtype
+
+    image = create_input_plus_noise(shape, is_complex).to(dtype)
+    kdata = create_input_plus_noise(kdata_shape, is_complex).to(dtype)
+    ktraj = create_ktraj(len(im_size), kdata_shape[2]).to(real_dtype)
+
+    forw_ob = tkbn.KbNufft(im_size=im_size).to(image)
+    adj_ob = tkbn.KbNufftAdjoint(im_size=im_size).to(kdata)
+
+    _ = forw_ob(image, ktraj)
+    _ = adj_ob(kdata, ktraj)

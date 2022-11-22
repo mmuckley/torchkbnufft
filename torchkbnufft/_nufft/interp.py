@@ -358,15 +358,15 @@ def table_interp(
     # we fork processes for accumulation, so we need to do a bit of thread
     # management for OMP to make sure we don't oversubscribe (managment not
     # necessary for non-OMP)
-    num_threads = torch.get_num_threads()
+    num_threads = int(torch.get_num_threads())
     factors = torch.arange(1, num_threads + 1)
     factors = factors[torch.remainder(torch.tensor(num_threads), factors) == 0]
-    threads_per_fork = num_threads  # default fallback
+    threads_per_fork = int(num_threads)  # default fallback
 
     if omega.ndim == 3:
         # increase number of forks as long as it's not greater than batch size
         for factor in factors.flip(0):
-            if num_threads // factor <= omega.shape[0]:
+            if num_threads // int(factor) <= omega.shape[0]:
                 threads_per_fork = int(factor)
 
         num_forks = num_threads // threads_per_fork
@@ -382,7 +382,7 @@ def table_interp(
         # determine number of process forks while keeping a minimum amount of
         # k-space per fork
         for factor in factors.flip(0):
-            if omega.shape[1] / (num_threads // factor) >= min_kspace_per_fork:
+            if omega.shape[1] / (num_threads // int(factor)) >= min_kspace_per_fork:
                 threads_per_fork = int(factor)
 
         num_forks = num_threads // threads_per_fork
@@ -643,12 +643,12 @@ def table_interp_adjoint(
     if batched_nufft:
         # increase number of forks as long as it's not greater than batch size
         for factor in factors.flip(0):
-            if num_threads // factor <= omega.shape[0]:
+            if num_threads // int(factor) <= omega.shape[0]:
                 threads_per_fork = int(factor)
     else:
         # increase forks as long as it's less/eq than batch * coildim
         for factor in factors.flip(0):
-            if num_threads // factor <= data.shape[0] * data.shape[1]:
+            if num_threads // int(factor) <= data.shape[0] * data.shape[1]:
                 threads_per_fork = int(factor)
 
     num_forks = num_threads // threads_per_fork
