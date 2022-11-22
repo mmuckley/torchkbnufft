@@ -1,13 +1,10 @@
+import builtins
 import pathlib
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 # https://github.com/williamFalcon/pytorch-lightning/blob/master/setup.py
 
-try:
-    import builtins
-except ImportError:
-    import __builtin__ as builtins
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
