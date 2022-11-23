@@ -26,7 +26,7 @@ copyright = "2021, Matthew Muckley"
 author = "Matthew Muckley"
 
 # The full version, including alpha/beta/rc tags
-release = f"v{vers)}"
+release = f"v{vers}"
 
 
 # -- General configuration ---------------------------------------------------
