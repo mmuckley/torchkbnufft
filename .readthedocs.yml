@@ -5,6 +5,4 @@ python:
         path: .
         extra_requirements:
             - docs
-      - method: pip
-        path: --editable ".[tests]"
    system_packages: true

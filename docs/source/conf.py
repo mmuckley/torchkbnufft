@@ -10,13 +10,13 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from importlib.metadata import version
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
 os.environ["PYTORCH_JIT"] = "0"
-
-import torchkbnufft
+vers = version("torchkbnufft")
 
 
 # -- Project information -----------------------------------------------------
@@ -26,7 +26,7 @@ copyright = "2021, Matthew Muckley"
 author = "Matthew Muckley"
 
 # The full version, including alpha/beta/rc tags
-release = f"v{torchkbnufft.__version__}"
+release = f"v{vers)}"
 
 
 # -- General configuration ---------------------------------------------------
