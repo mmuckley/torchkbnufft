@@ -17,7 +17,6 @@ sys.path.insert(0, os.path.abspath("../.."))
 os.environ["PYTORCH_JIT"] = "0"
 
 import torchkbnufft
-import torch
 
 
 # -- Project information -----------------------------------------------------

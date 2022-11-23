@@ -5,6 +5,6 @@ python:
         path: .
         extra_requirements:
             - docs
-      - method: setuptools
-        path: another/package
+      - method: pip
+        path: --editable ".[tests]"
    system_packages: true
