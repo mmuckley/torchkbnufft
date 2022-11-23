@@ -8,3 +8,4 @@ torchkbnufft.egg-info/
 speedtests/
 _build/
 gram/
+torchkbnufft/_version.py
