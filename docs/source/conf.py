@@ -10,20 +10,21 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from datetime import date
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
 os.environ["PYTORCH_JIT"] = "0"
+year = date.today().year
 
 import torchkbnufft
-import torch
 
 
 # -- Project information -----------------------------------------------------
 
 project = "torchkbnufft"
-copyright = "2021, Matthew Muckley"
+copyright = f"{year}, Matthew Muckley"
 author = "Matthew Muckley"
 
 # The full version, including alpha/beta/rc tags

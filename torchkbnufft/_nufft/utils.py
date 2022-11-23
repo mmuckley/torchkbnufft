@@ -262,8 +262,8 @@ def init_fn(
     table_oversamp: Union[int, Sequence[int]] = 2**10,
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
-    dtype: torch.dtype = None,
-    device: torch.device = None,
+    dtype: Optional[torch.dtype] = None,
+    device: Optional[torch.device] = None,
 ) -> Tuple[
     List[Tensor], Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor
 ]:
@@ -366,8 +366,8 @@ def validate_args(
     table_oversamp: Union[int, Sequence[int]] = 2**10,
     kbwidth: float = 2.34,
     order: Union[float, Sequence[float]] = 0.0,
-    dtype: torch.dtype = None,
-    device: torch.device = None,
+    dtype: Optional[torch.dtype] = None,
+    device: Optional[torch.device] = None,
 ) -> Tuple[
     Sequence[int],
     Sequence[int],
