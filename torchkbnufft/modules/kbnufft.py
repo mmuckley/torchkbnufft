@@ -129,6 +129,7 @@ class KbNufft(KbNufftModule):
         interp_mats: Optional[Tuple[Tensor, Tensor]] = None,
         smaps: Optional[Tensor] = None,
         norm: Optional[str] = None,
+        ssbasis: Optional[Tensor] = None,
     ) -> Tensor:
         """Apply FFT and interpolate from gridded data to scattered data.
 
@@ -220,6 +221,7 @@ class KbNufft(KbNufftModule):
                 table_oversamp=self.table_oversamp,
                 offsets=self.offsets.to(torch.long),
                 norm=norm,
+                ssbasis=ssbasis,
             )
 
         if not is_complex:
@@ -311,6 +313,7 @@ class KbNufftAdjoint(KbNufftModule):
         interp_mats: Optional[Tuple[Tensor, Tensor]] = None,
         smaps: Optional[Tensor] = None,
         norm: Optional[str] = None,
+        ssbasis: Optional[Tensor] = None,
     ) -> Tensor:
         """Interpolate from scattered data to gridded data and then iFFT.
 
@@ -399,6 +402,7 @@ class KbNufftAdjoint(KbNufftModule):
                 table_oversamp=self.table_oversamp,
                 offsets=self.offsets.to(torch.long),
                 norm=norm,
+                ssbasis=ssbasis,
             )
 
         if smaps is not None:
