@@ -86,7 +86,7 @@ import torchkbnufft as tkbn
 import numpy as np
 from skimage.data import shepp_logan_phantom
 
-x = shepp_logan_phantom().astype(np.complex)
+x = shepp_logan_phantom().astype(complex)
 im_size = x.shape
 # convert to tensor, unsqueeze batch and coil dimension
 # output size: (1, 1, ny, nx)

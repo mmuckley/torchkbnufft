@@ -188,7 +188,7 @@ def run_all_profiles():
 
         # create an example to run on
         image = np.array(Image.fromarray(camera()).resize((256, 256)))
-        image = image.astype(np.complex)
+        image = image.astype(complex)
         im_size = image.shape
 
         image = (
