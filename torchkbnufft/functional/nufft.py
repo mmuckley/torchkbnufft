@@ -135,6 +135,7 @@ def kb_table_nufft(
     table_oversamp: Tensor,
     offsets: Tensor,
     norm: Optional[str] = None,
+    ssbasis: Optional[Tensor] = None,
 ) -> Tensor:
     """Kaiser-Bessel NUFFT with table interpolation.
 
@@ -183,6 +184,7 @@ def kb_table_nufft(
         numpoints=numpoints,
         table_oversamp=table_oversamp,
         offsets=offsets,
+        ssbasis=ssbasis,
     )
 
     if is_complex is False:
@@ -203,6 +205,7 @@ def kb_table_nufft_adjoint(
     table_oversamp: Tensor,
     offsets: Tensor,
     norm: Optional[str] = None,
+    ssbasis: Optional[Tensor] = None,
 ) -> Tensor:
     """Kaiser-Bessel NUFFT adjoint with table interpolation.
 
@@ -247,6 +250,7 @@ def kb_table_nufft_adjoint(
             table_oversamp=table_oversamp,
             offsets=offsets,
             grid_size=grid_size,
+            ssbasis=ssbasis,
         ),
         scaling_coef=scaling_coef,
         im_size=im_size,
