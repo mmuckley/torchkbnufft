@@ -26,7 +26,7 @@ def test_params():
 
 
 def create_input_plus_noise(shape, is_complex):
-    x = np.arange(np.product(shape)).reshape(shape)
+    x = np.arange(np.prod(shape)).reshape(shape)
     x = torch.tensor(x, dtype=torch.get_default_dtype())
 
     if is_complex:
