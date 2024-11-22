@@ -20,4 +20,4 @@ python:
 
 sphinx:
   builder: html
-  configuration: conf.py
+  configuration: docs/source/conf.py
