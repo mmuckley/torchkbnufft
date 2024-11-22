@@ -26,7 +26,7 @@ def crop_dims(image: Tensor, dim_list: Tensor, end_list: Tensor) -> Tensor:
     """Crops an n-dimensional Tensor."""
     image = torch.view_as_real(image)  # index select only works for real
 
-    for (dim, end) in zip(dim_list, end_list):
+    for dim, end in zip(dim_list, end_list):
         image = torch.index_select(image, dim, torch.arange(end, device=image.device))
 
     return torch.view_as_complex(image)
@@ -64,7 +64,7 @@ def fft_and_scale(
 
     # zero pad for oversampled nufft
     pad_sizes: List[int] = []
-    for (gd, im) in zip(grid_size.flip((0,)), im_size.flip((0,))):
+    for gd, im in zip(grid_size.flip((0,)), im_size.flip((0,))):
         pad_sizes.append(0)
         pad_sizes.append(int(gd - im))
 
@@ -153,7 +153,7 @@ def fft_filter(image: Tensor, kernel: Tensor, norm: Optional[str] = "ortho") -> 
     # set up n-dimensional zero pad
     # zero pad for oversampled nufft
     pad_sizes: List[int] = []
-    for (gd, im) in zip(grid_size.flip((0,)), im_size.flip((0,))):
+    for gd, im in zip(grid_size.flip((0,)), im_size.flip((0,))):
         pad_sizes.append(0)
         pad_sizes.append(int(gd - im))
 

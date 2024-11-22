@@ -20,7 +20,7 @@ def create_interp_data():
     ]
 
     outputs = []
-    for (shape, klength, is_complex) in test_params:
+    for shape, klength, is_complex in test_params:
         torch.manual_seed(123)
         im_size = shape[2:-1]
 
@@ -74,7 +74,7 @@ def create_nufft_data():
     ]
 
     outputs = []
-    for (shape, klength, is_complex) in test_params:
+    for shape, klength, is_complex in test_params:
         torch.manual_seed(123)
         im_size = shape[2:-1]
 
@@ -128,7 +128,7 @@ def create_sense_nufft_data():
     ]
 
     outputs = []
-    for (shape, klength, is_complex) in test_params:
+    for shape, klength, is_complex in test_params:
         torch.manual_seed(123)
         im_size = shape[2:-1]
 

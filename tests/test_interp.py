@@ -19,7 +19,7 @@ def test_interp_accuracy():
     with open("tests/data/interp_data.pkl", "rb") as f:
         old_data = pickle.load(f)
 
-    for (image, ktraj, old_kdata) in old_data:
+    for image, ktraj, old_kdata in old_data:
         im_size = image.shape[2:-1]
 
         forw_ob = tkbn.KbInterp(im_size=im_size, grid_size=im_size)
