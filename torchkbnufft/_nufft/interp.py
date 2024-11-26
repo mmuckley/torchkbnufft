@@ -215,7 +215,7 @@ def table_interp_multiple_batches(
 ) -> Tensor:
     """Table interpolation with for loop over batch dimension."""
     kdat = []
-    for (it_image, it_omega) in zip(image, omega):
+    for it_image, it_omega in zip(image, omega):
         kdat.append(
             table_interp_one_batch(
                 it_image.unsqueeze(0),
@@ -245,7 +245,7 @@ def table_interp_fork_over_batchdim(
     """Table interpolation with forking over k-space."""
     # initialize the fork processes
     futures: List[torch.jit.Future[torch.Tensor]] = []
-    for (image_chunk, omega_chunk) in zip(
+    for image_chunk, omega_chunk in zip(
         image.tensor_split(num_forks), omega.tensor_split(num_forks)
     ):
         futures.append(
@@ -409,11 +409,11 @@ def accum_tensor_index_add(
 ) -> Tensor:
     """We fork this function for the adjoint accumulation."""
     if batched_nufft:
-        for (image_batch, arr_ind_batch, data_batch) in zip(image, arr_ind, data):
-            for (image_coil, data_coil) in zip(image_batch, data_batch):
+        for image_batch, arr_ind_batch, data_batch in zip(image, arr_ind, data):
+            for image_coil, data_coil in zip(image_batch, data_batch):
                 image_coil.index_add_(0, arr_ind_batch, data_coil)
     else:
-        for (image_it, data_it) in zip(image, data):
+        for image_it, data_it in zip(image, data):
             image_it.index_add_(0, arr_ind, data_it)
 
     return image
@@ -427,7 +427,7 @@ def fork_and_accum(
     # initialize the fork processes
     futures: List[torch.jit.Future[torch.Tensor]] = []
     if batched_nufft:
-        for (image_chunk, arr_ind_chunk, data_chunk) in zip(
+        for image_chunk, arr_ind_chunk, data_chunk in zip(
             image.tensor_split(num_forks),
             arr_ind.tensor_split(num_forks),
             data.tensor_split(num_forks),
@@ -442,7 +442,7 @@ def fork_and_accum(
                 )
             )
     else:
-        for (image_chunk, data_chunk) in zip(
+        for image_chunk, data_chunk in zip(
             image.tensor_split(num_forks), data.tensor_split(num_forks)
         ):
             futures.append(
@@ -476,7 +476,7 @@ def calc_coef_and_indices_batch(
     """For loop coef calculation over batch dim."""
     coef = []
     arr_ind = []
-    for (tm_it, base_offset_it) in zip(tm, base_offset):
+    for tm_it, base_offset_it in zip(tm, base_offset):
         coef_it, arr_ind_it = calc_coef_and_indices(
             tm_it,
             base_offset_it,
@@ -511,7 +511,7 @@ def calc_coef_and_indices_fork_over_batches(
     if batched_nufft:
         # initialize the fork processes
         futures: List[torch.jit.Future[Tuple[Tensor, Tensor]]] = []
-        for (tm_chunk, base_offset_chunk) in zip(
+        for tm_chunk, base_offset_chunk in zip(
             tm.tensor_split(num_forks),
             base_offset.tensor_split(num_forks),
         ):
@@ -570,7 +570,7 @@ def sort_data(
     if batched_nufft:
         # loop over batch dimension to get sorted k-space
         results: List[Tuple[Tensor, Tensor, Tensor]] = []
-        for (tm_it, omega_it, data_it) in zip(tm, omega, data):
+        for tm_it, omega_it, data_it in zip(tm, omega, data):
             results.append(
                 sort_one_batch(tm_it, omega_it, data_it.unsqueeze(0), grid_size)
             )
