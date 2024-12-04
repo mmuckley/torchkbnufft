@@ -4,8 +4,8 @@ import torch
 import torchkbnufft.functional as tkbnF
 from torch import Tensor
 
-from .._nufft.utils import compute_scaling_coefs
-from ._kbmodule import KbModule
+from torchkbnufft._nufft.utils import compute_scaling_coefs
+from torchkbnufft.modules._kbmodule import KbModule
 
 
 class KbNufftModule(KbModule):

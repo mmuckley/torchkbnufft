@@ -3,7 +3,7 @@ from typing import List, Tuple
 import torch
 from torch import Tensor
 
-from .._autograd.interp import (
+from torchkbnufft._autograd.interp import (
     KbSpmatInterpAdjoint,
     KbSpmatInterpForward,
     KbTableInterpAdjoint,

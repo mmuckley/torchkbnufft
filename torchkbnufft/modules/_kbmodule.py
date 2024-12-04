@@ -3,7 +3,7 @@ from typing import Optional, Sequence, Union
 import torch
 import torch.nn as nn
 
-from .._nufft.utils import DTYPE_MAP, init_fn
+from torchkbnufft._nufft.utils import DTYPE_MAP, init_fn
 
 
 class KbModule(nn.Module):

@@ -4,7 +4,7 @@ import torch
 import torchkbnufft.functional as tkbnF
 from torch import Tensor
 
-from ._kbmodule import KbModule
+from torchkbnufft.modules._kbmodule import KbModule
 
 
 class KbInterpModule(KbModule):
