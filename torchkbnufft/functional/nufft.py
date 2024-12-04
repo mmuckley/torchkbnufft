@@ -3,8 +3,8 @@ from typing import List, Optional, Tuple
 import torch
 from torch import Tensor
 
-from .._nufft.fft import fft_and_scale, ifft_and_scale
-from .interp import (
+from torchkbnufft._nufft.fft import fft_and_scale, ifft_and_scale
+from torchkbnufft.functional.interp import (
     kb_spmat_interp,
     kb_spmat_interp_adjoint,
     kb_table_interp,
