@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import torch
 from torch import Tensor
@@ -87,6 +87,7 @@ def kb_table_interp(
     numpoints: Tensor,
     table_oversamp: Tensor,
     offsets: Tensor,
+    ssbasis: Optional[Tensor] = None,
 ) -> Tensor:
     """Kaiser-Bessel table interpolation.
 
@@ -113,6 +114,9 @@ def kb_table_interp(
 
         is_complex = False
         image = torch.view_as_complex(image)
+    
+    if ssbasis is not None:
+        image = torch.tensordot(ssbasis,image,dims=([1], [0]))
 
     data = KbTableInterpForward.apply(
         image, omega, tables, n_shift, numpoints, table_oversamp, offsets
@@ -133,6 +137,7 @@ def kb_table_interp_adjoint(
     table_oversamp: Tensor,
     offsets: Tensor,
     grid_size: Tensor,
+    ssbasis: Optional[Tensor] = None,
 ) -> Tensor:
     """Kaiser-Bessel table interpolation adjoint.
 
@@ -168,5 +173,9 @@ def kb_table_interp_adjoint(
 
     if is_complex is False:
         image = torch.view_as_real(image)
+
+    if ssbasis is not None:
+        image = torch.tensordot(ssbasis.conj(),image,dims=([0], [0]))
+
 
     return image
