@@ -173,3 +173,34 @@ def test_batched_weights_toeplitz_nufft_accuracy(shape, kdata_shape, is_complex)
     assert norm_diff < norm_diff_tol
 
     torch.set_default_dtype(default_dtype)
+
+
+@pytest.mark.parametrize("ncoil", [1, 2, 3])
+@pytest.mark.parametrize("is_complex", [True, False])
+@pytest.mark.parametrize("norm", [None, "ortho"])
+def test_batched_toeplitz_without_smaps(ncoil, is_complex, norm):
+    generator = torch.Generator().manual_seed(71)
+    im_size = (6, 5)
+    image = torch.randn(2, ncoil, *im_size, dtype=torch.complex128, generator=generator)
+    ktraj = (
+        torch.rand(2, 2, 23, dtype=torch.double, generator=generator) * 2 * np.pi
+        - np.pi
+    )
+    kernel = tkbn.calc_toeplitz_kernel(ktraj, im_size, norm=norm)
+    forw_ob = tkbn.KbNufft(im_size=im_size, dtype=torch.double)
+    adj_ob = tkbn.KbNufftAdjoint(im_size=im_size, dtype=torch.double)
+    expected = adj_ob(forw_ob(image, ktraj, norm=norm), ktraj, norm=norm)
+
+    if not is_complex:
+        image = torch.view_as_real(image)
+        kernel = torch.view_as_real(kernel)
+        expected = torch.view_as_real(expected)
+
+    toep_ob = tkbn.ToepNufft()
+    actual = toep_ob(image, kernel, norm=norm)
+    separate = torch.cat(
+        [toep_ob(image[i : i + 1], kernel[i], norm=norm) for i in range(image.shape[0])]
+    )
+
+    torch.testing.assert_close(actual, separate)
+    assert torch.norm(actual - expected) / torch.norm(expected) < 1e-4
