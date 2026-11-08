@@ -496,6 +496,8 @@ class ToepNufft(torch.nn.Module):
             image: The image to apply the forward/backward Toeplitz-embedded
                 NUFFT to.
             kernel: The filter response taking into account Toeplitz embedding.
+                A kernel with a batch dimension is applied independently to each
+                image in the batch and shared across its coils.
             norm: Whether to apply normalization with the FFT operation.
                 Options are ``"ortho"`` or ``None``.
 
@@ -535,6 +537,8 @@ class ToepNufft(torch.nn.Module):
                 )
 
         if smaps is None:
+            if len(kernel.shape) > len(image.shape[2:]):
+                kernel = kernel.unsqueeze(1)
             output = tkbnF.fft_filter(image=image, kernel=kernel, norm=norm)
         else:
             output = self.toep_batch_loop(
